@@ -1,3 +1,9 @@
+use webserver::start;
+
+mod webserver;
+mod ast;
+mod infrastucture;
+
 fn main() {
-    println!("Hello, world!");
+    webserver::start();
 }
