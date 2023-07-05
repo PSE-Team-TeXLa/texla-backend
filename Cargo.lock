@@ -114,7 +114,6 @@ dependencies = [
  "axum",
  "chumsky",
  "notify",
- "serde",
  "serde_json",
  "serde_traitobject",
  "socketioxide",
