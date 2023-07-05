@@ -1,5 +1,5 @@
 use crate::ast;
-use crate::infrastucture;
+use crate::infrastructure;
 
 pub fn start() {
     println!("Hello, world!");

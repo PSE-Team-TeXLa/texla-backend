@@ -2,7 +2,7 @@ use webserver::start;
 
 mod webserver;
 mod ast;
-mod infrastucture;
+mod infrastructure;
 
 fn main() {
     webserver::start();
