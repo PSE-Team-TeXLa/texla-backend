@@ -1,12 +1,24 @@
+use clap::Parser;
+
 use crate::ast;
 use crate::infrastructure;
 use crate::webserver::webserver::Webserver;
 
+#[derive(Parser, Debug)]
+struct CliArguments {
+    #[arg(short, long)]
+    main_file: String,
+}
+
 pub fn start() {
     println!("Starting TeXLa...");
-    // TODO: read CLI arguments
 
-    let webserver = Webserver {
-        // TODO: initialize Managers and Ast
-    };
+    // append `-- --main-file main.tex` to your run command in CLion to provide the necessary CLI 
+    // argument
+    let args = CliArguments::parse();
+    println!("Opening file: {}", args.main_file);
+
+    let webserver = Webserver::new(
+        args.main_file
+    );
 }
