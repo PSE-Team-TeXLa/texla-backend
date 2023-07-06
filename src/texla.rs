@@ -1,5 +1,4 @@
-pub use start::start;
 pub use webserver::Webserver;
 
-mod start;
+pub mod start;
 mod webserver;

@@ -1,8 +1,7 @@
-mod webserver;
-// TODO rename module from 'webserver' to 'texla'?
 mod ast;
 mod infrastructure;
+mod texla;
 
 fn main() {
-    webserver::start();
+    texla::start::start();
 }
