@@ -6,6 +6,7 @@ pub trait UuidProvider {
     fn new_uuid(&mut self) -> Uuid;
 }
 
+#[derive(Debug, Clone)]
 pub struct TexlaUuidProvider {
     highest_uuid: Uuid,
 }

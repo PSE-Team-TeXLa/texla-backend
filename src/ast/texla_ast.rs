@@ -9,6 +9,7 @@ use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
 use crate::ast::{parser, Ast};
 
+#[derive(Debug)]
 pub struct TexlaAst {
     pub(crate) portal: HashMap<Uuid, NodeRefWeak>,
     pub(crate) root: NodeRef,

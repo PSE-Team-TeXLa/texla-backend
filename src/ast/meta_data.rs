@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct MetaData {
     pub(crate) meta_data: HashMap<String, String>,
 }
