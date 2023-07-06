@@ -64,18 +64,22 @@ impl LatexParser {
         )
     }
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
-        let line = none_of("\r\n\\").repeated().at_least(1).collect::<String>();
+        let line = none_of("\r\n\\")
+            .repeated()
+            .at_least(1)
+            .then_ignore(just("\n"))
+            .collect::<String>()
+            .map(|mut line| {
+                line.push_str("\n");
+                line
+            });
 
         let block = line
             .clone()
-            .then(just("\n"))
-            .map(|(mut line, _newline)| {
-                line.push_str("\n");
-                line
-            })
             .repeated()
+            .at_least(1)
             .collect::<String>()
-            .then_ignore(just("\n"))
+            .then_ignore(just("\n").or_not())
             .map(|x| self.build_text(x));
 
         let section = just("\\section")
