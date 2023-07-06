@@ -1,9 +1,14 @@
 use crate::ast::Ast;
 use crate::ast::texla_ast::TexlaAst;
+use crate::infrastructure::errors::MergeConflictError;
+use crate::infrastructure::export_manager::ExportManager;
+use crate::infrastructure::storage_manager::StorageManager;
+use crate::infrastructure::vcs_manager::MergeConflictHandler;
 
 pub struct Webserver<A> where A: Ast {
     ast: A,
-    // TODO: hold Managers
+    storage_manager: dyn StorageManager,
+    export_manager: dyn ExportManager,
 }
 
 impl Webserver<TexlaAst> {
@@ -25,4 +30,8 @@ impl Webserver<TexlaAst> {
     }
 }
 
-// TODO: implement handlers
+impl MergeConflictHandler for Webserver<TexlaAst> {
+    fn handle_merge_conflict(error: MergeConflictError) {
+        todo!()
+    }
+}
