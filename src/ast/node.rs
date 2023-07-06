@@ -22,7 +22,6 @@ enum NodeType {
     },
 }
 
-
 enum ExpandableData {
     // TODO
 }

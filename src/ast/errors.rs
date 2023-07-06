@@ -14,4 +14,3 @@ impl Display for AstError {
         write!(f, "There was an error with the Ast. (Parsing, Operation, Stringification)")
     }
 }
-

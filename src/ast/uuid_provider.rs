@@ -5,7 +5,6 @@ pub trait UuidProvider {
     fn new_uuid(&self) -> Uuid;
 }
 
-
 pub struct TexlaUuidProvider {}
 
 impl UuidProvider for TexlaUuidProvider {
