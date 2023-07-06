@@ -23,5 +23,5 @@ impl VcsManager for GitManager {
 }
 
 pub trait MergeConflictHandler {
-    fn handle_merge_conflict(error: MergeConflictError);
+    fn handle_merge_conflict(&self, error: MergeConflictError);
 }

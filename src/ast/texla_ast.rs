@@ -1,7 +1,7 @@
-use crate::ast::Ast;
 use crate::ast::errors::AstError;
 use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
+use crate::ast::Ast;
 
 pub struct TexlaAst {}
 
@@ -19,7 +19,7 @@ impl Ast for TexlaAst {
         todo!()
     }
 
-    fn execute(&self, operation: Box<dyn Operation<TexlaAst>>) -> Result<String, AstError> {
+    fn execute(&self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
         todo!()
     }
 }

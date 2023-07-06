@@ -1,5 +1,5 @@
 use crate::infrastructure::errors::StorageError;
-use crate::infrastructure::vcs_manager::{MergeConflictHandler, VcsManager};
+use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
 
 pub trait StorageManager {
     fn end_session();
@@ -8,16 +8,30 @@ pub trait StorageManager {
     fn multiplex_files() -> Result<String, StorageError>;
     fn stop_timers();
     fn remote_url() -> Option<String>;
-    fn start(dc_handler: dyn DirectoryChangeHandler, mc_handler: dyn MergeConflictHandler);
+    fn start();
 }
 
-pub struct TexlaStorageManager {
-    vcs_manager: dyn VcsManager,
-    directory_change_handler: dyn DirectoryChangeHandler,
-    merge_conflict_handler: dyn MergeConflictHandler,
+pub struct TexlaStorageManager<V>
+where
+    V: VcsManager,
+{
+    vcs_manager: V,
+    directory_change_handler: Option<Box<dyn DirectoryChangeHandler>>,
+    merge_conflict_handler: Option<Box<dyn MergeConflictHandler>>,
 }
 
-impl StorageManager for TexlaStorageManager {
+impl TexlaStorageManager<GitManager> {
+    fn attach_handlers(
+        &mut self,
+        dc_handler: Box<dyn DirectoryChangeHandler>,
+        mc_handler: Box<dyn MergeConflictHandler>,
+    ) {
+        self.directory_change_handler = Some(dc_handler);
+        self.merge_conflict_handler = Some(mc_handler);
+    }
+}
+
+impl StorageManager for TexlaStorageManager<GitManager> {
     fn end_session() {
         todo!()
     }
@@ -38,11 +52,11 @@ impl StorageManager for TexlaStorageManager {
         todo!()
     }
 
-    fn start(dc_handler: dyn DirectoryChangeHandler, mc_handler: dyn MergeConflictHandler) {
+    fn start() {
         todo!()
     }
 }
 
 pub trait DirectoryChangeHandler {
-    fn handle_directory_change();
+    fn handle_directory_change(&self);
 }

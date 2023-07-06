@@ -1,17 +1,27 @@
-use crate::ast::Ast;
-use crate::ast::texla_ast::TexlaAst;
-use crate::infrastructure::errors::MergeConflictError;
-use crate::infrastructure::export_manager::ExportManager;
-use crate::infrastructure::storage_manager::StorageManager;
-use crate::infrastructure::vcs_manager::MergeConflictHandler;
+use chumsky::prelude::todo;
 
-pub struct Webserver<A> where A: Ast {
+use crate::ast::texla_ast::TexlaAst;
+use crate::ast::Ast;
+use crate::infrastructure::errors::MergeConflictError;
+use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
+use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
+use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
+
+// TODO: rename to TexlaCore?
+type TexlaWebserver = Webserver<TexlaAst, TexlaStorageManager<GitManager>, TexlaExportManager>;
+
+pub struct Webserver<A, S, E>
+where
+    A: Ast,
+    S: StorageManager,
+    E: ExportManager,
+{
     ast: A,
-    storage_manager: dyn StorageManager,
-    export_manager: dyn ExportManager,
+    storage_manager: S,
+    export_manager: E,
 }
 
-impl Webserver<TexlaAst> {
+impl TexlaWebserver {
     pub fn new(main_file: String) -> Self {
         // TODO: initialize Managers and use them
         // we cannot give them the webserver just now, because the webserver is not yet initialized
@@ -24,14 +34,16 @@ impl Webserver<TexlaAst> {
 
         let ast = TexlaAst::from_latex(latex_single_string).expect("Found invalid LaTeX");
 
-        Webserver {
+        TexlaWebserver {
             ast,
+            storage_manager: todo!(),
+            export_manager: todo!(),
         }
     }
 }
 
-impl MergeConflictHandler for Webserver<TexlaAst> {
-    fn handle_merge_conflict(error: MergeConflictError) {
+impl MergeConflictHandler for TexlaWebserver {
+    fn handle_merge_conflict(&self, error: MergeConflictError) {
         todo!()
     }
 }
