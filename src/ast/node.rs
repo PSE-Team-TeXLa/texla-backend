@@ -37,8 +37,8 @@ pub enum LeafData {
 }
 
 impl Node {
-    pub fn new() -> Self {
-        Node {
+    pub fn new() -> NodeRef {
+        Rc::new(RefCell::new(Node {
             uuid: 0,
             node_type: NodeType::Leaf {
                 data: LeafData::Text {
@@ -49,10 +49,11 @@ impl Node {
                 meta_data: Default::default(),
             },
             parent: None,
-        }
+        }))
     }
-    pub fn new_text(text: String) -> Self {
-        Node {
+
+    pub fn new_text(text: String) -> NodeRef {
+        Rc::new(RefCell::new(Node {
             uuid: 0,
             node_type: NodeType::Leaf {
                 data: LeafData::Text { text: text },
@@ -61,36 +62,27 @@ impl Node {
                 meta_data: Default::default(),
             },
             parent: None,
-        }
+        }))
     }
 
-    pub fn new_image(path: String) -> Self {
-        Node {
-            uuid: 0,
-            node_type: NodeType::Leaf {
-                data: LeafData::Image { path },
-            },
-            meta_data: MetaData {
-                meta_data: Default::default(),
-            },
-            parent: None,
-        }
-    }
-    pub fn new_segment(heading: String, children: Vec<NodeRef>) -> Self {
-        Node {
+    pub fn new_segment(heading: String, children: Vec<NodeRef>) -> NodeRef {
+        let this = Rc::new(RefCell::new(Node {
             uuid: 0,
             node_type: NodeType::Expandable {
                 data: ExpandableData::Segment { heading },
-                children,
+                children: children,
             },
             meta_data: MetaData {
                 meta_data: Default::default(),
             },
             parent: None,
-        }
+        }));
+        Self::add_parent_to_children(&this);
+        this
     }
-    pub fn new_document(preamble: String, postamble: String, children: Vec<NodeRef>) -> Self {
-        Node {
+
+    pub fn new_document(preamble: String, postamble: String, children: Vec<NodeRef>) -> NodeRef {
+        let this = Rc::new(RefCell::new(Node {
             uuid: 0,
             node_type: NodeType::Expandable {
                 data: ExpandableData::Document {
@@ -103,6 +95,19 @@ impl Node {
                 meta_data: Default::default(),
             },
             parent: None,
+        }));
+        Self::add_parent_to_children(&this);
+        this
+    }
+
+    fn add_parent_to_children(parent: &Rc<RefCell<Node>>) {
+        match &parent.borrow_mut().node_type {
+            NodeType::Expandable { children, .. } => {
+                for child in children {
+                    child.borrow_mut().parent = Some(Rc::downgrade(&parent.clone()));
+                }
+            }
+            NodeType::Leaf { .. } => {}
         }
     }
 }
