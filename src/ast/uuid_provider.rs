@@ -1,14 +1,24 @@
+use std::cell::RefCell;
+
 pub type Uuid = u64;
 
 pub trait UuidProvider {
-    // Linus: i don't know why there is an option in the spec
-    fn new_uuid(&self) -> Uuid;
+    fn new_uuid(&mut self) -> Uuid;
 }
 
-pub struct TexlaUuidProvider {}
+pub struct TexlaUuidProvider {
+    highest_uuid: Uuid,
+}
 
 impl UuidProvider for TexlaUuidProvider {
-    fn new_uuid(&self) -> Uuid {
-        todo!()
+    fn new_uuid(&mut self) -> Uuid {
+        self.highest_uuid += 1;
+        self.highest_uuid
+    }
+}
+
+impl TexlaUuidProvider {
+    fn new() -> TexlaUuidProvider {
+        TexlaUuidProvider { highest_uuid: 0 }
     }
 }

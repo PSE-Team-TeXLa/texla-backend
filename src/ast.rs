@@ -7,6 +7,7 @@ mod meta_data;
 mod node;
 mod operation;
 mod options;
+mod parser;
 pub mod texla_ast;
 mod uuid_provider;
 
