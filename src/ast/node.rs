@@ -35,3 +35,20 @@ pub enum LeafData {
     Text { text: String },
     Image { path: String },
 }
+
+impl Node {
+    pub fn new() -> Self {
+        Node {
+            uuid: 0,
+            node_type: NodeType::Leaf {
+                data: LeafData::Text {
+                    text: "".to_string(),
+                },
+            },
+            meta_data: MetaData {
+                meta_data: Default::default(),
+            },
+            parent: None,
+        }
+    }
+}

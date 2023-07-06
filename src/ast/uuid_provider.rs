@@ -18,7 +18,7 @@ impl UuidProvider for TexlaUuidProvider {
 }
 
 impl TexlaUuidProvider {
-    fn new() -> TexlaUuidProvider {
+    pub fn new() -> Self {
         TexlaUuidProvider { highest_uuid: 0 }
     }
 }
