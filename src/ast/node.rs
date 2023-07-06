@@ -51,4 +51,58 @@ impl Node {
             parent: None,
         }
     }
+    pub fn new_text(text: String) -> Self {
+        Node {
+            uuid: 0,
+            node_type: NodeType::Leaf {
+                data: LeafData::Text { text: text },
+            },
+            meta_data: MetaData {
+                meta_data: Default::default(),
+            },
+            parent: None,
+        }
+    }
+
+    pub fn new_image(path: String) -> Self {
+        Node {
+            uuid: 0,
+            node_type: NodeType::Leaf {
+                data: LeafData::Image { path },
+            },
+            meta_data: MetaData {
+                meta_data: Default::default(),
+            },
+            parent: None,
+        }
+    }
+    pub fn new_segment(heading: String, children: Vec<NodeRef>) -> Self {
+        Node {
+            uuid: 0,
+            node_type: NodeType::Expandable {
+                data: ExpandableData::Segment { heading },
+                children,
+            },
+            meta_data: MetaData {
+                meta_data: Default::default(),
+            },
+            parent: None,
+        }
+    }
+    pub fn new_document(preamble: String, postamble: String, children: Vec<NodeRef>) -> Self {
+        Node {
+            uuid: 0,
+            node_type: NodeType::Expandable {
+                data: ExpandableData::Document {
+                    preamble,
+                    postamble,
+                },
+                children,
+            },
+            meta_data: MetaData {
+                meta_data: Default::default(),
+            },
+            parent: None,
+        }
+    }
 }
