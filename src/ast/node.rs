@@ -42,32 +42,15 @@ pub enum LeafData {
 }
 
 impl Node {
-    pub fn new() -> NodeRef {
-        Rc::new(RefCell::new(Node {
-            uuid: 0,
-            node_type: NodeType::Leaf {
-                data: LeafData::Text {
-                    text: "".to_string(),
-                },
-            },
-            meta_data: MetaData {
-                meta_data: Default::default(),
-            },
-            parent: None,
-        }))
-    }
-
-    pub fn new_text(
-        text: String,
+    pub fn new_leaf(
+        data: LeafData,
         uuid_provider: &mut impl UuidProvider,
         portal: &mut HashMap<Uuid, NodeRefWeak>,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
         let this = Rc::new(RefCell::new(Node {
             uuid,
-            node_type: NodeType::Leaf {
-                data: LeafData::Text { text },
-            },
+            node_type: NodeType::Leaf { data },
             meta_data: MetaData {
                 meta_data: Default::default(),
             },
@@ -77,8 +60,8 @@ impl Node {
         this
     }
 
-    pub fn new_segment(
-        heading: String,
+    pub fn new_expandable(
+        data: ExpandableData,
         children: Vec<NodeRef>,
         uuid_provider: &mut impl UuidProvider,
         portal: &mut HashMap<Uuid, NodeRefWeak>,
@@ -87,7 +70,7 @@ impl Node {
         let this = Rc::new(RefCell::new(Node {
             uuid,
             node_type: NodeType::Expandable {
-                data: ExpandableData::Segment { heading },
+                data,
                 children: children,
             },
             meta_data: MetaData {
@@ -95,46 +78,15 @@ impl Node {
             },
             parent: None,
         }));
-        Self::add_parent_to_children(&this);
-        portal.insert(uuid, Rc::downgrade(&this));
-        this
-    }
-
-    pub fn new_document(
-        preamble: String,
-        postamble: String,
-        children: Vec<NodeRef>,
-        uuid_provider: &mut impl UuidProvider,
-        portal: &mut HashMap<Uuid, NodeRefWeak>,
-    ) -> NodeRef {
-        let uuid = uuid_provider.new_uuid();
-        let this = Rc::new(RefCell::new(Node {
-            uuid,
-            node_type: NodeType::Expandable {
-                data: ExpandableData::Document {
-                    preamble,
-                    postamble,
-                },
-                children,
-            },
-            meta_data: MetaData {
-                meta_data: Default::default(),
-            },
-            parent: None,
-        }));
-        Self::add_parent_to_children(&this);
-        portal.insert(uuid, Rc::downgrade(&this));
-        this
-    }
-
-    fn add_parent_to_children(parent: &Rc<RefCell<Node>>) {
-        match &parent.borrow_mut().node_type {
+        match &this.borrow_mut().node_type {
             NodeType::Expandable { children, .. } => {
                 for child in children {
-                    child.borrow_mut().parent = Some(Rc::downgrade(&parent.clone()));
+                    child.borrow_mut().parent = Some(Rc::downgrade(&this.clone()));
                 }
             }
             NodeType::Leaf { .. } => {}
         }
+        portal.insert(uuid, Rc::downgrade(&this));
+        this
     }
 }

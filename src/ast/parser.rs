@@ -7,8 +7,7 @@ use chumsky::prelude::*;
 use chumsky::Parser;
 
 use crate::ast::meta_data::MetaData;
-use crate::ast::node::LeafData::Text;
-use crate::ast::node::{Node, NodeRef, NodeRefWeak, NodeType};
+use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak, NodeType};
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid};
 
@@ -35,15 +34,15 @@ impl LatexParser {
         }
     }
     fn build_text(&self, text: String) -> NodeRef {
-        Node::new_text(
-            text,
+        Node::new_leaf(
+            LeafData::Text { text },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
         )
     }
     fn build_segment(&self, heading: String, children: Vec<NodeRef>) -> NodeRef {
-        Node::new_segment(
-            heading,
+        Node::new_expandable(
+            ExpandableData::Segment { heading },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
@@ -55,9 +54,11 @@ impl LatexParser {
         postamble: String,
         children: Vec<NodeRef>,
     ) -> NodeRef {
-        Node::new_document(
-            preamble,
-            postamble,
+        Node::new_expandable(
+            ExpandableData::Document {
+                preamble,
+                postamble,
+            },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
