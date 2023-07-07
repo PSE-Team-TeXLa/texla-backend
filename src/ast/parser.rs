@@ -70,10 +70,11 @@ impl LatexParser {
             .at_least(1)
             .then_ignore(just("\n"))
             .collect::<String>()
-            .map(|mut line| {
+            .map(|mut line: String| {
                 line.push_str("\n");
                 line
-            });
+            })
+            .boxed();
 
         let block = line
             .clone()
@@ -81,25 +82,44 @@ impl LatexParser {
             .at_least(1)
             .collect::<String>()
             .then_ignore(just("\n").or_not())
-            .map(|x| self.build_text(x));
-
-        let section = just("\\section")
-            .ignore_then(line.clone())
-            .then(block.clone())
-            .map(|(heading, child)| self.build_segment(heading, vec![child]));
+            .map(|x: String| self.build_text(x))
+            .boxed();
 
         let subsection = just("\\subsection")
             .ignore_then(line.clone())
-            .then(block.clone())
-            .map(|(heading, child)| self.build_segment(heading, vec![child]));
+            .then(block.clone().repeated())
+            .map(|(heading, blocks): (String, Vec<NodeRef>)| self.build_segment(heading, blocks))
+            .boxed();
 
-        let node = section.clone().or(subsection.clone()).or(block.clone());
+        let section = just("\\section")
+            .ignore_then(line.clone())
+            .then(block.clone().repeated())
+            .then(subsection.clone().repeated())
+            .map(
+                |((heading, mut blocks), mut subsections): (
+                    (String, Vec<NodeRef>),
+                    Vec<NodeRef>,
+                )| {
+                    blocks.append(&mut subsections);
+                    self.build_segment(heading, blocks)
+                },
+            )
+            .boxed();
+
+        let node = section
+            .clone()
+            .or(subsection.clone())
+            .or(block.clone())
+            .boxed();
 
         let document = just::<_, _, Simple<char>>("\\begin{document}\n")
             .ignore_then(node.clone().repeated())
             .then_ignore(just("\\end{document}"))
-            .map(|children| self.build_document(String::new(), String::new(), children))
-            .then_ignore(end());
+            .map(|children: Vec<NodeRef>| {
+                self.build_document(String::new(), String::new(), children)
+            })
+            .then_ignore(end())
+            .boxed();
         document
     }
 }
