@@ -2,7 +2,8 @@ use clap::Parser;
 
 use crate::ast;
 use crate::infrastructure;
-use crate::texla::webserver::Webserver;
+use crate::texla::core::Core;
+use crate::texla::webserver::start_axum;
 
 #[derive(Parser, Debug)]
 struct CliArguments {
@@ -10,7 +11,7 @@ struct CliArguments {
     main_file: String,
 }
 
-pub fn start() {
+pub async fn start() {
     println!("Starting TeXLa...");
 
     // append `-- --main-file main.tex` to your run command in CLion to provide the necessary CLI
@@ -18,5 +19,7 @@ pub fn start() {
     let args = CliArguments::parse();
     println!("Opening file: {}", args.main_file);
 
-    let webserver = Webserver::new(args.main_file);
+    // HERE: start multiple tasks and join them
+    // let core = Core::new(args.main_file);
+    start_axum().await;
 }

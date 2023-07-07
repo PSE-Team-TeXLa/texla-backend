@@ -2,6 +2,7 @@ mod ast;
 mod infrastructure;
 mod texla;
 
-fn main() {
-    texla::start::start();
+#[tokio::main]
+async fn main() {
+    texla::start::start().await;
 }
