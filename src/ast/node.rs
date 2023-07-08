@@ -23,9 +23,23 @@ enum NodeType {
 }
 
 enum ExpandableData {
-    // TODO
+    Document { preamble: String, postamble: String },
+    Segment { heading: String },
+    File { path: String },
+    Environment { name: String },
 }
 
 enum LeafData {
-    // TODO
+    Text { text: String },
+    Math { kind: MathType, content: String },
+    Image { path: String },
+    Label { label: String },
+    Caption { caption: String },
+}
+
+enum MathType {
+    SquareBrackets,
+    DoubleDollars,
+    Displaymath,
+    Equation,
 }

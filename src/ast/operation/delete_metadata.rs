@@ -1,14 +1,14 @@
 use crate::ast::errors::AstError;
-use crate::ast::operation::{Operation, Position};
+use crate::ast::operation::Operation;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
-pub struct MoveNode {
+pub struct DeleteMetadata {
     target: Uuid,
-    destination: Position,
+    key: String,
 }
 
-impl Operation<TexlaAst> for MoveNode {
+impl Operation<TexlaAst> for DeleteMetadata {
     fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
         todo!()
     }
