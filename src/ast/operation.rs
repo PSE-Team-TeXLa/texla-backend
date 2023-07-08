@@ -13,7 +13,7 @@ where
 }
 
 // TODO move into uuid_provider?
-pub struct Postion {
+pub struct Position {
     pub parent: Uuid,
     pub after_sibling: Option<Uuid>,
 }
