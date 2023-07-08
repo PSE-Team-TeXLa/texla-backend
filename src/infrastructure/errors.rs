@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
+// TODO implement and use same errors as in spec?
+
 #[derive(Debug)]
 pub struct InfrastructureError {}
 
@@ -16,7 +18,6 @@ impl Display for InfrastructureError {
     }
 }
 
-// TODO: more granular errors (do we really need them here?)
 pub struct ExportZipError;
 
 pub struct StorageError;

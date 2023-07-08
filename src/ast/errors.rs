@@ -1,8 +1,7 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-// yes, this is all necessary
-// TODO: more granular errors (do we really need them here?)
+// TODO implement and use same errors as in spec?
 
 #[derive(Debug)]
 pub struct AstError {}
