@@ -3,7 +3,6 @@ use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsMa
 
 pub trait StorageManager {
     fn end_session();
-    // TODO method is private in spec, not possible in trait
     fn save(latex_single_string: String) -> Result<(), StorageError>;
     fn multiplex_files() -> Result<String, StorageError>;
     fn stop_timers();

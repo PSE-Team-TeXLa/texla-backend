@@ -1,7 +1,7 @@
 pub type Uuid = u64;
 
 pub trait UuidProvider {
-    // Linus: i don't know why there is an option in the spec
+    // TODO use Option<Uuid> as return type as in spec?
     fn new_uuid(&self) -> Uuid;
 }
 
