@@ -8,8 +8,11 @@ impl Error for InfrastructureError {}
 
 impl Display for InfrastructureError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "There was an error with the Infrastructure. (Parsing, Operation, \
-        Stringification)")
+        write!(
+            f,
+            "There was an error with the Infrastructure. (Parsing, Operation, \
+        Stringification)"
+        )
     }
 }
 

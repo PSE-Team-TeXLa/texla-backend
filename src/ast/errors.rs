@@ -11,6 +11,9 @@ impl Error for AstError {}
 
 impl Display for AstError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "There was an error with the Ast. (Parsing, Operation, Stringification)")
+        write!(
+            f,
+            "There was an error with the Ast. (Parsing, Operation, Stringification)"
+        )
     }
 }
