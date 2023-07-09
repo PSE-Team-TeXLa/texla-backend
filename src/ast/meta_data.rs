@@ -6,7 +6,7 @@ pub struct MetaData {
 
 impl MetaData {
     fn new() -> Self {
-        MetaData {
+        Self {
             meta_data: HashMap::new(),
         }
     }

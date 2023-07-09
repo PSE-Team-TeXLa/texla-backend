@@ -33,7 +33,7 @@ impl TexlaCore {
 
         let ast = TexlaAst::from_latex(latex_single_string).expect("Found invalid LaTeX");
 
-        TexlaCore {
+        Self {
             ast,
             storage_manager: todo!(),
             export_manager: todo!(),
