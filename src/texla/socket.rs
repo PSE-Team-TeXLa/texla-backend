@@ -17,7 +17,7 @@ pub fn socket_service(
     core: Arc<RwLock<TexlaCore>>,
 ) -> ServiceBuilder<Stack<SocketIoLayer<LocalAdapter>, Stack<CorsLayer, Identity>>> {
     let ns = Namespace::builder()
-        .add("/", |socket| handler(socket, core.clone()))
+        .add("/", move |socket| handler(socket, core.clone()))
         .build();
 
     let service = ServiceBuilder::new()
