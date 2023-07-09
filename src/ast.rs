@@ -6,7 +6,7 @@ mod errors;
 mod meta_data;
 mod node;
 mod operation;
-mod options;
+pub mod options;
 pub mod texla_ast;
 mod uuid_provider;
 
