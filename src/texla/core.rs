@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
 use crate::infrastructure::errors::InfrastructureError;
@@ -22,7 +24,15 @@ where
 
 impl TexlaCore {
     pub fn new(main_file: String) -> Self {
-        let vcs_manager = GitManager;
+        // TODO is there a shorter way to get the parent directory as String?
+        let parent_directory = Path::new(&main_file)
+            .parent()
+            .expect("No parent directory found")
+            .to_str()
+            .expect("No parent directory found")
+            .to_string();
+
+        let vcs_manager = GitManager::new(parent_directory);
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
         let export_manager = TexlaExportManager;
 
