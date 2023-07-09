@@ -7,12 +7,14 @@ use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
+use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
+use crate::texla::errors::TexlaError;
 use crate::texla::state::{State, TexlaState};
 
 pub fn socket_service(
@@ -57,26 +59,31 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
         .emit("remote_url", state.storage_manager.remote_url())
         .ok();
 
-    send_ast(&socket);
+    if let Ok(ast) = state.ast.to_json(StringificationOptions::default()) {
+        socket.emit("new_ast", ast).ok();
+    } else {
+        panic!("This error should have been caught before creating state")
+    }
 
+    // TODO: make TexlaAst serializable and Operation deserializable
     // TODO: data should be dyn Operation
-    socket.on("operation", |socket, data: String, _, _| async move {
-        println!("Received operation: {:?}", data);
-        todo!();
-        // process operation
-
-        send_ast(&socket);
+    socket.on("operation", |socket, operation: String, _, _| async move {
+        println!("Received operation: {:?}", operation);
+        let ast = &socket.extensions.get::<TexlaState>().unwrap().ast;
+        match perform_and_check_operation(todo!("ast"), todo!("&operation")) {
+            Ok(ast) => {
+                socket.emit("new_ast", todo!("ast")).ok();
+            }
+            Err(err) => {
+                socket.emit("error", err).ok();
+            }
+        }
     });
 }
 
-fn send_ast(socket: &Arc<Socket<LocalAdapter>>) {
-    let state = socket.extensions.get::<TexlaState>().unwrap();
-    match state.ast.to_json(StringificationOptions::default()) {
-        Ok(ast) => {
-            socket.emit("new_ast", ast).ok();
-        }
-        Err(err) => {
-            socket.emit("error", err).ok();
-        }
-    }
+fn perform_and_check_operation(
+    ast: TexlaAst,
+    operation: &dyn Operation<TexlaAst>,
+) -> Result<TexlaAst, TexlaError> {
+    todo!("using ? operator")
 }

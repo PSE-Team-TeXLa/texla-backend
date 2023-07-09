@@ -2,10 +2,10 @@ use crate::ast::errors::AstError;
 use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 
-mod errors;
+pub mod errors;
 mod meta_data;
 mod node;
-mod operation;
+pub mod operation;
 pub mod options;
 pub mod texla_ast;
 mod uuid_provider;
