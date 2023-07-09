@@ -2,8 +2,8 @@ use crate::infrastructure::errors::InfrastructureError;
 
 pub trait VcsManager {
     fn pull(&self) -> Result<(), InfrastructureError>;
-    fn push(&self) -> Result<(), InfrastructureError>;
     fn commit(&self, message: String) -> Result<(), InfrastructureError>;
+    fn push(&self) -> Result<(), InfrastructureError>;
 }
 
 pub struct GitManager;
@@ -13,11 +13,11 @@ impl VcsManager for GitManager {
         todo!()
     }
 
-    fn push(&self) -> Result<(), InfrastructureError> {
+    fn commit(&self, message: String) -> Result<(), InfrastructureError> {
         todo!()
     }
 
-    fn commit(&self, message: String) -> Result<(), InfrastructureError> {
+    fn push(&self) -> Result<(), InfrastructureError> {
         todo!()
     }
 }
