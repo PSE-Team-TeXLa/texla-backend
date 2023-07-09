@@ -2,12 +2,12 @@ use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
 
 pub trait StorageManager {
-    fn end_session(&self);
-    fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError>;
+    fn start(&self);
+    fn remote_url(&self) -> Option<String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn stop_timers(&self);
-    fn remote_url(&self) -> Option<String>;
-    fn start(&self);
+    fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError>;
+    fn end_session(&self);
 }
 
 pub struct TexlaStorageManager<V>
@@ -44,11 +44,11 @@ where
 }
 
 impl StorageManager for TexlaStorageManager<GitManager> {
-    fn end_session(&self) {
+    fn start(&self) {
         todo!()
     }
 
-    fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError> {
+    fn remote_url(&self) -> Option<String> {
         todo!()
     }
 
@@ -60,11 +60,11 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         todo!()
     }
 
-    fn remote_url(&self) -> Option<String> {
+    fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError> {
         todo!()
     }
 
-    fn start(&self) {
+    fn end_session(&self) {
         todo!()
     }
 }
