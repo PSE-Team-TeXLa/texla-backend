@@ -16,6 +16,7 @@ use crate::texla::state::{State, TexlaState};
 pub fn socket_service(
     core: Arc<RwLock<TexlaCore>>,
 ) -> ServiceBuilder<Stack<SocketIoLayer<LocalAdapter>, Stack<CorsLayer, Identity>>> {
+    // TODO: Arc<RwLock<TexlaCor>> is technically not needed until here
     let ns = Namespace::builder()
         .add("/", move |socket| handler(socket, core.clone()))
         .build();
@@ -35,6 +36,7 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
     // initial parse
     // TODO: error handling!
     let storage_manager = TexlaStorageManager::new(core.main_file.clone());
+    // TODO: asynchronously start StorageManager
     let latex_single_string = storage_manager.multiplex_files().unwrap();
     let ast = TexlaAst::from_latex(&latex_single_string).unwrap();
 
