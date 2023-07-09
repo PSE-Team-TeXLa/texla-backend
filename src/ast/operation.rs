@@ -11,7 +11,7 @@ mod merge_nodes;
 mod move_node;
 
 // TODO: derive Deserialize here, serde_traitobject needed for that
-pub trait Operation<A>
+pub trait Operation<A>: Send + Sync
 where
     A: Ast,
 {

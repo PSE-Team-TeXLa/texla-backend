@@ -11,7 +11,7 @@ mod parser;
 pub mod texla_ast;
 mod uuid_provider;
 
-pub trait Ast: Sized {
+pub trait Ast: Sized + Send + Sync {
     // TODO: we probably want to un-elide lifetimes here
     fn from_latex(latex_single_string: &str) -> Result<Self, AstError>;
 
