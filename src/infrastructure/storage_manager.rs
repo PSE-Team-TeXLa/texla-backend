@@ -1,4 +1,5 @@
 use crate::infrastructure::errors::InfrastructureError;
+use crate::infrastructure::export_manager::TexlaExportManager;
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
 
 pub trait StorageManager {
@@ -28,6 +29,10 @@ impl TexlaStorageManager<GitManager> {
         self.directory_change_handler = Some(dc_handler);
         self.merge_conflict_handler = Some(mc_handler);
     }
+
+    pub fn new(main_file: String) -> Self {
+        todo!()
+    }
 }
 
 impl StorageManager for TexlaStorageManager<GitManager> {
@@ -56,6 +61,6 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 }
 
-pub trait DirectoryChangeHandler {
+pub trait DirectoryChangeHandler: Send + Sync {
     fn handle_directory_change(&self);
 }

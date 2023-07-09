@@ -6,6 +6,7 @@ use crate::ast::Ast;
 pub struct TexlaAst {}
 
 impl Ast for TexlaAst {
+    // TODO: why not move latex_single_string?
     fn from_latex(latex_single_string: &str) -> Result<TexlaAst, AstError> {
         // TODO
         Ok(TexlaAst {})

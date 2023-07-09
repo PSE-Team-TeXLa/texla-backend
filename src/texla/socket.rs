@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, RwLock};
 
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
@@ -6,9 +6,19 @@ use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
+use crate::ast::texla_ast::TexlaAst;
+use crate::ast::Ast;
+use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
+use crate::infrastructure::vcs_manager::GitManager;
+use crate::texla::core::TexlaCore;
+use crate::texla::state::{State, TexlaState};
+
 pub fn socket_service(
+    core: Arc<RwLock<TexlaCore>>,
 ) -> ServiceBuilder<Stack<SocketIoLayer<LocalAdapter>, Stack<CorsLayer, Identity>>> {
-    let ns = Namespace::builder().add("/", handler).build();
+    let ns = Namespace::builder()
+        .add("/", |socket| handler(socket, core.clone()))
+        .build();
 
     let service = ServiceBuilder::new()
         .layer(CorsLayer::permissive())
@@ -17,11 +27,26 @@ pub fn socket_service(
     service
 }
 
-async fn handler(socket: Arc<Socket<LocalAdapter>>) {
+async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>) {
     println!("Socket connected with id: {}", socket.sid);
 
+    let core = core.read().unwrap();
+
+    // initial parse
+    // TODO: error handling!
+    let storage_manager = TexlaStorageManager::new(core.main_file.clone());
+    let latex_single_string = storage_manager.multiplex_files().unwrap();
+    let ast = TexlaAst::from_latex(&latex_single_string).unwrap();
+
+    let state = TexlaState {
+        socket: socket.clone(),
+        storage_manager,
+        ast,
+    };
+
+    socket.extensions.insert(state);
+
     // TODO: implement API here
-    // TODO: how do i come in here from outside, e.g. for sending an error?
 
     // data can also be any serde deserializable struct
     socket.on("abc", |socket, data: String, _, _| async move {
