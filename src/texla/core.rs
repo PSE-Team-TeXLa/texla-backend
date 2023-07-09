@@ -22,21 +22,21 @@ where
 
 impl TexlaCore {
     pub fn new(main_file: String) -> Self {
-        // TODO: initialize Managers and use them
-        // we cannot give them the webserver just now, because the webserver is not yet initialized
-        // -> use attach_handler on the managers
+        let vcs_manager = GitManager;
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let export_manager = TexlaExportManager;
 
-        // give main_file to StorageManager, it will hold it
+        // TODO call TexlaStorageManager<T>::attach_handlers() later
 
-        // get this from StorageManager
-        let latex_single_string = "";
-
-        let ast = TexlaAst::from_latex(latex_single_string).expect("Found invalid LaTeX");
+        let latex_single_string = storage_manager
+            .multiplex_files()
+            .expect("Could not build LaTeX single string");
+        let ast = TexlaAst::from_latex(&latex_single_string).expect("Found invalid LaTeX");
 
         Self {
             ast,
-            storage_manager: todo!(),
-            export_manager: todo!(),
+            storage_manager,
+            export_manager,
         }
     }
 }

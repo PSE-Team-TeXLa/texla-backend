@@ -17,12 +17,22 @@ where
     vcs_manager: V,
     directory_change_handler: Option<Box<dyn DirectoryChangeHandler>>,
     merge_conflict_handler: Option<Box<dyn MergeConflictHandler>>,
+    main_file: String,
 }
 
 impl<V> TexlaStorageManager<V>
 where
     V: VcsManager,
 {
+    pub fn new(vcs_manager: V, main_file: String) -> Self {
+        Self {
+            vcs_manager,
+            directory_change_handler: None,
+            merge_conflict_handler: None,
+            main_file,
+        }
+    }
+
     fn attach_handlers(
         &mut self,
         dc_handler: Box<dyn DirectoryChangeHandler>,
