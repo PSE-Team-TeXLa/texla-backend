@@ -31,13 +31,13 @@ enum ExpandableData {
 
 enum LeafData {
     Text { text: String },
-    Math { kind: MathType, content: String },
+    Math { kind: MathKind, content: String },
     Image { path: String },
     Label { label: String },
     Caption { caption: String },
 }
 
-enum MathType {
+enum MathKind {
     SquareBrackets,
     DoubleDollars,
     Displaymath,
