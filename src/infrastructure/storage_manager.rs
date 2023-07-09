@@ -19,7 +19,10 @@ where
     merge_conflict_handler: Option<Box<dyn MergeConflictHandler>>,
 }
 
-impl TexlaStorageManager<GitManager> {
+impl<V> TexlaStorageManager<V>
+where
+    V: VcsManager,
+{
     fn attach_handlers(
         &mut self,
         dc_handler: Box<dyn DirectoryChangeHandler>,
