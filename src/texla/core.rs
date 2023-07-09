@@ -1,6 +1,6 @@
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
-use crate::infrastructure::errors::MergeConflictError;
+use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
@@ -42,7 +42,7 @@ impl TexlaCore {
 }
 
 impl MergeConflictHandler for TexlaCore {
-    fn handle_merge_conflict(&self, error: MergeConflictError) {
+    fn handle_merge_conflict(&self, error: InfrastructureError) {
         todo!()
     }
 }

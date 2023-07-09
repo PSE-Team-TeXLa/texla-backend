@@ -12,16 +12,8 @@ impl Display for InfrastructureError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "There was an error with the Infrastructure. (Parsing, Operation, \
-        Stringification)"
+            "There was an error with the Infrastructure. (Storage, Vcs, PushRejection, \
+            MergeConflict, ExportZip)"
         )
     }
 }
-
-pub struct ExportZipError;
-
-pub struct StorageError;
-
-pub struct VcsError;
-
-pub struct MergeConflictError;

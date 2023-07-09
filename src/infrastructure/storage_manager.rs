@@ -1,10 +1,10 @@
-use crate::infrastructure::errors::StorageError;
+use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
 
 pub trait StorageManager {
     fn end_session(&self);
-    fn save(&self, latex_single_string: String) -> Result<(), StorageError>;
-    fn multiplex_files(&self) -> Result<String, StorageError>;
+    fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError>;
+    fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn stop_timers(&self);
     fn remote_url(&self) -> Option<String>;
     fn start(&self);
@@ -35,11 +35,11 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         todo!()
     }
 
-    fn save(&self, latex_single_string: String) -> Result<(), StorageError> {
+    fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError> {
         todo!()
     }
 
-    fn multiplex_files(&self) -> Result<String, StorageError> {
+    fn multiplex_files(&self) -> Result<String, InfrastructureError> {
         todo!()
     }
 
