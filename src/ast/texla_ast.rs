@@ -37,7 +37,7 @@ impl Ast for TexlaAst {
     }
 
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError> {
-        todo!()
+        Ok(self.root.borrow().to_latex(1)?)
     }
 
     fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
@@ -51,10 +51,15 @@ impl Ast for TexlaAst {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use crate::ast::meta_data::MetaData;
     use crate::ast::node::{LeafData, Node, NodeType};
+    use crate::ast::options::StringificationOptions;
+    use crate::ast::parser::parse_latex;
     use crate::ast::texla_ast::TexlaAst;
     use crate::ast::uuid_provider::Uuid;
+    use crate::ast::Ast;
 
     #[test]
     fn crate_ast() {
@@ -75,5 +80,16 @@ mod tests {
         assert_eq!(ast.root.borrow().uuid, 1);
         assert!(ast.portal.get(&(1 as Uuid)).is_some());
         assert!(ast.portal.get(&(2 as Uuid)).is_none());
+    }
+    #[test]
+    fn parse_and_print() {
+        let latex = fs::read_to_string("simple_latex").unwrap();
+        let ast = parse_latex(latex.clone()).expect("Valid Latex");
+        println!("{}", ast.to_latex(StringificationOptions {}).unwrap());
+        assert!(ast.to_latex(StringificationOptions {}).is_ok());
+        assert_eq!(
+            ast.to_latex(StringificationOptions {}).unwrap(),
+            latex.clone()
+        );
     }
 }

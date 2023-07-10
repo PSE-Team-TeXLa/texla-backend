@@ -1,9 +1,10 @@
-// TODO: derive Serialize and decide on JSON scheme
-
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
+use std::string::String;
 
+// TODO: derive Serialize and decide on JSON scheme
+use crate::ast::errors::StringificationError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::uuid_provider::{Uuid, UuidProvider};
 
@@ -17,6 +18,11 @@ pub struct Node {
     pub(crate) meta_data: MetaData,
     pub(crate) parent: Option<NodeRefWeak>,
 }
+impl Node {
+    pub(crate) fn to_latex(&self, level: i32) -> Result<String, StringificationError> {
+        self.node_type.to_latex(level)
+    }
+}
 
 #[derive(Debug)]
 pub enum NodeType {
@@ -29,6 +35,47 @@ pub enum NodeType {
     },
 }
 
+impl NodeType {
+    pub fn to_latex(&self, level: i32) -> Result<String, StringificationError> {
+        match self {
+            NodeType::Expandable { data, children } => {
+                match data {
+                    ExpandableData::Segment { heading } => {
+                        let keyword = match level {
+                            2 => "section".to_string(),
+                            3 => "subsection".to_string(),
+                            other => {
+                                return Err(StringificationError {
+                                    message: format!("Invalid Nesting Level: {}", other),
+                                })
+                            }
+                        };
+                        let children: String = children
+                            .iter()
+                            .map(|child_node| child_node.borrow().to_latex(level + 1))
+                            .collect::<Result<String, StringificationError>>()?;
+                        Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
+                    }
+                    ExpandableData::Document {
+                        preamble,
+                        postamble,
+                    } => {
+                        let children: String = children
+                            .iter()
+                            .map(|child_node| child_node.borrow().to_latex(level + 1))
+                            .collect::<Result<String, StringificationError>>()?;
+                        Ok(format!("{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"))
+                    }
+                }
+            }
+            NodeType::Leaf { data } => match data {
+                LeafData::Text { text } => Ok(text.to_string()),
+                LeafData::Image { path } => Ok(format!("\\includegraphics{{{}}}\n", path)),
+            },
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum ExpandableData {
     Segment { heading: String },
@@ -39,6 +86,16 @@ pub enum ExpandableData {
 pub enum LeafData {
     Text { text: String },
     Image { path: String },
+}
+
+impl LeafData {
+    // This does not consume the node
+    fn to_latex(&self) -> String {
+        match self {
+            LeafData::Text { text } => text.to_string(),
+            LeafData::Image { path } => format!("\\includegraphics{{{}}}\n", path),
+        }
+    }
 }
 
 impl Node {
@@ -88,5 +145,27 @@ impl Node {
         }
         portal.insert(uuid, Rc::downgrade(&this));
         this
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use crate::ast::node::{LeafData, Node};
+    use crate::ast::uuid_provider::TexlaUuidProvider;
+
+    #[test]
+    fn printText() {
+        let mut uuidprov = TexlaUuidProvider::new();
+        let mut portal = HashMap::new();
+        let node = Node::new_leaf(
+            LeafData::Text {
+                text: "Test".to_string(),
+            },
+            &mut uuidprov,
+            &mut portal,
+        );
+        assert_eq!(node.borrow().to_latex(1), Ok("Test".to_string()));
     }
 }
