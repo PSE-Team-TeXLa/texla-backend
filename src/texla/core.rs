@@ -26,7 +26,7 @@ where
 
 impl TexlaCore {
     pub fn new(main_file: String) -> Self {
-        // TODO is there a shorter way to get the parent directory as String?
+        // TODO after VS: is there a shorter way to get the parent directory as String?
         let parent_directory = Path::new(&main_file)
             .parent()
             .expect("No parent directory found")
