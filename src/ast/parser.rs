@@ -6,6 +6,7 @@ use std::rc::Rc;
 use chumsky::prelude::*;
 use chumsky::Parser;
 
+use crate::ast;
 use crate::ast::meta_data::MetaData;
 use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak, NodeType};
 use crate::ast::texla_ast::TexlaAst;
@@ -16,14 +17,14 @@ struct LatexParser {
     uuid_provider: RefCell<TexlaUuidProvider>,
     portal: RefCell<HashMap<Uuid, NodeRefWeak>>,
 }
-pub fn parse_latex(string: String) -> TexlaAst {
+pub fn parse_latex(string: String) -> Result<TexlaAst, ast::errors::ParseError> {
     let mut parser = LatexParser::new();
-    let root = parser.parser().parse(string).unwrap();
-    TexlaAst {
+    let root = parser.parser().parse(string)?;
+    Ok(TexlaAst {
         portal: parser.portal.into_inner(),
         uuid_provider: parser.uuid_provider.into_inner(),
         root,
-    }
+    })
 }
 
 impl LatexParser {

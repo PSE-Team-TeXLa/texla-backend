@@ -32,8 +32,8 @@ impl TexlaAst {
 }
 
 impl Ast for TexlaAst {
-    fn from_latex(latex_single_string: &str) -> Result<TexlaAst, AstError> {
-        todo!()
+    fn from_latex(latex_single_string: &str) -> Result<Self, AstError> {
+        Ok(parser::parse_latex(latex_single_string.to_string())?)
     }
 
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError> {
