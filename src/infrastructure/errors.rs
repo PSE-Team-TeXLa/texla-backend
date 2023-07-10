@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-// TODO implement and use same errors as in spec?
+// TODO after VS: implement and use same errors as in spec?
 
 #[derive(Debug)]
 pub struct InfrastructureError {}

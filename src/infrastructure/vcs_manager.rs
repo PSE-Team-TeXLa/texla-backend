@@ -13,7 +13,7 @@ pub struct GitManager {
 
 impl GitManager {
     pub fn new(repository_path: String) -> Self {
-        // TODO check that the given directory is a repository and get remote url
+        // TODO after VS: check that the given directory is a repository and get remote url
 
         Self {
             repository_path,
@@ -21,7 +21,7 @@ impl GitManager {
         }
     }
 
-    // TODO is this an acceptable getter?
+    // TODO after VS: is this an acceptable getter?
     pub fn remote_url(&self) -> Option<&String> {
         self.remote_url.as_ref()
     }
@@ -33,7 +33,7 @@ impl VcsManager for GitManager {
     }
 
     fn commit(&self, message: Option<String>) -> Result<(), InfrastructureError> {
-        // TODO use default commit message if no message is given
+        // TODO after VS: use default commit message if no message is given
 
         todo!()
     }

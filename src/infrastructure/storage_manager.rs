@@ -51,7 +51,7 @@ where
 
 impl StorageManager for TexlaStorageManager<GitManager> {
     fn start(&self) {
-        // TODO start async background tasks based on the timers and start DirectoryChangeHandler
+        // TODO after VS: start async timer-based background tasks and start DirectoryChangeHandler
 
         todo!()
     }
@@ -61,7 +61,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn multiplex_files(&self) -> Result<String, InfrastructureError> {
-        // TODO handle multiple files
+        // TODO after VS: handle multiple files
 
         // dummy implementation for a single file without '\input'
         fs::read_to_string(&self.main_file).map_err(|_| InfrastructureError {})
@@ -73,7 +73,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn save(&mut self, latex_single_string: String) -> Result<(), InfrastructureError> {
-        // TODO handle multiple files
+        // TODO after VS: handle multiple files
 
         // dummy implementation for a single file without '\input'
         let res =
@@ -88,10 +88,9 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn end_session(&mut self) -> Result<(), InfrastructureError> {
-        // TODO stop async background tasks based on the timers and stop DirectoryChangeHandler
+        // TODO after VS: stop async timer-based background tasks and stop DirectoryChangeHandler
 
-        // TODO call save() here as in spec although you can't quit with unsaved changes?
-        //  --> if save() should be called, pass latex_single_string as argument to this method
+        // don't call save() here since you can't quit (i.e. end the session) with unsaved changes
 
         self.stop_timers();
 

@@ -4,7 +4,9 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
-use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
+use crate::infrastructure::storage_manager::{
+    DirectoryChangeHandler, StorageManager, TexlaStorageManager,
+};
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
 
 type TexlaCore = Core<TexlaAst, TexlaStorageManager<GitManager>, TexlaExportManager>;
@@ -48,6 +50,12 @@ impl TexlaCore {
             storage_manager,
             export_manager,
         }
+    }
+}
+
+impl DirectoryChangeHandler for TexlaCore {
+    fn handle_directory_change(&self) {
+        todo!()
     }
 }
 
