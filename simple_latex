@@ -1,12 +1,10 @@
 \begin{document}
-\section Test
-Multi
-Line
+\section{Title1}
 Block
-
-sing line block
-\subsection subtitle
-subtext
-
-some more subtext
+of
+Text
+\subsection{Subtitle}
+another Block of text
+aaaaa
+\section{Title2}
 \end{document}

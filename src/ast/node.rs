@@ -38,36 +38,36 @@ pub enum NodeType {
 impl NodeType {
     pub fn to_latex(&self, level: i32) -> Result<String, StringificationError> {
         match self {
-            NodeType::Expandable { data, children } => {
-                match data {
-                    ExpandableData::Segment { heading } => {
-                        let keyword = match level {
-                            2 => "section".to_string(),
-                            3 => "subsection".to_string(),
-                            other => {
-                                return Err(StringificationError {
-                                    message: format!("Invalid Nesting Level: {}", other),
-                                })
-                            }
-                        };
-                        let children: String = children
-                            .iter()
-                            .map(|child_node| child_node.borrow().to_latex(level + 1))
-                            .collect::<Result<String, StringificationError>>()?;
-                        Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
-                    }
-                    ExpandableData::Document {
-                        preamble,
-                        postamble,
-                    } => {
-                        let children: String = children
-                            .iter()
-                            .map(|child_node| child_node.borrow().to_latex(level + 1))
-                            .collect::<Result<String, StringificationError>>()?;
-                        Ok(format!("{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"))
-                    }
+            NodeType::Expandable { data, children } => match data {
+                ExpandableData::Segment { heading } => {
+                    let keyword = match level {
+                        2 => "section".to_string(),
+                        3 => "subsection".to_string(),
+                        other => {
+                            return Err(StringificationError {
+                                message: format!("Invalid Nesting Level: {}", other),
+                            })
+                        }
+                    };
+                    let children: String = children
+                        .iter()
+                        .map(|child_node| child_node.borrow().to_latex(level + 1))
+                        .collect::<Result<String, StringificationError>>()?;
+                    Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
                 }
-            }
+                ExpandableData::Document {
+                    preamble,
+                    postamble,
+                } => {
+                    let children: String = children
+                        .iter()
+                        .map(|child_node| child_node.borrow().to_latex(level + 1))
+                        .collect::<Result<String, StringificationError>>()?;
+                    Ok(format!(
+                        "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
+                    ))
+                }
+            },
             NodeType::Leaf { data } => match data {
                 LeafData::Text { text } => Ok(text.to_string()),
                 LeafData::Image { path } => Ok(format!("\\includegraphics{{{}}}\n", path)),

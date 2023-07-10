@@ -29,9 +29,9 @@ impl From<ParseError> for AstError {
 
 //TODO Decide on Chumsky Error Strategy, then make this nicer (after VS)
 #[derive(Debug)]
-pub struct ParseError {}
-
-impl Error for ParseError {}
+pub struct ParseError {
+    message: String,
+}
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -41,7 +41,12 @@ impl Display for ParseError {
 
 impl From<Vec<chumsky::error::Simple<char>>> for ParseError {
     fn from(value: Vec<Simple<char>>) -> Self {
-        Self {}
+        Self {
+            message: value
+                .iter()
+                .map(|error| format!("{:?} {}", error.span(), error.to_string()))
+                .collect(),
+        }
     }
 }
 

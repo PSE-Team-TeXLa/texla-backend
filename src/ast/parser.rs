@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::rc::Rc;
 
+use axum::body::HttpBody;
 use chumsky::prelude::*;
+use chumsky::text::newline;
 use chumsky::Parser;
 
 use crate::ast;
@@ -66,6 +68,12 @@ impl LatexParser {
         )
     }
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
+        let word = filter(|char: &char| char.is_ascii_alphanumeric())
+            .repeated()
+            .at_least(1)
+            .collect::<String>()
+            .boxed();
+
         let line = none_of("\r\n\\")
             .repeated()
             .at_least(1)
@@ -87,13 +95,15 @@ impl LatexParser {
             .boxed();
 
         let subsection = just("\\subsection")
-            .ignore_then(line.clone())
+            .ignore_then(word.clone().delimited_by(just('{'), just('}')))
+            .then_ignore(newline())
             .then(block.clone().repeated())
             .map(|(heading, blocks): (String, Vec<NodeRef>)| self.build_segment(heading, blocks))
             .boxed();
 
         let section = just("\\section")
-            .ignore_then(line.clone())
+            .ignore_then(word.clone().delimited_by(just('{'), just('}')))
+            .then_ignore(just("\n"))
             .then(block.clone().repeated())
             .then(subsection.clone().repeated())
             .map(
@@ -136,6 +146,5 @@ mod tests {
         let latex = fs::read_to_string("simple_latex").unwrap();
         let ast = parse_latex(latex);
         println!("{:#?}", ast);
-        assert!(1 + 1 == 2);
     }
 }
