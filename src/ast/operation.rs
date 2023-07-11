@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 use crate::ast::errors::AstError;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
@@ -9,7 +11,7 @@ pub trait Operation<A>
 where
     A: Ast,
 {
-    fn execute_on(&self, ast: A);
+    fn execute_on(&self, ast: A) -> Result<(), AstError>;
 }
 
 struct MoveOperation {
@@ -18,7 +20,7 @@ struct MoveOperation {
 }
 
 impl Operation<TexlaAst> for MoveOperation {
-    fn execute_on(&self, ast: TexlaAst) {
+    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }
@@ -37,7 +39,7 @@ impl JsonOperation {
     }
 }
 // ? move into uuid_provider?
-pub struct Postion {
+pub struct Position {
     pub parent: Uuid,
     pub after_sibling: Option<Uuid>,
 }

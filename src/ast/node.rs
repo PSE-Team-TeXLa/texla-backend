@@ -16,6 +16,7 @@ pub type NodeRefWeak = Weak<RefCell<Node>>;
 pub struct Node {
     pub(crate) uuid: Uuid,
     pub(crate) node_type: NodeType,
+    #[serde(flatten)]
     pub(crate) meta_data: MetaData,
     #[serde(skip_serializing)]
     pub(crate) parent: Option<NodeRefWeak>,
@@ -27,6 +28,7 @@ impl Node {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(tag = "type")]
 pub enum NodeType {
     Expandable {
         data: ExpandableData,
@@ -79,12 +81,14 @@ impl NodeType {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(tag = "type")]
 pub enum ExpandableData {
     Segment { heading: String },
     Document { preamble: String, postamble: String },
 }
 
 #[derive(Debug, Serialize)]
+#[serde(tag = "type")]
 pub enum LeafData {
     Text { text: String },
     Image { path: String },
