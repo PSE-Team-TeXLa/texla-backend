@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 use std::string::String;
 
-// TODO: derive Serialize and decide on JSON scheme
+use serde::Serialize;
+
 use crate::ast::errors::StringificationError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::uuid_provider::{Uuid, UuidProvider};
@@ -11,11 +12,12 @@ use crate::ast::uuid_provider::{Uuid, UuidProvider};
 pub type NodeRef = Rc<RefCell<Node>>;
 pub type NodeRefWeak = Weak<RefCell<Node>>;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Node {
     pub(crate) uuid: Uuid,
     pub(crate) node_type: NodeType,
     pub(crate) meta_data: MetaData,
+    #[serde(skip_serializing)]
     pub(crate) parent: Option<NodeRefWeak>,
 }
 impl Node {
@@ -24,7 +26,7 @@ impl Node {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum NodeType {
     Expandable {
         data: ExpandableData,
@@ -76,13 +78,13 @@ impl NodeType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum ExpandableData {
     Segment { heading: String },
     Document { preamble: String, postamble: String },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum LeafData {
     Text { text: String },
     Image { path: String },

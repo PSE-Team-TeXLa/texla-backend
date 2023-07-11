@@ -2,17 +2,21 @@ use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::ast::errors::AstError;
+use serde::{Deserialize, Serialize};
+
+use crate::ast::errors::{AstError, StringificationError};
 use crate::ast::node::{Node, NodeRef, NodeRefWeak};
 use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
 use crate::ast::{parser, Ast};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct TexlaAst {
+    #[serde(skip_serializing)]
     pub(crate) portal: HashMap<Uuid, NodeRefWeak>,
     pub(crate) root: NodeRef,
+    #[serde(skip_serializing)]
     pub(crate) uuid_provider: TexlaUuidProvider,
 }
 
@@ -41,7 +45,10 @@ impl Ast for TexlaAst {
     }
 
     fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
-        todo!()
+        match serde_json::to_string_pretty(self) {
+            Ok(json_string) => Ok(json_string),
+            Err(error) => Err(AstError::from(StringificationError::from(error))),
+        }
     }
 
     fn execute(&self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
@@ -85,11 +92,16 @@ mod tests {
     fn parse_and_print() {
         let latex = fs::read_to_string("simple_latex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        println!("{}", ast.to_latex(StringificationOptions {}).unwrap());
         assert!(ast.to_latex(StringificationOptions {}).is_ok());
         assert_eq!(
             ast.to_latex(StringificationOptions {}).unwrap(),
             latex.clone()
         );
+    }
+    #[test]
+    fn parse_and_to_json() {
+        let latex = fs::read_to_string("simple_latex").unwrap();
+        let ast = parse_latex(latex.clone()).expect("Valid Latex");
+        println!("{}", ast.to_json(StringificationOptions {}).unwrap());
     }
 }

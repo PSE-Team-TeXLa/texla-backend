@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
 pub struct MetaData {
     pub(crate) meta_data: HashMap<String, String>,
 }

@@ -1,12 +1,14 @@
 use std::cell::RefCell;
 
+use serde::Serialize;
+
 pub type Uuid = u64;
 
 pub trait UuidProvider {
     fn new_uuid(&mut self) -> Uuid;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TexlaUuidProvider {
     highest_uuid: Uuid,
 }

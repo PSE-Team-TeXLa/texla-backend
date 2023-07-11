@@ -68,3 +68,11 @@ impl Display for StringificationError {
         write!(f, "Stringification Error: {}", self.message)
     }
 }
+
+impl From<serde_json::Error> for StringificationError {
+    fn from(error: serde_json::Error) -> Self {
+        Self {
+            message: format!("Stringification Error: Serde Error{}", error.to_string()),
+        }
+    }
+}
