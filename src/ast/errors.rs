@@ -5,6 +5,7 @@ use chumsky::error::Simple;
 
 // yes, this is all necessary
 // TODO: more granular errors (do we really need them here?)
+// TODO implement and use same errors as in spec?
 
 #[derive(Debug)]
 pub struct AstError {

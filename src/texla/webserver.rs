@@ -1,49 +1,40 @@
-use chumsky::prelude::todo;
+use std::path::PathBuf;
 
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::Ast;
-use crate::infrastructure::errors::MergeConflictError;
-use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
-use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
-use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
+use axum::response::Html;
+use axum::routing::{get, MethodRouter};
+use axum::Server;
+use tower_http::services::{ServeDir, ServeFile};
+use tower_http::set_status::SetStatus;
 
-// TODO: rename to TexlaCore?
-type TexlaWebserver = Webserver<TexlaAst, TexlaStorageManager<GitManager>, TexlaExportManager>;
+use crate::texla::socket::socket_service;
 
-pub struct Webserver<A, S, E>
-where
-    A: Ast,
-    S: StorageManager,
-    E: ExportManager,
-{
-    ast: A,
-    storage_manager: S,
-    export_manager: E,
+const PORT: u16 = 13814;
+const FRONTEND_PATH: &str = "frontend";
+
+pub async fn start_axum() {
+    let app = axum::Router::new()
+        // .route("/dummy", get(|| async { Html("This is a dummy file.") }))
+        .layer(socket_service())
+        .fallback_service(static_files());
+
+    let res = Server::bind(&([127, 0, 0, 1], PORT).into())
+        .serve(app.into_make_service())
+        .await;
+
+    res.expect("Could not start webserver");
 }
 
-impl TexlaWebserver {
-    pub fn new(main_file: String) -> Self {
-        // TODO: initialize Managers and use them
-        // we cannot give them the webserver just now, because the webserver is not yet initialized
-        // -> use attach_handler on the managers
+fn static_files() -> ServeDir<SetStatus<ServeFile>> {
+    let frontend_path = PathBuf::from(FRONTEND_PATH)
+        .canonicalize()
+        .expect("Could not find frontend path");
+    println!("Serving static files from: {}", frontend_path.display());
 
-        // give main_file to StorageManager, it will hold it
-
-        // get this from StorageManager
-        let latex_single_string = "";
-
-        let ast = TexlaAst::from_latex(latex_single_string).expect("Found invalid LaTeX");
-
-        TexlaWebserver {
-            ast,
-            storage_manager: todo!(),
-            export_manager: todo!(),
-        }
-    }
-}
-
-impl MergeConflictHandler for TexlaWebserver {
-    fn handle_merge_conflict(&self, error: MergeConflictError) {
-        todo!()
-    }
+    // TODO: is index.html really the root of our svelte app?
+    ServeDir::new(frontend_path).not_found_service(ServeFile::new(
+        PathBuf::from(FRONTEND_PATH)
+            .join(PathBuf::from("index.html"))
+            .canonicalize()
+            .expect("Could not find frontend index.html"),
+    ))
 }

@@ -1,3 +1,4 @@
+use crate::ast::errors::AstError;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 use crate::ast::Ast;

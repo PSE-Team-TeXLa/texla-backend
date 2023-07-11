@@ -6,6 +6,7 @@ pub type Uuid = u64;
 
 pub trait UuidProvider {
     fn new_uuid(&mut self) -> Uuid;
+    // TODO use Option<Uuid> as return type as in spec?
 }
 
 #[derive(Debug, Clone, Serialize)]
