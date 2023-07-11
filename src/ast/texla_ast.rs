@@ -102,6 +102,7 @@ mod tests {
     fn parse_and_to_json() {
         let latex = fs::read_to_string("simple_latex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        println!("{}", ast.to_json(StringificationOptions {}).unwrap());
+        let out = ast.to_json(StringificationOptions {}).unwrap();
+        fs::write("out.json", out).expect("File write error");
     }
 }
