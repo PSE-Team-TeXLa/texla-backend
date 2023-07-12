@@ -22,7 +22,7 @@ pub struct Node {
     pub(crate) parent: Option<NodeRefWeak>,
 }
 impl Node {
-    pub(crate) fn to_latex(&self, level: i32) -> Result<String, StringificationError> {
+    pub(crate) fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
         self.node_type.to_latex(level)
     }
 }
@@ -40,7 +40,7 @@ pub enum NodeType {
 }
 
 impl NodeType {
-    pub fn to_latex(&self, level: i32) -> Result<String, StringificationError> {
+    pub fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
         match self {
             NodeType::Expandable { data, children } => match data {
                 ExpandableData::Segment { heading } => {
@@ -65,7 +65,7 @@ impl NodeType {
                 } => {
                     let children: String = children
                         .iter()
-                        .map(|child_node| child_node.borrow().to_latex(level + 1))
+                        .map(|child_node| child_node.borrow().to_latex(level))
                         .collect::<Result<String, StringificationError>>()?;
                     Ok(format!(
                         "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"

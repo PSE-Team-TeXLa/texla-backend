@@ -18,6 +18,7 @@ pub struct TexlaAst {
     pub(crate) root: NodeRef,
     #[serde(skip_serializing)]
     pub(crate) uuid_provider: TexlaUuidProvider,
+    pub(crate) highest_level: u8,
 }
 
 impl TexlaAst {
@@ -31,6 +32,7 @@ impl TexlaAst {
             portal,
             root: root_ref,
             uuid_provider,
+            highest_level: 0,
         }
     }
 }
@@ -41,7 +43,7 @@ impl Ast for TexlaAst {
     }
 
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError> {
-        Ok(self.root.borrow().to_latex(1)?)
+        Ok(self.root.borrow().to_latex(self.highest_level)?)
     }
 
     fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
@@ -89,9 +91,21 @@ mod tests {
         assert!(ast.portal.get(&(2 as Uuid)).is_none());
     }
     #[test]
-    fn parse_and_print() {
-        let latex = fs::read_to_string("simple_latex").unwrap();
+    fn simple_latex_identical() {
+        let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
+        println!("{:?}", ast.to_latex(StringificationOptions {}));
+        assert!(ast.to_latex(StringificationOptions {}).is_ok());
+        assert_eq!(
+            ast.to_latex(StringificationOptions {}).unwrap(),
+            latex.clone()
+        );
+    }
+    #[test]
+    fn only_subsection_identical() {
+        let latex = fs::read_to_string("latex_test_files/only_subsection.tex").unwrap();
+        let ast = parse_latex(latex.clone()).expect("Valid Latex");
+        println!("{:?}", ast.to_latex(StringificationOptions {}));
         assert!(ast.to_latex(StringificationOptions {}).is_ok());
         assert_eq!(
             ast.to_latex(StringificationOptions {}).unwrap(),
@@ -100,7 +114,7 @@ mod tests {
     }
     #[test]
     fn parse_and_to_json() {
-        let latex = fs::read_to_string("simple_latex").unwrap();
+        let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         let out = ast.to_json(StringificationOptions {}).unwrap();
         fs::write("out.json", out).expect("File write error");

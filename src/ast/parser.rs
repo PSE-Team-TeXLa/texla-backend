@@ -21,15 +21,18 @@ struct LatexParser {
 }
 pub fn parse_latex(string: String) -> Result<TexlaAst, ast::errors::ParseError> {
     let mut parser = LatexParser::new();
-    let root = parser.parser().parse(string)?;
+    let root = parser.parser().parse(string.clone())?;
+    let highest_level = parser.find_highest_level().parse(string)?;
     Ok(TexlaAst {
         portal: parser.portal.into_inner(),
         uuid_provider: parser.uuid_provider.into_inner(),
         root,
+        highest_level,
     })
 }
 
 impl LatexParser {
+    //TODO Indentation Support
     fn new() -> Self {
         LatexParser {
             uuid_provider: RefCell::new(TexlaUuidProvider::new()),
@@ -133,6 +136,14 @@ impl LatexParser {
             .boxed();
         document
     }
+    fn find_highest_level(&self) -> impl Parser<char, u8, Error = Simple<char>> + '_ {
+        take_until(just("\\section").or(just("\\subsection"))).map(|(trash, keyword)| match keyword
+        {
+            "\\section" => 2,
+            "\\subsection" => 3,
+            _ => 7,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -143,7 +154,7 @@ mod tests {
 
     #[test]
     fn simple() {
-        let latex = fs::read_to_string("simple_latex").unwrap();
+        let latex = fs::read_to_string("../../latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex);
         println!("{:#?}", ast);
     }
