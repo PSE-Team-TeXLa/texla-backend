@@ -99,7 +99,6 @@ mod tests {
     fn simple_latex_identical() {
         let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        println!("{:?}", ast.to_latex(StringificationOptions {}));
         assert!(ast.to_latex(StringificationOptions {}).is_ok());
         assert_eq!(
             ast.to_latex(StringificationOptions {}).unwrap(),
@@ -110,7 +109,6 @@ mod tests {
     fn only_subsection_identical() {
         let latex = fs::read_to_string("latex_test_files/only_subsection.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        println!("{:?}", ast.to_latex(StringificationOptions {}));
         assert!(ast.to_latex(StringificationOptions {}).is_ok());
         assert_eq!(
             ast.to_latex(StringificationOptions {}).unwrap(),
