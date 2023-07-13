@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{Arc, Weak};
 use std::string::String;
+use std::sync::{Arc, Mutex, Weak};
 
 use serde::Serialize;
 
@@ -9,8 +9,8 @@ use crate::ast::errors::StringificationError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::uuid_provider::{Uuid, UuidProvider};
 
-pub type NodeRef = Arc<RefCell<Node>>;
-pub type NodeRefWeak = Weak<RefCell<Node>>;
+pub type NodeRef = Arc<Mutex<Node>>;
+pub type NodeRefWeak = Weak<Mutex<Node>>;
 
 #[derive(Debug, Serialize)]
 pub struct Node {
@@ -55,7 +55,7 @@ impl NodeType {
                     };
                     let children: String = children
                         .iter()
-                        .map(|child_node| child_node.borrow().to_latex(level + 1))
+                        .map(|child_node| child_node.lock().unwrap().to_latex(level + 1))
                         .collect::<Result<String, StringificationError>>()?;
                     Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
                 }
@@ -65,7 +65,7 @@ impl NodeType {
                 } => {
                     let children: String = children
                         .iter()
-                        .map(|child_node| child_node.borrow().to_latex(level))
+                        .map(|child_node| child_node.lock().unwrap().to_latex(level))
                         .collect::<Result<String, StringificationError>>()?;
                     Ok(format!(
                         "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
@@ -111,7 +111,7 @@ impl Node {
         portal: &mut HashMap<Uuid, NodeRefWeak>,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
-        let this = Arc::new(RefCell::new(Node {
+        let this = Arc::new(Mutex::new(Node {
             uuid,
             node_type: NodeType::Leaf { data },
             meta_data: MetaData {
@@ -130,7 +130,7 @@ impl Node {
         portal: &mut HashMap<Uuid, NodeRefWeak>,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
-        let this = Arc::new(RefCell::new(Node {
+        let this = Arc::new(Mutex::new(Node {
             uuid,
             node_type: NodeType::Expandable {
                 data,
@@ -141,10 +141,10 @@ impl Node {
             },
             parent: None,
         }));
-        match &this.borrow_mut().node_type {
+        match &this.lock().unwrap().node_type {
             NodeType::Expandable { children, .. } => {
                 for child in children {
-                    child.borrow_mut().parent = Some(Arc::downgrade(&this.clone()));
+                    child.lock().unwrap().parent = Some(Arc::downgrade(&this.clone()));
                 }
             }
             NodeType::Leaf { .. } => {}
@@ -172,6 +172,6 @@ mod tests {
             &mut uuidprov,
             &mut portal,
         );
-        assert_eq!(node.borrow().to_latex(1), Ok("Test".to_string()));
+        assert_eq!(node.lock().unwrap().to_latex(1), Ok("Test".to_string()));
     }
 }

@@ -1,7 +1,7 @@
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
@@ -27,8 +27,11 @@ impl TexlaAst {
         let mut portal: HashMap<Uuid, NodeRefWeak> = HashMap::new();
         let mut uuid_provider = TexlaUuidProvider::new();
         root.uuid = uuid_provider.new_uuid();
-        let root_ref = Arc::new(RefCell::new(root));
-        portal.insert(root_ref.borrow().uuid, Arc::downgrade(&root_ref.clone()));
+        let root_ref = Arc::new(Mutex::new(root));
+        portal.insert(
+            root_ref.lock().unwrap().uuid,
+            Arc::downgrade(&root_ref.clone()),
+        );
         TexlaAst {
             portal,
             root: root_ref,
@@ -45,7 +48,7 @@ impl Ast for TexlaAst {
     }
 
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError> {
-        Ok(self.root.borrow().to_latex(self.highest_level)?)
+        Ok(self.root.lock().unwrap().to_latex(self.highest_level)?)
     }
 
     fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
@@ -87,8 +90,8 @@ mod tests {
             parent: None,
         };
         let ast = TexlaAst::new(root);
-        assert!(ast.root.borrow().parent.is_none());
-        assert_eq!(ast.root.borrow().uuid, 1);
+        assert!(ast.root.lock().unwrap().parent.is_none());
+        assert_eq!(ast.root.lock().unwrap().uuid, 1);
         assert!(ast.portal.get(&(1 as Uuid)).is_some());
         assert!(ast.portal.get(&(2 as Uuid)).is_none());
     }
