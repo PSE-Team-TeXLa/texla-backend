@@ -1,8 +1,11 @@
+use std::sync::{Arc, RwLock};
+
 use clap::Parser;
 
 use crate::ast;
 use crate::infrastructure;
-use crate::texla::core::Core;
+use crate::infrastructure::export_manager::TexlaExportManager;
+use crate::texla::core::TexlaCore;
 use crate::texla::webserver::start_axum;
 
 #[derive(Parser, Debug)]
@@ -19,7 +22,12 @@ pub async fn start() {
     let args = CliArguments::parse();
     println!("Opening file: {}", args.main_file);
 
-    // HERE: start multiple tasks and join them
-    // let core = Core::new(args.main_file);
-    start_axum().await;
+    let core = TexlaCore {
+        export_manager: TexlaExportManager,
+        main_file: args.main_file,
+    };
+
+    let core = Arc::new(RwLock::new(core));
+
+    start_axum(core).await;
 }

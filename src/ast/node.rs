@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::{Rc, Weak};
+use std::sync::{Arc, Weak};
 use std::string::String;
 
 use serde::Serialize;
@@ -9,7 +9,7 @@ use crate::ast::errors::StringificationError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::uuid_provider::{Uuid, UuidProvider};
 
-pub type NodeRef = Rc<RefCell<Node>>;
+pub type NodeRef = Arc<RefCell<Node>>;
 pub type NodeRefWeak = Weak<RefCell<Node>>;
 
 #[derive(Debug, Serialize)]
@@ -111,7 +111,7 @@ impl Node {
         portal: &mut HashMap<Uuid, NodeRefWeak>,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
-        let this = Rc::new(RefCell::new(Node {
+        let this = Arc::new(RefCell::new(Node {
             uuid,
             node_type: NodeType::Leaf { data },
             meta_data: MetaData {
@@ -119,7 +119,7 @@ impl Node {
             },
             parent: None,
         }));
-        portal.insert(uuid, Rc::downgrade(&this));
+        portal.insert(uuid, Arc::downgrade(&this));
         this
     }
 
@@ -130,7 +130,7 @@ impl Node {
         portal: &mut HashMap<Uuid, NodeRefWeak>,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
-        let this = Rc::new(RefCell::new(Node {
+        let this = Arc::new(RefCell::new(Node {
             uuid,
             node_type: NodeType::Expandable {
                 data,
@@ -144,12 +144,12 @@ impl Node {
         match &this.borrow_mut().node_type {
             NodeType::Expandable { children, .. } => {
                 for child in children {
-                    child.borrow_mut().parent = Some(Rc::downgrade(&this.clone()));
+                    child.borrow_mut().parent = Some(Arc::downgrade(&this.clone()));
                 }
             }
             NodeType::Leaf { .. } => {}
         }
-        portal.insert(uuid, Rc::downgrade(&this));
+        portal.insert(uuid, Arc::downgrade(&this));
         this
     }
 }

@@ -7,7 +7,8 @@ use crate::ast::Ast;
 
 mod move_node;
 
-pub trait Operation<A>
+// TODO: derive Deserialize here, serde_traitobject needed for that
+pub trait Operation<A>: Send + Sync
 where
     A: Ast,
 {

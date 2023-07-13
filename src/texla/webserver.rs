@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex, RwLock};
 
 use axum::response::Html;
 use axum::routing::{get, MethodRouter};
@@ -6,15 +7,16 @@ use axum::Server;
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::set_status::SetStatus;
 
+use crate::texla::core::TexlaCore;
 use crate::texla::socket::socket_service;
 
 const PORT: u16 = 13814;
 const FRONTEND_PATH: &str = "frontend";
 
-pub async fn start_axum() {
+pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
     let app = axum::Router::new()
         // .route("/dummy", get(|| async { Html("This is a dummy file.") }))
-        .layer(socket_service())
+        .layer(socket_service(core))
         .fallback_service(static_files());
 
     let res = Server::bind(&([127, 0, 0, 1], PORT).into())

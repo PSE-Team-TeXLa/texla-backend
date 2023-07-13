@@ -1,14 +1,29 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, RwLock};
 
 use socketioxide::adapter::LocalAdapter;
+use socketioxide::extensions::Ref;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
+use crate::ast::operation::Operation;
+use crate::ast::options::StringificationOptions;
+use crate::ast::texla_ast::TexlaAst;
+use crate::ast::Ast;
+use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
+use crate::infrastructure::vcs_manager::GitManager;
+use crate::texla::core::TexlaCore;
+use crate::texla::errors::TexlaError;
+use crate::texla::state::{State, TexlaState};
+
 pub fn socket_service(
+    core: Arc<RwLock<TexlaCore>>,
 ) -> ServiceBuilder<Stack<SocketIoLayer<LocalAdapter>, Stack<CorsLayer, Identity>>> {
-    let ns = Namespace::builder().add("/", handler).build();
+    // TODO: Arc<RwLock<TexlaCor>> is technically not needed until here
+    let ns = Namespace::builder()
+        .add("/", move |socket| handler(socket, core.clone()))
+        .build();
 
     let service = ServiceBuilder::new()
         .layer(CorsLayer::permissive())
@@ -17,15 +32,58 @@ pub fn socket_service(
     service
 }
 
-async fn handler(socket: Arc<Socket<LocalAdapter>>) {
+async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>) {
     println!("Socket connected with id: {}", socket.sid);
 
-    // TODO: implement API here
-    // TODO: how do i come in here from outside, e.g. for sending an error?
+    let core = core.read().unwrap();
 
-    // data can also be any serde deserializable struct
-    socket.on("abc", |socket, data: String, _, _| async move {
-        println!("Received abc event: {:?}", data);
-        socket.emit("abc", "i am also alive").ok();
+    // initial parse
+    // TODO: error handling! -> close connection if unable to set a state!
+    let storage_manager = TexlaStorageManager::new(core.main_file.clone());
+    // TODO: asynchronously start StorageManager
+    let latex_single_string = storage_manager.multiplex_files().unwrap();
+    let ast = TexlaAst::from_latex(&latex_single_string).unwrap();
+    // TODO: validate ast
+
+    let state = TexlaState {
+        socket: socket.clone(),
+        storage_manager,
+        ast,
+    };
+
+    socket.extensions.insert(state);
+    let state = socket.extensions.get::<TexlaState>().unwrap();
+
+    // initial messages
+    socket
+        .emit("remote_url", state.storage_manager.remote_url())
+        .ok();
+
+    if let Ok(ast) = state.ast.to_json(StringificationOptions::default()) {
+        socket.emit("new_ast", ast).ok();
+    } else {
+        panic!("This error should have been caught before creating state")
+    }
+
+    // TODO: make TexlaAst serializable and Operation deserializable
+    // TODO: data should be dyn Operation
+    socket.on("operation", |socket, operation: String, _, _| async move {
+        println!("Received operation: {:?}", operation);
+        let ast = &socket.extensions.get::<TexlaState>().unwrap().ast;
+        match perform_and_check_operation(todo!("ast"), todo!("&operation")) {
+            Ok(ast) => {
+                socket.emit("new_ast", todo!("ast")).ok();
+            }
+            Err(err) => {
+                socket.emit("error", err).ok();
+            }
+        }
     });
+}
+
+fn perform_and_check_operation(
+    ast: TexlaAst,
+    operation: &dyn Operation<TexlaAst>,
+) -> Result<TexlaAst, TexlaError> {
+    todo!("using ? operator")
 }

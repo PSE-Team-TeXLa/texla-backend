@@ -1,6 +1,7 @@
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -26,8 +27,8 @@ impl TexlaAst {
         let mut portal: HashMap<Uuid, NodeRefWeak> = HashMap::new();
         let mut uuid_provider = TexlaUuidProvider::new();
         root.uuid = uuid_provider.new_uuid();
-        let root_ref = Rc::new(RefCell::new(root));
-        portal.insert(root_ref.borrow().uuid, Rc::downgrade(&root_ref.clone()));
+        let root_ref = Arc::new(RefCell::new(root));
+        portal.insert(root_ref.borrow().uuid, Arc::downgrade(&root_ref.clone()));
         TexlaAst {
             portal,
             root: root_ref,
@@ -38,6 +39,7 @@ impl TexlaAst {
 }
 
 impl Ast for TexlaAst {
+    // TODO: why not move latex_single_string?
     fn from_latex(latex_single_string: &str) -> Result<Self, AstError> {
         Ok(parser::parse_latex(latex_single_string.to_string())?)
     }

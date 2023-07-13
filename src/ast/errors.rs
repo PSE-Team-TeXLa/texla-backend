@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
+use serde::{Serialize, Serializer};
+
 use chumsky::error::Simple;
 
 // yes, this is all necessary
@@ -75,5 +77,14 @@ impl From<serde_json::Error> for StringificationError {
         Self {
             message: format!("Stringification Error: Serde Error{}", error.to_string()),
         }
+    }
+}
+
+impl Serialize for AstError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        todo!("Implement Into for AstError and make TexlaError serializable")
     }
 }
