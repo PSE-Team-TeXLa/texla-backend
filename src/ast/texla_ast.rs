@@ -1,9 +1,7 @@
-use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::ast::errors::{AstError, StringificationError};
 use crate::ast::node::{Node, NodeRef, NodeRefWeak};

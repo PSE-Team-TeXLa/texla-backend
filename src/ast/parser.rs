@@ -1,16 +1,13 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
-use std::rc::Rc;
 
-use axum::body::HttpBody;
 use chumsky::prelude::*;
 use chumsky::text::newline;
 use chumsky::Parser;
 
 use crate::ast;
-use crate::ast::meta_data::MetaData;
-use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak, NodeType};
+use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak};
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid};
 
@@ -20,7 +17,7 @@ struct LatexParser {
     portal: RefCell<HashMap<Uuid, NodeRefWeak>>,
 }
 pub fn parse_latex(string: String) -> Result<TexlaAst, ast::errors::ParseError> {
-    let mut parser = LatexParser::new();
+    let parser = LatexParser::new();
     let root = parser.parser().parse(string.clone())?;
     let highest_level = parser.find_highest_level().parse(string)?;
     Ok(TexlaAst {
@@ -137,12 +134,13 @@ impl LatexParser {
         document
     }
     fn find_highest_level(&self) -> impl Parser<char, u8, Error = Simple<char>> + '_ {
-        take_until(just("\\section").or(just("\\subsection"))).map(|(trash, keyword)| match keyword
-        {
-            "\\section" => 2,
-            "\\subsection" => 3,
-            _ => 7,
-        })
+        take_until(just("\\section").or(just("\\subsection"))).map(
+            |(_trash, keyword)| match keyword {
+                "\\section" => 2,
+                "\\subsection" => 3,
+                _ => 7,
+            },
+        )
     }
 }
 

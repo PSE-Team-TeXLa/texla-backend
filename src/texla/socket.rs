@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::extensions::Ref;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
+
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -42,7 +43,7 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
     let storage_manager = TexlaStorageManager::new(core.main_file.clone());
     // TODO: asynchronously start StorageManager
     let latex_single_string = storage_manager.multiplex_files().unwrap();
-    let ast = TexlaAst::from_latex(&latex_single_string).unwrap();
+    let ast = TexlaAst::from_latex(latex_single_string).unwrap();
     // TODO: validate ast
 
     let state = TexlaState {

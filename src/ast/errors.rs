@@ -1,9 +1,7 @@
-use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-use serde::{Serialize, Serializer};
-
 use chumsky::error::Simple;
+use serde::{Serialize, Serializer};
 
 // yes, this is all necessary
 // TODO: more granular errors (do we really need them here?)

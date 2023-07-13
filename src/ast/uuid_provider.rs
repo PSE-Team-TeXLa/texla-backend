@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use serde::Serialize;
 
 pub type Uuid = u64;

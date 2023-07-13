@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::string::String;
 use std::sync::{Arc, Mutex, Weak};
@@ -162,7 +161,7 @@ mod tests {
     use crate::ast::uuid_provider::TexlaUuidProvider;
 
     #[test]
-    fn printText() {
+    fn print_text() {
         let mut uuidprov = TexlaUuidProvider::new();
         let mut portal = HashMap::new();
         let node = Node::new_leaf(
