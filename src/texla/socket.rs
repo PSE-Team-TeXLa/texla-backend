@@ -27,6 +27,7 @@ pub fn socket_service(
         .add("/", move |socket| handler(socket, core.clone()))
         .build();
 
+    // ServiceBuilder executes layer top to bottom
     let service = ServiceBuilder::new()
         .layer(CorsLayer::permissive())
         .layer(SocketIoLayer::new(ns));
@@ -57,7 +58,8 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
     let storage_manager = TexlaStorageManager::new(vcs_manager, core.main_file.clone());
 
     let latex_single_string = storage_manager.multiplex_files().unwrap();
-    let ast = TexlaAst::from_latex(latex_single_string).unwrap();
+    // let ast = TexlaAst::from_latex(latex_single_string).unwrap();
+    let ast = TexlaAst::trivial();
     // TODO: validate ast
 
     let state = TexlaState {

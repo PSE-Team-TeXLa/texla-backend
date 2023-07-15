@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, RwLock};
 
+use axum::http::Request;
 use axum::response::Html;
 use axum::routing::{get, MethodRouter};
 use axum::Server;
@@ -16,8 +17,9 @@ const FRONTEND_PATH: &str = "frontend";
 pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
     let app = axum::Router::new()
         // .route("/dummy", get(|| async { Html("This is a dummy file.") }))
-        .layer(socket_service(core))
-        .fallback_service(static_files());
+        .fallback_service(static_files())
+        .layer(socket_service(core));
+    // TODO: would be cool to have some kind of tracing/logging here, but I don't get it to work
 
     let res = Server::bind(&([127, 0, 0, 1], PORT).into())
         .serve(app.into_make_service())

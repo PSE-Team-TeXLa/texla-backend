@@ -17,7 +17,7 @@ impl GitManager {
 
         Self {
             repository_path,
-            remote_url: todo!(),
+            remote_url: None, // TODO!
         }
     }
 

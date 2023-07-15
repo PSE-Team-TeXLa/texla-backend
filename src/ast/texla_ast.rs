@@ -4,7 +4,8 @@ use std::sync::{Arc, Mutex};
 use serde::Serialize;
 
 use crate::ast::errors::{AstError, StringificationError};
-use crate::ast::node::{Node, NodeRef, NodeRefWeak};
+use crate::ast::meta_data::MetaData;
+use crate::ast::node::{LeafData, Node, NodeRef, NodeRefWeak, NodeType};
 use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
@@ -34,6 +35,26 @@ impl TexlaAst {
             portal,
             root: root_ref,
             uuid_provider,
+            highest_level: 0,
+        }
+    }
+
+    pub fn trivial() -> Self {
+        TexlaAst {
+            portal: HashMap::new(),
+            root: Arc::new(Mutex::new(Node {
+                uuid: 0,
+                node_type: NodeType::Leaf {
+                    data: LeafData::Text {
+                        text: "This is a trivial ast.".to_string(),
+                    },
+                },
+                meta_data: MetaData {
+                    meta_data: Default::default(),
+                },
+                parent: None,
+            })),
+            uuid_provider: TexlaUuidProvider::new(),
             highest_level: 0,
         }
     }
