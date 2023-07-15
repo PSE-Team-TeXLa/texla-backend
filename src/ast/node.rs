@@ -1,45 +1,176 @@
-// TODO: derive Serialize and decide on JSON scheme
+use std::collections::HashMap;
+use std::string::String;
+use std::sync::{Arc, Mutex, Weak};
 
-use std::cell::RefCell;
+use serde::Serialize;
 
+use crate::ast::errors::StringificationError;
 use crate::ast::meta_data::MetaData;
-use crate::ast::uuid_provider::Uuid;
+use crate::ast::uuid_provider::{Uuid, UuidProvider};
 
+pub type NodeRef = Arc<Mutex<Node>>;
+pub type NodeRefWeak = Weak<Mutex<Node>>;
+
+#[derive(Debug, Serialize)]
 pub struct Node {
-    uuid: Uuid,
-    node_type: NodeType,
-    meta_data: MetaData,
-    // TODO: parent
+    pub(crate) uuid: Uuid,
+    pub(crate) node_type: NodeType,
+    #[serde(flatten)]
+    pub(crate) meta_data: MetaData,
+    #[serde(skip_serializing)]
+    pub(crate) parent: Option<NodeRefWeak>,
+}
+impl Node {
+    pub(crate) fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
+        self.node_type.to_latex(level)
+    }
 }
 
-enum NodeType {
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum NodeType {
     Expandable {
         data: ExpandableData,
-        children: Vec<RefCell<Node>>,
+        children: Vec<NodeRef>,
     },
     Leaf {
         data: LeafData,
     },
 }
 
-enum ExpandableData {
-    Document { preamble: String, postamble: String },
+impl NodeType {
+    pub fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
+        match self {
+            NodeType::Expandable { data, children } => match data {
+                ExpandableData::Segment { heading } => {
+                    let keyword = match level {
+                        2 => "section".to_string(),
+                        3 => "subsection".to_string(),
+                        other => {
+                            return Err(StringificationError {
+                                message: format!("Invalid Nesting Level: {}", other),
+                            })
+                        }
+                    };
+                    let children: String = children
+                        .iter()
+                        .map(|child_node| child_node.lock().unwrap().to_latex(level + 1))
+                        .collect::<Result<String, StringificationError>>()?;
+                    Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
+                }
+                ExpandableData::Document {
+                    preamble,
+                    postamble,
+                } => {
+                    let children: String = children
+                        .iter()
+                        .map(|child_node| child_node.lock().unwrap().to_latex(level))
+                        .collect::<Result<String, StringificationError>>()?;
+                    Ok(format!(
+                        "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
+                    ))
+                }
+            },
+            NodeType::Leaf { data } => match data {
+                LeafData::Text { text } => Ok(text.to_string()),
+                LeafData::Image { path } => Ok(format!("\\includegraphics{{{}}}\n", path)),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum ExpandableData {
     Segment { heading: String },
-    File { path: String },
-    Environment { name: String },
+    Document { preamble: String, postamble: String },
 }
 
-enum LeafData {
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum LeafData {
     Text { text: String },
-    Math { kind: MathKind, content: String },
     Image { path: String },
-    Label { label: String },
-    Caption { caption: String },
 }
 
-enum MathKind {
-    SquareBrackets,
-    DoubleDollars,
-    Displaymath,
-    Equation,
+impl LeafData {
+    // This does not consume the node
+    fn to_latex(&self) -> String {
+        match self {
+            LeafData::Text { text } => text.to_string(),
+            LeafData::Image { path } => format!("\\includegraphics{{{}}}\n", path),
+        }
+    }
+}
+
+impl Node {
+    pub fn new_leaf(
+        data: LeafData,
+        uuid_provider: &mut impl UuidProvider,
+        portal: &mut HashMap<Uuid, NodeRefWeak>,
+    ) -> NodeRef {
+        let uuid = uuid_provider.new_uuid();
+        let this = Arc::new(Mutex::new(Node {
+            uuid,
+            node_type: NodeType::Leaf { data },
+            meta_data: MetaData {
+                meta_data: Default::default(),
+            },
+            parent: None,
+        }));
+        portal.insert(uuid, Arc::downgrade(&this));
+        this
+    }
+
+    pub fn new_expandable(
+        data: ExpandableData,
+        children: Vec<NodeRef>,
+        uuid_provider: &mut impl UuidProvider,
+        portal: &mut HashMap<Uuid, NodeRefWeak>,
+    ) -> NodeRef {
+        let uuid = uuid_provider.new_uuid();
+        let this = Arc::new(Mutex::new(Node {
+            uuid,
+            node_type: NodeType::Expandable {
+                data,
+                children: children,
+            },
+            meta_data: MetaData {
+                meta_data: Default::default(),
+            },
+            parent: None,
+        }));
+        match &this.lock().unwrap().node_type {
+            NodeType::Expandable { children, .. } => {
+                for child in children {
+                    child.lock().unwrap().parent = Some(Arc::downgrade(&this.clone()));
+                }
+            }
+            NodeType::Leaf { .. } => {}
+        }
+        portal.insert(uuid, Arc::downgrade(&this));
+        this
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use crate::ast::node::{LeafData, Node};
+    use crate::ast::uuid_provider::TexlaUuidProvider;
+
+    #[test]
+    fn print_text() {
+        let mut uuidprov = TexlaUuidProvider::new();
+        let mut portal = HashMap::new();
+        let node = Node::new_leaf(
+            LeafData::Text {
+                text: "Test".to_string(),
+            },
+            &mut uuidprov,
+            &mut portal,
+        );
+        assert_eq!(node.lock().unwrap().to_latex(1), Ok("Test".to_string()));
+    }
 }

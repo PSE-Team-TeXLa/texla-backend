@@ -47,6 +47,10 @@ where
         self.directory_change_handler = Some(dc_handler);
         self.merge_conflict_handler = Some(mc_handler);
     }
+
+    pub fn new(main_file: String) -> Self {
+        todo!()
+    }
 }
 
 impl StorageManager for TexlaStorageManager<GitManager> {
@@ -99,6 +103,6 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 }
 
-pub trait DirectoryChangeHandler {
+pub trait DirectoryChangeHandler: Send + Sync {
     fn handle_directory_change(&self);
 }
