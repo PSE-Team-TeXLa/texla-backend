@@ -1,9 +1,9 @@
+use std::path::Path;
 use std::sync::{Arc, Mutex, RwLock};
 
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::extensions::Ref;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
-
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -12,6 +12,7 @@ use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
+use crate::infrastructure::export_manager::TexlaExportManager;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
@@ -39,9 +40,22 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
     let core = core.read().unwrap();
 
     // initial parse
+    // TODO call TexlaStorageManager<T>::attach_handlers() later
     // TODO: error handling! -> close connection if unable to set a state!
-    let storage_manager = TexlaStorageManager::new(core.main_file.clone());
-    // TODO: asynchronously start StorageManager
+
+    // TODO after VS: is there a shorter way to get the parent directory as String?
+    // Linus: i think we should not assume, that we only want to watch the surrounding directory
+    let parent_directory = Path::new(&core.main_file)
+        .parent()
+        .expect("No parent directory found")
+        .to_str()
+        .expect("No parent directory found")
+        .to_string();
+
+    // TODO: allow asynchronicity here
+    let vcs_manager = GitManager::new(parent_directory);
+    let storage_manager = TexlaStorageManager::new(vcs_manager, core.main_file.clone());
+
     let latex_single_string = storage_manager.multiplex_files().unwrap();
     let ast = TexlaAst::from_latex(latex_single_string).unwrap();
     // TODO: validate ast

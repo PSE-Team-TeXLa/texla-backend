@@ -20,6 +20,7 @@ where
     directory_change_handler: Option<Box<dyn DirectoryChangeHandler>>,
     merge_conflict_handler: Option<Box<dyn MergeConflictHandler>>,
     main_file: String,
+    // TODO: should maybe be a reference and maybe a Path
     pull_timer_running: bool,
     worksession_timer_running: bool,
 }
@@ -46,10 +47,6 @@ where
     ) {
         self.directory_change_handler = Some(dc_handler);
         self.merge_conflict_handler = Some(mc_handler);
-    }
-
-    pub fn new(main_file: String) -> Self {
-        todo!()
     }
 }
 
