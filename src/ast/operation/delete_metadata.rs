@@ -4,8 +4,8 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct DeleteMetadata {
-    target: Uuid,
-    key: String,
+    pub target: Uuid,
+    pub key: String,
 }
 
 impl Operation<TexlaAst> for DeleteMetadata {

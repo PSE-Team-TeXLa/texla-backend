@@ -4,8 +4,8 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct EditNode {
-    target: Uuid,
-    raw_latex: String,
+    pub target: Uuid,
+    pub raw_latex: String,
 }
 
 impl Operation<TexlaAst> for EditNode {

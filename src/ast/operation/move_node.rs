@@ -4,8 +4,8 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct MoveNode {
-    target: Uuid,
-    destination: Position,
+    pub target: Uuid,
+    pub destination: Position,
 }
 
 impl Operation<TexlaAst> for MoveNode {

@@ -4,7 +4,7 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct MergeNodes {
-    second_node: Uuid,
+    pub second_node: Uuid,
 }
 
 impl Operation<TexlaAst> for MergeNodes {

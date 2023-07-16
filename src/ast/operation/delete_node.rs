@@ -4,7 +4,7 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct DeleteNode {
-    target: Uuid,
+    pub target: Uuid,
 }
 
 impl Operation<TexlaAst> for DeleteNode {
