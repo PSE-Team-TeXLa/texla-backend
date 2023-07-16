@@ -82,15 +82,27 @@ impl NodeType {
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum ExpandableData {
-    Segment { heading: String },
     Document { preamble: String, postamble: String },
+    Segment { heading: String },
+    // File { path: String },
+    // Environment { name: String },
 }
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum LeafData {
     Text { text: String },
+    // Math { kind: MathKind, content: String },
     Image { path: String },
+    // Label { label: String },
+    // Caption { caption: String },
+}
+
+enum MathKind {
+    SquareBrackets,
+    DoubleDollars,
+    Displaymath,
+    Equation,
 }
 
 impl LeafData {
