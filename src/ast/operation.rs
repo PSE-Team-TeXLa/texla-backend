@@ -1,6 +1,7 @@
 use serde::Deserialize;
 
 use crate::ast::errors::AstError;
+use crate::ast::operation::edit_node::EditNode;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 use crate::ast::Ast;
@@ -21,27 +22,14 @@ where
     fn execute_on(&self, ast: A) -> Result<(), AstError>;
 }
 
-struct MoveOperation {
-    new_string: String,
-    target: Uuid,
-}
-
-impl Operation<TexlaAst> for MoveOperation {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
-        todo!()
-    }
-}
-
 #[derive(Deserialize)]
 enum JsonOperation {
-    MoveOperation { new_string: String, target: Uuid },
+    EditNode { target: Uuid, raw_latex: String },
 }
 impl JsonOperation {
     fn to_trait_obj(self) -> impl Operation<TexlaAst> {
         match self {
-            JsonOperation::MoveOperation { new_string, target } => {
-                MoveOperation { new_string, target }
-            }
+            JsonOperation::EditNode { target, raw_latex } => EditNode { target, raw_latex },
         }
     }
 }
