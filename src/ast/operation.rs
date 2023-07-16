@@ -5,6 +5,12 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 use crate::ast::Ast;
 
+mod add_node;
+mod delete_metadata;
+mod delete_node;
+mod edit_metadata;
+mod edit_node;
+mod merge_nodes;
 mod move_node;
 
 // TODO: derive Deserialize here, serde_traitobject needed for that
