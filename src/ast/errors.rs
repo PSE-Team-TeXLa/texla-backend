@@ -3,8 +3,6 @@ use std::fmt::{Debug, Display, Formatter};
 use chumsky::error::Simple;
 use serde::{Serialize, Serializer};
 
-// yes, this is all necessary
-// TODO: more granular errors (do we really need them here?)
 // TODO implement and use same errors as in spec?
 
 #[derive(Debug)]
