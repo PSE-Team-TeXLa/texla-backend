@@ -9,7 +9,7 @@ pub struct DeleteMetadata {
 }
 
 impl Operation<TexlaAst> for DeleteMetadata {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }

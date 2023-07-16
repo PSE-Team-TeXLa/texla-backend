@@ -19,7 +19,7 @@ pub trait Operation<A>: Send + Sync
 where
     A: Ast,
 {
-    fn execute_on(&self, ast: A) -> Result<(), AstError>;
+    fn execute_on(&self, ast: &mut A) -> Result<(), AstError>;
 }
 
 #[derive(Deserialize)]

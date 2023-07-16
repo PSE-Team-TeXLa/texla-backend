@@ -11,7 +11,7 @@ pub struct EditMetadata {
 }
 
 impl Operation<TexlaAst> for EditMetadata {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }

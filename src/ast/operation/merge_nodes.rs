@@ -8,7 +8,7 @@ pub struct MergeNodes {
 }
 
 impl Operation<TexlaAst> for MergeNodes {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }

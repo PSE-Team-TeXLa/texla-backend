@@ -8,7 +8,7 @@ pub struct AddNode {
 }
 
 impl Operation<TexlaAst> for AddNode {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }
