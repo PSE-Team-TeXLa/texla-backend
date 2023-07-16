@@ -50,7 +50,7 @@ impl TexlaAst {
                     },
                 },
                 meta_data: MetaData {
-                    meta_data: Default::default(),
+                    data: Default::default(),
                 },
                 parent: None,
             })),
@@ -108,7 +108,7 @@ mod tests {
                 },
             },
             meta_data: MetaData {
-                meta_data: Default::default(),
+                data: Default::default(),
             },
             parent: None,
         };

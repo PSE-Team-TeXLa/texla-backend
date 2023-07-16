@@ -4,13 +4,13 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct MetaData {
-    pub(crate) meta_data: HashMap<String, String>,
+    pub(crate) data: HashMap<String, String>,
 }
 
 impl MetaData {
     fn new() -> Self {
         Self {
-            meta_data: HashMap::new(),
+            data: HashMap::new(),
         }
     }
 

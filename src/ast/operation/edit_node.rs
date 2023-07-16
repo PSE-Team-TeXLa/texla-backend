@@ -21,7 +21,7 @@ impl Operation<TexlaAst> for EditNode {
             .upgrade()
             .expect("Could not upgrade weak pointer");
         let node = node_ref.lock().expect("Could not acquire lock");
-        let node_meta_data_map = &node.meta_data.meta_data;
+        let node_meta_data_map = &node.meta_data.data;
         let node_parent = &node.parent;
 
         // create new node
@@ -33,7 +33,7 @@ impl Operation<TexlaAst> for EditNode {
                 },
             },
             meta_data: MetaData {
-                meta_data: node_meta_data_map.clone(),
+                data: node_meta_data_map.clone(),
             },
             parent: node_parent.clone(),
         }));
