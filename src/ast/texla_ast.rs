@@ -15,6 +15,7 @@ use crate::ast::{parser, Ast};
 pub struct TexlaAst {
     #[serde(skip_serializing)]
     pub(crate) portal: HashMap<Uuid, NodeRefWeak>,
+    // TODO can we safely call '.upgrade().unwrap()' on any weak pointer from the portal?
     pub(crate) root: NodeRef,
     #[serde(skip_serializing)]
     pub(crate) uuid_provider: TexlaUuidProvider,
