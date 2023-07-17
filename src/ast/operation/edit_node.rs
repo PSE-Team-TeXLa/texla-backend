@@ -1,5 +1,7 @@
 use std::sync::{Arc, Mutex};
 
+use serde::Deserialize;
+
 use crate::ast::errors::AstError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::node::{LeafData, Node, NodeType};
@@ -8,6 +10,7 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 use crate::ast::Ast;
 
+#[derive(Deserialize)]
 pub struct EditNode {
     pub target: Uuid,
     pub raw_latex: String,

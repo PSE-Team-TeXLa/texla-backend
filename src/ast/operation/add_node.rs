@@ -1,7 +1,10 @@
+use serde::Deserialize;
+
 use crate::ast::errors::AstError;
 use crate::ast::operation::{Operation, Position};
 use crate::ast::texla_ast::TexlaAst;
 
+#[derive(Deserialize)]
 pub struct AddNode {
     pub destination: Position,
     pub raw_latex: String,
