@@ -159,8 +159,16 @@ mod tests {
 
     #[test]
     fn simple() {
-        let latex = fs::read_to_string("../../latex_test_files/simple_latex.tex").unwrap();
+        let latex = fs::read_to_string(Path::new("./latex_test_files/simple_latex.tex")).unwrap();
         let ast = parse_latex(latex);
         println!("{:#?}", ast);
+    }
+
+    #[test]
+    fn get_sample_json() {
+        let latex = fs::read_to_string(Path::new("./latex_test_files/simple_latex.tex")).unwrap();
+        let ast = parse_latex(latex).unwrap();
+        let json = ast.to_json(Default::default()).unwrap();
+        fs::write(Path::new("./latex_test_files/simple_latex.json"), json).unwrap();
     }
 }
