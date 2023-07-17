@@ -3,12 +3,12 @@ use crate::ast::operation::{Operation, Position};
 use crate::ast::texla_ast::TexlaAst;
 
 pub struct AddNode {
-    destination: Position,
-    raw_latex: String,
+    pub destination: Position,
+    pub raw_latex: String,
 }
 
 impl Operation<TexlaAst> for AddNode {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }

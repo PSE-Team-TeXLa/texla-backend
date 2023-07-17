@@ -4,12 +4,12 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct MoveNode {
-    target: Uuid,
-    destination: Position,
+    pub target: Uuid,
+    pub destination: Position,
 }
 
 impl Operation<TexlaAst> for MoveNode {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }

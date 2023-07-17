@@ -6,12 +6,12 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct EditMetadata {
-    target: Uuid,
-    new: HashMap<String, String>,
+    pub target: Uuid,
+    pub new: HashMap<String, String>,
 }
 
 impl Operation<TexlaAst> for EditMetadata {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }

@@ -51,7 +51,7 @@ impl TexlaAst {
                     },
                 },
                 meta_data: MetaData {
-                    meta_data: Default::default(),
+                    data: Default::default(),
                 },
                 parent: None,
             })),
@@ -77,8 +77,13 @@ impl Ast for TexlaAst {
         }
     }
 
-    fn execute(&self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
-        todo!()
+    fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
+        operation.execute_on(self)
+    }
+
+    fn get_node(&self, uuid: Uuid) -> &NodeRefWeak {
+        self.portal.get(&uuid).expect("Unknown uuid")
+        // TODO return Option instead?
     }
 }
 
@@ -104,7 +109,7 @@ mod tests {
                 },
             },
             meta_data: MetaData {
-                meta_data: Default::default(),
+                data: Default::default(),
             },
             parent: None,
         };

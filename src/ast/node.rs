@@ -126,7 +126,7 @@ impl Node {
             uuid,
             node_type: NodeType::Leaf { data },
             meta_data: MetaData {
-                meta_data: Default::default(),
+                data: Default::default(),
             },
             parent: None,
         }));
@@ -148,7 +148,7 @@ impl Node {
                 children: children,
             },
             meta_data: MetaData {
-                meta_data: Default::default(),
+                data: Default::default(),
             },
             parent: None,
         }));

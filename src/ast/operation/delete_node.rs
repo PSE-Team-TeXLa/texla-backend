@@ -4,11 +4,11 @@ use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
 pub struct DeleteNode {
-    target: Uuid,
+    pub target: Uuid,
 }
 
 impl Operation<TexlaAst> for DeleteNode {
-    fn execute_on(&self, ast: TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         todo!()
     }
 }
