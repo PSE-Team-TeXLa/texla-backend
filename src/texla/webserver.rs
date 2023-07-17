@@ -1,9 +1,6 @@
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
-use axum::http::Request;
-use axum::response::Html;
-use axum::routing::{get, MethodRouter};
 use axum::Server;
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::set_status::SetStatus;

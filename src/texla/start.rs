@@ -2,8 +2,6 @@ use std::sync::{Arc, RwLock};
 
 use clap::Parser;
 
-use crate::ast;
-use crate::infrastructure;
 use crate::infrastructure::export_manager::TexlaExportManager;
 use crate::texla::core::TexlaCore;
 use crate::texla::webserver::start_axum;

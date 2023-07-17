@@ -3,8 +3,8 @@ use std::sync::Arc;
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::Socket;
 
-use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
+use crate::ast::texla_ast::TexlaAst;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 

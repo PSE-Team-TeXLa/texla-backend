@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 
 use chumsky::error::Simple;
-use serde::{Serialize, Serializer};
+use serde::Serializer;
 
 // TODO implement and use same errors as in spec?
 

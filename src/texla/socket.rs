@@ -1,23 +1,21 @@
 use std::path::Path;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
-use socketioxide::adapter::LocalAdapter;
-use socketioxide::extensions::Ref;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
+use socketioxide::adapter::LocalAdapter;
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
+use crate::ast::Ast;
 use crate::ast::operation::{JsonOperation, Operation};
 use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
-use crate::ast::Ast;
-use crate::infrastructure::export_manager::TexlaExportManager;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
-use crate::texla::state::{State, TexlaState};
+use crate::texla::state::TexlaState;
 
 pub fn socket_service(
     core: Arc<RwLock<TexlaCore>>,

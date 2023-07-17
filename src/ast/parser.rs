@@ -2,9 +2,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 
+use chumsky::Parser;
 use chumsky::prelude::*;
 use chumsky::text::newline;
-use chumsky::Parser;
 
 use crate::ast;
 use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak};
@@ -154,8 +154,8 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
-    use crate::ast::parser::parse_latex;
     use crate::ast::Ast;
+    use crate::ast::parser::parse_latex;
 
     #[test]
     fn simple() {
