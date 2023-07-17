@@ -134,7 +134,7 @@ impl LatexParser {
             .map(|children: Vec<NodeRef>| {
                 self.build_document(String::new(), String::new(), children)
             })
-            .then_ignore(end())
+            .then_ignore(end().padded())
             .boxed();
         document
     }
