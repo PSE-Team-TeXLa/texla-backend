@@ -8,7 +8,7 @@ use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
-use crate::ast::operation::Operation;
+use crate::ast::operation::{JsonOperation, Operation};
 use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
@@ -82,28 +82,34 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
         panic!("This error should have been caught before creating state")
     }
 
-    // TODO: make TexlaAst serializable and Operation deserializable
-    // TODO: data should be dyn Operation
-    socket.on("operation", |socket, operation: String, _, _| async move {
-        println!("Received operation: {:?}", operation);
-        let ast = &socket.extensions.get::<TexlaState>().unwrap().ast;
-        match perform_and_check_operation(todo!("ast"), todo!("&operation")) {
-            Ok(ast) => {
-                socket.emit("new_ast", todo!("ast")).ok();
+    socket.on(
+        "operation",
+        |socket, operation: JsonOperation, _, _| async move {
+            println!("Received operation");
+            let mut state = socket.extensions.get_mut::<TexlaState>().unwrap();
+            match perform_and_check_operation(&state.ast, operation.to_trait_obj()) {
+                Ok(ast) => {
+                    state.ast = ast;
+                    socket.emit("new_ast", &state.ast).ok();
+                }
+                Err(err) => {
+                    socket.emit("error", err).ok();
+                }
             }
-            Err(err) => {
-                socket.emit("error", err).ok();
-            }
-        }
-    });
+        },
+    );
 }
 
 fn perform_and_check_operation(
-    mut ast: TexlaAst,
+    ast: &TexlaAst,
     operation: Box<dyn Operation<TexlaAst>>,
 ) -> Result<TexlaAst, TexlaError> {
-    ast.execute(operation)?;
-    let latex_single_string = ast.to_latex(Default::default())?;
+    // TODO alternative to cloning: mutable reference + atomic operations
+    let mut cloned_ast = ast.clone();
+
+    cloned_ast.execute(operation)?;
+    let latex_single_string = cloned_ast.to_latex(Default::default())?;
     let reparsed_ast = TexlaAst::from_latex(latex_single_string)?;
+
     Ok(reparsed_ast)
 }

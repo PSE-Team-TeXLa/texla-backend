@@ -23,7 +23,7 @@ where
 
 #[derive(Deserialize)]
 #[serde(tag = "type")]
-enum JsonOperation {
+pub enum JsonOperation {
     EditNode {
         arguments: edit_node::EditNode,
     },
@@ -49,7 +49,7 @@ enum JsonOperation {
 
 // we do this, just because serde_traitobject requires nightly
 impl JsonOperation {
-    fn to_trait_obj(self) -> Box<dyn Operation<TexlaAst>> {
+    pub fn to_trait_obj(self) -> Box<dyn Operation<TexlaAst>> {
         match self {
             JsonOperation::EditNode {
                 arguments: operation,
