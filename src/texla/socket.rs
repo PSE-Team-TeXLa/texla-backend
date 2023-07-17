@@ -99,8 +99,11 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
 }
 
 fn perform_and_check_operation(
-    ast: TexlaAst,
-    operation: &dyn Operation<TexlaAst>,
+    mut ast: TexlaAst,
+    operation: Box<dyn Operation<TexlaAst>>,
 ) -> Result<TexlaAst, TexlaError> {
-    todo!("using ? operator")
+    ast.execute(operation)?;
+    let latex_single_string = ast.to_latex(Default::default())?;
+    let reparsed_ast = TexlaAst::from_latex(latex_single_string)?;
+    Ok(reparsed_ast)
 }
