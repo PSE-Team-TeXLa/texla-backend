@@ -17,6 +17,7 @@ struct LatexParser {
     portal: RefCell<HashMap<Uuid, NodeRefWeak>>,
 }
 pub fn parse_latex(string: String) -> Result<TexlaAst, ast::errors::ParseError> {
+    // TODO: for performance, the parser should not be created every time, but reused
     let parser = LatexParser::new();
     let root = parser.parser().parse(string.clone())?;
     let highest_level = parser.find_highest_level().parse(string)?;
@@ -74,13 +75,15 @@ impl LatexParser {
             .collect::<String>()
             .boxed();
 
+        // TODO: why \\ and this should somehow use newline()
+        // Und warum ist der Parser überhaupt zeilenweise? Die sind bis auf doppelte doch irrelevant
         let line = none_of("\r\n\\")
             .repeated()
             .at_least(1)
-            .then_ignore(just("\n"))
+            .then_ignore(newline())
             .collect::<String>()
             .map(|mut line: String| {
-                line.push_str("\n");
+                line.push('\n');
                 line
             })
             .boxed();
@@ -90,10 +93,11 @@ impl LatexParser {
             .repeated()
             .at_least(1)
             .collect::<String>()
-            .then_ignore(just("\n").or_not())
+            .then_ignore(newline().or_not())
             .map(|x: String| self.build_text(x))
             .boxed();
 
+        // TODO: this should not be repetitive
         let subsection = just("\\subsection")
             .ignore_then(word.clone().delimited_by(just('{'), just('}')))
             .then_ignore(newline())
@@ -103,7 +107,7 @@ impl LatexParser {
 
         let section = just("\\section")
             .ignore_then(word.clone().delimited_by(just('{'), just('}')))
-            .then_ignore(just("\n"))
+            .then_ignore(newline())
             .then(block.clone().repeated())
             .then(subsection.clone().repeated())
             .map(
@@ -123,7 +127,8 @@ impl LatexParser {
             .or(block.clone())
             .boxed();
 
-        let document = just::<_, _, Simple<char>>("\\begin{document}\n")
+        let document = just::<_, _, Simple<char>>("\\begin{document}")
+            .then(newline())
             .ignore_then(node.clone().repeated())
             .then_ignore(just("\\end{document}"))
             .map(|children: Vec<NodeRef>| {
@@ -147,8 +152,10 @@ impl LatexParser {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::path::Path;
 
     use crate::ast::parser::parse_latex;
+    use crate::ast::Ast;
 
     #[test]
     fn simple() {
