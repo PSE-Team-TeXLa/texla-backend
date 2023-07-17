@@ -4,6 +4,7 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct MetaData {
+    #[serde(rename = "meta_data")]
     pub(crate) data: HashMap<String, String>,
 }
 

@@ -71,6 +71,7 @@ impl Ast for TexlaAst {
     }
 
     fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
+        // TODO: remove pretty in production
         match serde_json::to_string_pretty(self) {
             Ok(json_string) => Ok(json_string),
             Err(error) => Err(AstError::from(StringificationError::from(error))),
