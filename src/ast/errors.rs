@@ -75,12 +75,3 @@ impl From<serde_json::Error> for StringificationError {
         }
     }
 }
-
-impl Serialize for AstError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        todo!("Implement Into for AstError and make TexlaError serializable")
-    }
-}

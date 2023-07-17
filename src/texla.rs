@@ -1,5 +1,5 @@
 mod core;
-mod errors;
+pub mod errors;
 mod socket;
 pub mod start;
 mod state;
