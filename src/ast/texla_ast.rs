@@ -63,6 +63,7 @@ impl TexlaAst {
 
 impl Ast for TexlaAst {
     fn from_latex(latex_single_string: String) -> Result<Self, AstError> {
+        // TODO: Linus fände an solchen stellen <...>.into() schöner
         Ok(parser::parse_latex(latex_single_string)?)
     }
 
