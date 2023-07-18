@@ -1,16 +1,15 @@
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
-use socketioxide::{Namespace, Socket, SocketIoLayer};
 use socketioxide::adapter::LocalAdapter;
+use socketioxide::{Namespace, Socket, SocketIoLayer};
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
-use crate::ast::Ast;
 use crate::ast::operation::{JsonOperation, Operation};
-use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
+use crate::ast::Ast;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
@@ -74,11 +73,7 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
         .emit("remote_url", state.storage_manager.remote_url())
         .ok();
 
-    if let Ok(ast) = state.ast.to_json(StringificationOptions::default()) {
-        socket.emit("new_ast", ast).ok();
-    } else {
-        panic!("This error should have been caught before creating state")
-    }
+    socket.emit("new_ast", &state.ast).ok();
 
     socket.on(
         "operation",
