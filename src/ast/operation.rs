@@ -1,9 +1,9 @@
 use serde::Deserialize;
 
-use crate::ast::Ast;
 use crate::ast::errors::AstError;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
+use crate::ast::Ast;
 
 mod add_node;
 mod delete_metadata;
@@ -13,7 +13,7 @@ mod edit_node;
 mod merge_nodes;
 mod move_node;
 
-// TODO: derive Deserialize here, serde_traitobject needed for that
+// TODO: if struggling with lifetimes, let execute_on consume self
 pub trait Operation<A>: Send + Sync
 where
     A: Ast,
