@@ -47,13 +47,16 @@ impl Operation<TexlaAst> for EditNode {
             parent: node_parent.clone(),
             raw_latex: String::new(), //shouldn't matter since it gets re-parsed instantly
         }));
+
         // update child of parent
         let parent_ref = node_parent
             .as_ref()
             .expect("Could not find parent")
             .upgrade()
-            .expect("Could not upgrade weak pointer");
+            .expect("Could not upgrade weak pointer"); // FIXME: this happens sometimes
         let parent_node_type = &mut parent_ref.lock().expect("Could not acquire lock").node_type;
+
+        drop(target_node); //drop lock
 
         let parent_children;
         if let NodeType::Expandable { children, .. } = parent_node_type {
