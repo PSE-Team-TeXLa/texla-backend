@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::ast::errors::AstError;
 use crate::ast::meta_data::MetaData;
-use crate::ast::node::{LeafData, Node, NodeType};
+use crate::ast::node::{ExpandableData, LeafData, Node, NodeType};
 use crate::ast::operation::Operation;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
@@ -23,25 +23,30 @@ impl Operation<TexlaAst> for EditNode {
             .get_node(self.target)
             .upgrade()
             .expect("Could not upgrade weak pointer");
-        let node = node_ref.lock().expect("Could not acquire lock");
-        let node_meta_data_map = &node.meta_data.data;
-        let node_parent = &node.parent;
+        let target_node = node_ref.lock().expect("Could not acquire lock");
+        let node_meta_data_map = &target_node.meta_data.data;
+        let node_parent = &target_node.parent;
 
         // create new node
         let new_node_ref = Arc::new(Mutex::new(Node {
             uuid: self.target,
-            node_type: NodeType::Leaf {
-                data: LeafData::Text {
+            node_type: NodeType::Expandable {
+                data: ExpandableData::Dummy {
                     text: self.raw_latex.clone(),
+                },
+                children: match &target_node.node_type {
+                    NodeType::Expandable { children, .. } => children.clone(), //copies children from old node
+                    NodeType::Leaf { .. } => {
+                        vec![]
+                    }
                 },
             },
             meta_data: MetaData {
                 data: node_meta_data_map.clone(),
             },
             parent: node_parent.clone(),
-            raw_latex: self.raw_latex.clone(), //doesnt matter since it gets reparsed
+            raw_latex: String::new(), //shouldn't matter since it gets re-parsed instantly
         }));
-
         // update child of parent
         let parent_ref = node_parent
             .as_ref()

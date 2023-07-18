@@ -40,9 +40,18 @@ pub enum NodeType {
 }
 
 impl NodeType {
+    pub fn children_to_latex(&self, level: u8) -> Result<String, StringificationError> {
+        match self {
+            NodeType::Expandable { children, .. } => children
+                .iter()
+                .map(|child| child.lock().unwrap().to_latex(level))
+                .collect(),
+            NodeType::Leaf { .. } => Ok(String::new()),
+        }
+    }
     pub fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
         match self {
-            NodeType::Expandable { data, children } => match data {
+            NodeType::Expandable { data, .. } => match data {
                 ExpandableData::Segment { heading } => {
                     let keyword = match level {
                         2 => "section".to_string(),
@@ -53,23 +62,21 @@ impl NodeType {
                             })
                         }
                     };
-                    let children: String = children
-                        .iter()
-                        .map(|child_node| child_node.lock().unwrap().to_latex(level + 1))
-                        .collect::<Result<String, StringificationError>>()?;
+                    let children = self.children_to_latex(level + 1)?;
                     Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
                 }
                 ExpandableData::Document {
                     preamble,
                     postamble,
                 } => {
-                    let children: String = children
-                        .iter()
-                        .map(|child_node| child_node.lock().unwrap().to_latex(level))
-                        .collect::<Result<String, StringificationError>>()?;
+                    let children: String = self.children_to_latex(level)?;
                     Ok(format!(
                         "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
                     ))
+                }
+                ExpandableData::Dummy { text } => {
+                    let children: String = self.children_to_latex(level + 1)?;
+                    Ok(format!("{text}\n{children}"))
                 }
             },
             NodeType::Leaf { data } => match data {
@@ -85,8 +92,8 @@ impl NodeType {
 pub enum ExpandableData {
     Document { preamble: String, postamble: String },
     Segment { heading: String },
-    // File { path: String },
-    // Environment { name: String },
+    Dummy { text: String }, // File { path: String },
+                            // Environment { name: String },
 }
 
 #[derive(Debug, Serialize)]
