@@ -92,7 +92,7 @@ mod test {
         let json = r#"
         {
             "type": "EditNode",
-            "operation": {
+            "arguments": {
                 "target": 42,
                 "raw_latex": "this is the new latex"
             }
