@@ -1,9 +1,11 @@
+use std::fmt::Debug;
+
 use serde::Deserialize;
 
-use crate::ast::Ast;
 use crate::ast::errors::AstError;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
+use crate::ast::Ast;
 
 mod add_node;
 mod delete_metadata;
@@ -14,7 +16,7 @@ mod merge_nodes;
 mod move_node;
 
 // TODO: derive Deserialize here, serde_traitobject needed for that
-pub trait Operation<A>: Send + Sync
+pub trait Operation<A>: Send + Sync + Debug
 where
     A: Ast,
 {
@@ -77,7 +79,7 @@ impl JsonOperation {
 }
 
 // TODO move into uuid_provider?
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Position {
     pub parent: Uuid,
     pub after_sibling: Option<Uuid>,

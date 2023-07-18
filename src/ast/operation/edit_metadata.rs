@@ -7,7 +7,7 @@ use crate::ast::operation::Operation;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct EditMetadata {
     pub target: Uuid,
     pub new: HashMap<String, String>,

@@ -5,7 +5,7 @@ use crate::ast::operation::Operation;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct DeleteNode {
     pub target: Uuid,
 }

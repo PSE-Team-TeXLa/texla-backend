@@ -4,7 +4,7 @@ use crate::ast::errors::AstError;
 use crate::ast::operation::{Operation, Position};
 use crate::ast::texla_ast::TexlaAst;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct AddNode {
     pub destination: Position,
     pub raw_latex: String,

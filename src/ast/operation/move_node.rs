@@ -5,7 +5,7 @@ use crate::ast::operation::{Operation, Position};
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct MoveNode {
     pub target: Uuid,
     pub destination: Position,

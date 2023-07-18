@@ -4,13 +4,13 @@ use serde::Deserialize;
 
 use crate::ast::errors::AstError;
 use crate::ast::meta_data::MetaData;
-use crate::ast::node::{ExpandableData, LeafData, Node, NodeType};
+use crate::ast::node::{ExpandableData, Node, NodeType};
 use crate::ast::operation::Operation;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 use crate::ast::Ast;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct EditNode {
     pub target: Uuid,
     pub raw_latex: String,
