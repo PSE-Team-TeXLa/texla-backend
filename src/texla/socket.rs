@@ -8,7 +8,6 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
 use crate::ast::operation::{JsonOperation, Operation};
-use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
@@ -73,34 +72,33 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
         .emit("remote_url", state.storage_manager.remote_url())
         .ok();
 
-    if let Ok(ast) = state.ast.to_json(StringificationOptions::default()) {
-        socket.emit("new_ast", ast).ok();
-    } else {
-        panic!("This error should have been caught before creating state")
-    }
+    socket.emit("new_ast", &state.ast).ok();
 
-    socket.on(
-        "operation",
-        |socket, operation: JsonOperation, _, _| async move {
-            let operation = operation.to_trait_obj();
-            println!("Received operation: {:?}", operation);
-            let mut state = socket.extensions.get_mut::<TexlaState>().unwrap();
-            match perform_and_check_operation(&state.ast, operation) {
-                Ok(ast) => {
-                    state.ast = ast;
-                    socket.emit("new_ast", &state.ast).ok();
-                    println!(
-                        "Operation was okay, new_ast {:?}",
-                        serde_json::to_string_pretty(&state.ast).unwrap()
-                    );
-                }
-                Err(err) => {
-                    println!("Operation was not okay: {}", err);
-                    socket.emit("error", err).ok();
-                }
+    // TODO: maybe someday use implicit deserialization
+    socket.on("operation", |socket, json: String, _, _| async move {
+        print!("Received operation:");
+
+        let operation = serde_json::from_str::<JsonOperation>(&json)
+            .expect("Got invalid operation from frontend")
+            .to_trait_obj();
+        println!("{:?}", operation);
+
+        let mut state = socket.extensions.get_mut::<TexlaState>().unwrap();
+        match perform_and_check_operation(&state.ast, operation) {
+            Ok(ast) => {
+                state.ast = ast;
+                socket.emit("new_ast", &state.ast).ok();
+                println!(
+                    "Operation was okay, new_ast {:?}",
+                    serde_json::to_string_pretty(&state.ast).unwrap()
+                );
             }
-        },
-    );
+            Err(err) => {
+                println!("Operation was not okay: {}", err);
+                socket.emit("error", err).ok();
+            }
+        }
+    });
 }
 
 fn perform_and_check_operation(
