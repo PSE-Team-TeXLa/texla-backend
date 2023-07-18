@@ -19,6 +19,7 @@ pub struct Node {
     pub(crate) meta_data: MetaData,
     #[serde(skip_serializing)]
     pub(crate) parent: Option<NodeRefWeak>,
+    pub(crate) raw_latex: String,
 }
 impl Node {
     pub(crate) fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
@@ -120,6 +121,7 @@ impl Node {
         data: LeafData,
         uuid_provider: &mut impl UuidProvider,
         portal: &mut HashMap<Uuid, NodeRefWeak>,
+        raw_latex: String,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
         let this = Arc::new(Mutex::new(Node {
@@ -129,6 +131,7 @@ impl Node {
                 data: Default::default(),
             },
             parent: None,
+            raw_latex,
         }));
         portal.insert(uuid, Arc::downgrade(&this));
         this
@@ -139,6 +142,7 @@ impl Node {
         children: Vec<NodeRef>,
         uuid_provider: &mut impl UuidProvider,
         portal: &mut HashMap<Uuid, NodeRefWeak>,
+        raw_latex: String,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
         let this = Arc::new(Mutex::new(Node {
@@ -151,6 +155,7 @@ impl Node {
                 data: Default::default(),
             },
             parent: None,
+            raw_latex,
         }));
         match &this.lock().unwrap().node_type {
             NodeType::Expandable { children, .. } => {
@@ -182,6 +187,7 @@ mod tests {
             },
             &mut uuidprov,
             &mut portal,
+            "raw".to_string(),
         );
         assert_eq!(node.lock().unwrap().to_latex(1), Ok("Test".to_string()));
     }

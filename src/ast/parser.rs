@@ -2,9 +2,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 
-use chumsky::Parser;
 use chumsky::prelude::*;
 use chumsky::text::newline;
+use chumsky::Parser;
 
 use crate::ast;
 use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak};
@@ -39,17 +39,19 @@ impl LatexParser {
     }
     fn build_text(&self, text: String) -> NodeRef {
         Node::new_leaf(
-            LeafData::Text { text },
+            LeafData::Text { text: text.clone() },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
+            text,
         )
     }
-    fn build_segment(&self, heading: String, children: Vec<NodeRef>) -> NodeRef {
+    fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
+            raw,
         )
     }
     fn build_document(
@@ -66,6 +68,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
+            String::new(),
         )
     }
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
@@ -102,7 +105,9 @@ impl LatexParser {
             .ignore_then(word.clone().delimited_by(just('{'), just('}')))
             .then_ignore(newline())
             .then(block.clone().repeated())
-            .map(|(heading, blocks): (String, Vec<NodeRef>)| self.build_segment(heading, blocks))
+            .map(|(heading, blocks): (String, Vec<NodeRef>)| {
+                self.build_segment(heading.clone(), blocks, format!("\\subsection {heading}"))
+            })
             .boxed();
 
         let section = just("\\section")
@@ -116,7 +121,7 @@ impl LatexParser {
                     Vec<NodeRef>,
                 )| {
                     blocks.append(&mut subsections);
-                    self.build_segment(heading, blocks)
+                    self.build_segment(heading.clone(), blocks, format!("\\section {heading}"))
                 },
             )
             .boxed();
@@ -154,8 +159,8 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
-    use crate::ast::Ast;
     use crate::ast::parser::parse_latex;
+    use crate::ast::Ast;
 
     #[test]
     fn simple() {

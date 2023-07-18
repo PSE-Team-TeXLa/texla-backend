@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use serde::de::Unexpected::Str;
 use serde::Serialize;
 
-use crate::ast::{Ast, parser};
 use crate::ast::errors::{AstError, StringificationError};
 use crate::ast::meta_data::MetaData;
 use crate::ast::node::{LeafData, Node, NodeRef, NodeRefWeak, NodeType};
 use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
+use crate::ast::{parser, Ast};
 
 #[derive(Debug, Serialize, Clone)]
 pub struct TexlaAst {
@@ -54,6 +55,7 @@ impl TexlaAst {
                     data: Default::default(),
                 },
                 parent: None,
+                raw_latex: String::new(),
             })),
             uuid_provider: TexlaUuidProvider::new(),
             highest_level: 0,
@@ -93,13 +95,13 @@ impl Ast for TexlaAst {
 mod tests {
     use std::fs;
 
-    use crate::ast::Ast;
     use crate::ast::meta_data::MetaData;
     use crate::ast::node::{LeafData, Node, NodeType};
     use crate::ast::options::StringificationOptions;
     use crate::ast::parser::parse_latex;
     use crate::ast::texla_ast::TexlaAst;
     use crate::ast::uuid_provider::Uuid;
+    use crate::ast::Ast;
 
     #[test]
     fn crate_ast() {
@@ -114,6 +116,7 @@ mod tests {
                 data: Default::default(),
             },
             parent: None,
+            raw_latex: String::new(),
         };
         let ast = TexlaAst::new(root);
         assert!(ast.root.lock().unwrap().parent.is_none());

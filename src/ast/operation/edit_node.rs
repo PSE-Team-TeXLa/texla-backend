@@ -2,13 +2,13 @@ use std::sync::{Arc, Mutex};
 
 use serde::Deserialize;
 
-use crate::ast::Ast;
 use crate::ast::errors::AstError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::node::{LeafData, Node, NodeType};
 use crate::ast::operation::Operation;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
+use crate::ast::Ast;
 
 #[derive(Deserialize)]
 pub struct EditNode {
@@ -39,6 +39,7 @@ impl Operation<TexlaAst> for EditNode {
                 data: node_meta_data_map.clone(),
             },
             parent: node_parent.clone(),
+            raw_latex: self.raw_latex.clone(), //doesnt matter since it gets reparsed
         }));
 
         // update child of parent
