@@ -2,13 +2,13 @@ use std::sync::{Arc, Mutex};
 
 use serde::Deserialize;
 
-use crate::ast::Ast;
 use crate::ast::errors::AstError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::node::{LeafData, Node, NodeType};
 use crate::ast::operation::Operation;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
+use crate::ast::Ast;
 
 #[derive(Deserialize)]
 pub struct EditNode {
@@ -19,11 +19,8 @@ pub struct EditNode {
 impl Operation<TexlaAst> for EditNode {
     fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         // get information of current node
-        let node_ref = ast
-            .get_node(self.target)
-            .upgrade()
-            .expect("Could not upgrade weak pointer");
-        let node = node_ref.lock().expect("Could not acquire lock");
+        let node_ref = ast.get_node(self.target);
+        let node = node_ref.lock().unwrap();
         let node_meta_data_map = &node.meta_data.data;
         let node_parent = &node.parent;
 

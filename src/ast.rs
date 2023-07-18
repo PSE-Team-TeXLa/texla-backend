@@ -1,5 +1,5 @@
 use crate::ast::errors::AstError;
-use crate::ast::node::NodeRefWeak;
+use crate::ast::node::NodeRef;
 use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::Uuid;
@@ -20,6 +20,6 @@ pub trait Ast: Sized + Send + Sync {
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError>;
     fn to_json(&self, options: StringificationOptions) -> Result<String, AstError>;
     fn execute(&mut self, operation: Box<dyn Operation<Self>>) -> Result<(), AstError>;
-    fn get_node(&self, uuid: Uuid) -> &NodeRefWeak; // TODO define method here?
-                                                    // TODO add methods for deleting a node and inserting a node?
+    fn get_node(&self, uuid: Uuid) -> NodeRef; // TODO define method here?
+                                               // TODO add methods for deleting a node and inserting a node?
 }
