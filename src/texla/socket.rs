@@ -1,16 +1,16 @@
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
-use socketioxide::{Namespace, Socket, SocketIoLayer};
 use socketioxide::adapter::LocalAdapter;
+use socketioxide::{Namespace, Socket, SocketIoLayer};
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
-use crate::ast::Ast;
 use crate::ast::operation::{JsonOperation, Operation};
 use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
+use crate::ast::Ast;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
@@ -56,9 +56,8 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
     let storage_manager = TexlaStorageManager::new(vcs_manager, core.main_file.clone());
 
     let latex_single_string = storage_manager.multiplex_files().unwrap();
-    // let ast = TexlaAst::from_latex(latex_single_string).unwrap();
-    let ast = TexlaAst::trivial();
-    // TODO: validate ast
+    let ast = TexlaAst::from_latex(latex_single_string).unwrap();
+    // TODO: validate ast (by calling to_latex())
 
     let state = TexlaState {
         socket: socket.clone(),
@@ -83,14 +82,20 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
     socket.on(
         "operation",
         |socket, operation: JsonOperation, _, _| async move {
-            println!("Received operation");
+            let operation = operation.to_trait_obj();
+            println!("Received operation: {:?}", operation);
             let mut state = socket.extensions.get_mut::<TexlaState>().unwrap();
-            match perform_and_check_operation(&state.ast, operation.to_trait_obj()) {
+            match perform_and_check_operation(&state.ast, operation) {
                 Ok(ast) => {
                     state.ast = ast;
                     socket.emit("new_ast", &state.ast).ok();
+                    println!(
+                        "Operation was okay, new_ast {:?}",
+                        serde_json::to_string_pretty(&state.ast).unwrap()
+                    );
                 }
                 Err(err) => {
+                    println!("Operation was not okay: {}", err);
                     socket.emit("error", err).ok();
                 }
             }
