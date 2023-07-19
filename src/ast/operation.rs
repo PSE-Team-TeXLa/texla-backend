@@ -15,7 +15,7 @@ mod edit_node;
 mod merge_nodes;
 mod move_node;
 
-// TODO: derive Deserialize here, serde_traitobject needed for that
+// TODO: if struggling with lifetimes, let execute_on consume self
 pub trait Operation<A>: Send + Sync + Debug
 where
     A: Ast,

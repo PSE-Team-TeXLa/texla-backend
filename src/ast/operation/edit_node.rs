@@ -17,15 +17,13 @@ pub struct EditNode {
 }
 
 impl Operation<TexlaAst> for EditNode {
+    // TODO: some of the results, that are expected or unwrapped should be propagated using ?
     fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
         // get information of current node
-        let node_ref = ast
-            .get_node(self.target)
-            .upgrade()
-            .expect("Could not upgrade weak pointer");
-        let target_node = node_ref.lock().expect("Could not acquire lock");
-        let node_meta_data_map = &target_node.meta_data.data;
-        let node_parent = &target_node.parent;
+        let node_ref = ast.get_node(self.target);
+        let node = node_ref.lock().unwrap();
+        let node_meta_data_map = &node.meta_data.data;
+        let node_parent = &node.parent;
 
         // create new node
         let new_node_ref = Arc::new(Mutex::new(Node {
@@ -34,7 +32,7 @@ impl Operation<TexlaAst> for EditNode {
                 data: ExpandableData::Dummy {
                     text: self.raw_latex.clone(),
                 },
-                children: match &target_node.node_type {
+                children: match &node.node_type {
                     NodeType::Expandable { children, .. } => children.clone(), //copies children from old node
                     NodeType::Leaf { .. } => {
                         vec![]
@@ -49,29 +47,27 @@ impl Operation<TexlaAst> for EditNode {
         }));
 
         // update child of parent
-        let parent_ref = node_parent
-            .as_ref()
-            .expect("Could not find parent")
-            .upgrade()
-            .expect("Could not upgrade weak pointer"); // FIXME: this happens sometimes
-        let parent_node_type = &mut parent_ref.lock().expect("Could not acquire lock").node_type;
+        if let Some(parent_ref_weak) = node_parent.as_ref() {
+            let parent_ref = parent_ref_weak.upgrade().unwrap(); // FIXME: this happens sometimes
+            let mut parent = parent_ref.lock().unwrap();
 
-        drop(target_node); //drop lock
+            let parent_children = match &mut parent.node_type {
+                NodeType::Expandable { children, .. } => children,
+                NodeType::Leaf { .. } => panic!("Parent is a leaf"),
+            };
 
-        let parent_children;
-        if let NodeType::Expandable { children, .. } = parent_node_type {
-            parent_children = children;
+            drop(node); // drop lock, because we need want to lock again in the next step
+
+            let child_index = parent_children
+                .iter()
+                .position(|child_ref| child_ref.lock().unwrap().uuid == self.target)
+                .expect("Could not find child");
+
+            parent_children[child_index] = new_node_ref.clone();
         } else {
-            panic!("Invalid parent which is no Expandable")
+            // if parent is None, then this node is the root node
+            ast.root = new_node_ref.clone();
         }
-
-        let child_index = parent_children
-            .iter()
-            .position(|child_ref| {
-                child_ref.lock().expect("Could not acquire lock").uuid == self.target
-            })
-            .expect("Could not find child");
-        parent_children[child_index] = new_node_ref.clone();
 
         // update node reference in portal
         ast.portal

@@ -1,10 +1,13 @@
 pub struct StringificationOptions {
-    // TODO
+    pub include_comments: bool,
+    pub include_metadata: bool,
 }
 
 impl Default for StringificationOptions {
     fn default() -> Self {
-        // TODO
-        Self {}
+        Self {
+            include_comments: true,
+            include_metadata: true,
+        }
     }
 }

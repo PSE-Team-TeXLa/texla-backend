@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use serde::de::Unexpected::Str;
 use serde::Serialize;
 
-use crate::ast::errors::{AstError, StringificationError};
-use crate::ast::meta_data::MetaData;
-use crate::ast::node::{LeafData, Node, NodeRef, NodeRefWeak, NodeType};
+use crate::ast::errors::AstError;
+use crate::ast::node::{Node, NodeRef, NodeRefWeak};
 use crate::ast::operation::Operation;
 use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
@@ -40,32 +38,10 @@ impl TexlaAst {
             highest_level: 0,
         }
     }
-
-    pub fn trivial() -> Self {
-        TexlaAst {
-            portal: HashMap::new(),
-            root: Arc::new(Mutex::new(Node {
-                uuid: 0,
-                node_type: NodeType::Leaf {
-                    data: LeafData::Text {
-                        text: "This is a trivial ast.".to_string(),
-                    },
-                },
-                meta_data: MetaData {
-                    data: Default::default(),
-                },
-                parent: None,
-                raw_latex: String::new(),
-            })),
-            uuid_provider: TexlaUuidProvider::new(),
-            highest_level: 0,
-        }
-    }
 }
 
 impl Ast for TexlaAst {
     fn from_latex(latex_single_string: String) -> Result<Self, AstError> {
-        // TODO: Linus fände an solchen stellen <...>.into() schöner
         Ok(parser::parse_latex(latex_single_string)?)
     }
 
@@ -73,21 +49,16 @@ impl Ast for TexlaAst {
         Ok(self.root.lock().unwrap().to_latex(self.highest_level)?)
     }
 
-    fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
-        // TODO: remove pretty in production
-        match serde_json::to_string_pretty(self) {
-            Ok(json_string) => Ok(json_string),
-            Err(error) => Err(AstError::from(StringificationError::from(error))),
-        }
-    }
-
     fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
         operation.execute_on(self)
     }
 
-    fn get_node(&self, uuid: Uuid) -> &NodeRefWeak {
-        self.portal.get(&uuid).expect("Unknown uuid")
-        // TODO return Option instead?
+    fn get_node(&self, uuid: Uuid) -> NodeRef {
+        self.portal
+            .get(&uuid)
+            .expect("unknown uuid")
+            .upgrade()
+            .expect("portal should never contain invalid weak pointers when a operation comes")
     }
 }
 
@@ -97,7 +68,6 @@ mod tests {
 
     use crate::ast::meta_data::MetaData;
     use crate::ast::node::{LeafData, Node, NodeType};
-    use crate::ast::options::StringificationOptions;
     use crate::ast::parser::parse_latex;
     use crate::ast::texla_ast::TexlaAst;
     use crate::ast::uuid_provider::Uuid;
@@ -128,27 +98,21 @@ mod tests {
     fn simple_latex_identical() {
         let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        assert!(ast.to_latex(StringificationOptions {}).is_ok());
-        assert_eq!(
-            ast.to_latex(StringificationOptions {}).unwrap(),
-            latex.clone()
-        );
+        assert!(ast.to_latex(Default::default()).is_ok());
+        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
     }
     #[test]
     fn only_subsection_identical() {
         let latex = fs::read_to_string("latex_test_files/only_subsection.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        assert!(ast.to_latex(StringificationOptions {}).is_ok());
-        assert_eq!(
-            ast.to_latex(StringificationOptions {}).unwrap(),
-            latex.clone()
-        );
+        assert!(ast.to_latex(Default::default()).is_ok());
+        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
     }
     #[test]
     fn parse_and_to_json() {
         let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        let out = ast.to_json(StringificationOptions {}).unwrap();
+        let out = serde_json::to_string_pretty(&ast).unwrap();
         fs::write("out.json", out).expect("File write error");
     }
 }
