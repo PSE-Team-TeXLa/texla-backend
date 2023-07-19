@@ -106,7 +106,11 @@ impl LatexParser {
             .then_ignore(newline())
             .then(block.clone().repeated())
             .map(|(heading, blocks): (String, Vec<NodeRef>)| {
-                self.build_segment(heading.clone(), blocks, format!("\\subsection {heading}"))
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\subsection{{{heading}}}"),
+                )
             })
             .boxed();
 
@@ -121,7 +125,7 @@ impl LatexParser {
                     Vec<NodeRef>,
                 )| {
                     blocks.append(&mut subsections);
-                    self.build_segment(heading.clone(), blocks, format!("\\section {heading}"))
+                    self.build_segment(heading.clone(), blocks, format!("\\section{{{heading}}}"))
                 },
             )
             .boxed();
