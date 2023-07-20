@@ -2,9 +2,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 
+use axum::body::HttpBody;
 use chumsky::prelude::*;
-use chumsky::text::newline;
+use chumsky::text::{keyword, newline};
 use chumsky::Parser;
+use tokio::io::AsyncSeekExt;
+use tower::ServiceExt;
 
 use crate::ast;
 use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak};
@@ -30,7 +33,7 @@ pub fn parse_latex(string: String) -> Result<TexlaAst, ast::errors::ParseError> 
 }
 
 impl LatexParser {
-    //TODO Indentation Support
+    // TODO Indentation Support
     fn new() -> Self {
         LatexParser {
             uuid_provider: RefCell::new(TexlaUuidProvider::new()),
@@ -72,39 +75,54 @@ impl LatexParser {
         )
     }
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
+        // FIXME parsing aborts
+
         let word = filter(|char: &char| char.is_ascii_alphanumeric())
             .repeated()
             .at_least(1)
             .collect::<String>()
             .boxed();
 
-        // TODO: why \\ and this should somehow use newline()
-        // Und warum ist der Parser überhaupt zeilenweise? Die sind bis auf doppelte doch irrelevant
-        let line = none_of("\r\n\\")
-            .repeated()
-            .at_least(1)
-            .then_ignore(newline())
-            .collect::<String>()
-            .map(|mut line: String| {
-                line.push('\n');
-                line
-            })
-            .boxed();
+        // TODO find way to ignore \sectioning (use keyword?)
+        let terminator = choice((
+            just("\\section").rewind(),
+            just("\\subsection").rewind(),
+            just("\\begin").rewind(),
+            just("\\end{document}").rewind(),
+            just("\n\n"),
+            // TODO recognize and consume also more than 2 newlines
+            // TODO use newline() instead of \n?
+        ));
 
-        let block = line
-            .clone()
-            .repeated()
-            .at_least(1)
+        // TODO write parsers
+        let environment = just(" ").map(|_| self.build_text(" ".to_string()));
+        let input = just(" ").map(|_| self.build_text(" ".to_string()));
+
+        let text_node = take_until(terminator)
+            .try_map(|(v, _), span| {
+                if !v.is_empty() {
+                    return Ok(v);
+                } else {
+                    println!("VALIDATION FAILED"); // TODO remove statement
+                    return Err(Simple::custom(span, format!("Found empty text")));
+                }
+            })
             .collect::<String>()
             .then_ignore(newline().or_not())
             .map(|x: String| self.build_text(x))
             .boxed();
 
-        // TODO: this should not be repetitive
+        let leaf = text_node.clone();
+        // TODO or image...
+
+        let prelude = choice((environment.clone(), input.clone(), leaf.clone()));
+
+        // TODO extract method
+        // TODO use prelude parser
         let subsection = just("\\subsection")
             .ignore_then(word.clone().delimited_by(just('{'), just('}')))
             .then_ignore(newline())
-            .then(block.clone().repeated())
+            .then(prelude.clone().repeated())
             .map(|(heading, blocks): (String, Vec<NodeRef>)| {
                 self.build_segment(
                     heading.clone(),
@@ -114,10 +132,11 @@ impl LatexParser {
             })
             .boxed();
 
+        // TODO use prelude parser
         let section = just("\\section")
             .ignore_then(word.clone().delimited_by(just('{'), just('}')))
             .then_ignore(newline())
-            .then(block.clone().repeated())
+            .then(prelude.clone().repeated())
             .then(subsection.clone().repeated())
             .map(
                 |((heading, mut blocks), mut subsections): (
@@ -130,19 +149,23 @@ impl LatexParser {
             )
             .boxed();
 
-        let node = section
-            .clone()
-            .or(subsection.clone())
-            .or(block.clone())
-            .boxed();
+        let root_children = prelude.clone().repeated().then(choice((
+            section.clone().repeated(),
+            subsection.clone().repeated(),
+            // TODO others
+        )));
 
         // TODO implement preamble
         let document = just::<_, _, Simple<char>>("\\begin{document}")
             .then(newline())
-            .ignore_then(node.clone().repeated())
+            .or_not()
+            .ignore_then(root_children.clone())
             .then_ignore(just("\\end{document}"))
-            .map(|children: Vec<NodeRef>| {
-                self.build_document(String::new(), String::new(), children)
+            .map(|(mut leaves, mut segments)| {
+                self.build_document(String::new(), String::new(), {
+                    leaves.append(&mut segments);
+                    leaves
+                })
             })
             .then_ignore(end().padded())
             .boxed();
@@ -177,7 +200,7 @@ mod tests {
     fn get_sample_json() {
         let latex = fs::read_to_string(Path::new("./latex_test_files/simple_latex.tex")).unwrap();
         let ast = parse_latex(latex).unwrap();
-        let json = ast.to_json(Default::default()).unwrap();
+        let json = serde_json::to_string_pretty(&ast).unwrap();
         fs::write(Path::new("./latex_test_files/simple_latex.json"), json).unwrap();
     }
 }
