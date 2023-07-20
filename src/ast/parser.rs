@@ -136,6 +136,7 @@ impl LatexParser {
             .or(block.clone())
             .boxed();
 
+        // TODO implement preamble
         let document = just::<_, _, Simple<char>>("\\begin{document}")
             .then(newline())
             .ignore_then(node.clone().repeated())
@@ -164,7 +165,6 @@ mod tests {
     use std::path::Path;
 
     use crate::ast::parser::parse_latex;
-    use crate::ast::Ast;
 
     #[test]
     fn simple() {
