@@ -56,7 +56,7 @@ impl From<Vec<chumsky::error::Simple<char>>> for ParseError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct StringificationError {
     pub(crate) message: String,
 }
