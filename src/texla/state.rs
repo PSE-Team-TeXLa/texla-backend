@@ -11,6 +11,7 @@ use crate::infrastructure::storage_manager::{
 };
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
 use crate::texla::errors::TexlaError;
+use crate::texla::socket::TexlaSocket;
 
 pub type TexlaState = State<TexlaAst, TexlaStorageManager<GitManager>>;
 // TODO: maybe Mutex is not needed (if it is, use RwLock instead)
@@ -23,14 +24,10 @@ where
 {
     pub ast: A,
     pub storage_manager: Arc<Mutex<SM>>,
-    pub socket: Arc<Socket<LocalAdapter>>,
+    pub socket: TexlaSocket,
 }
 
-impl State<TexlaAst, TexlaStorageManager<GitManager>> {
-    fn send_error(&self, error: TexlaError) {
-        self.socket.emit("error", error).ok();
-    }
-}
+impl State<TexlaAst, TexlaStorageManager<GitManager>> {}
 
 impl DirectoryChangeHandler for TexlaState {
     fn handle_directory_change(&self) {
@@ -40,6 +37,6 @@ impl DirectoryChangeHandler for TexlaState {
 
 impl MergeConflictHandler for TexlaState {
     fn handle_merge_conflict(&self, error: InfrastructureError) {
-        self.send_error(error.into());
+        self.socket.emit("error", TexlaError::from(error)).ok();
     }
 }

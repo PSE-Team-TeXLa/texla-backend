@@ -9,13 +9,18 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
 use crate::ast::operation::{JsonOperation, Operation};
+use crate::ast::options::StringificationOptions;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::Ast;
+use crate::infrastructure::errors::InfrastructureError;
+use crate::infrastructure::export_manager::ExportManager;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
 use crate::texla::state::{SharedTexlaState, TexlaState};
+
+pub type TexlaSocket = Arc<Socket<LocalAdapter>>;
 
 pub fn socket_service(
     core: Arc<RwLock<TexlaCore>>,
@@ -33,7 +38,7 @@ pub fn socket_service(
     service
 }
 
-async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>) {
+async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     println!("Socket connected with id: {}", socket.sid);
 
     let storage_manager = {
@@ -106,10 +111,19 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
         }
     });
 
+    {
+        socket.on(
+            "prepare_export",
+            move |socket, options: StringificationOptions, _, _| {
+                handle_export(socket, options, core.clone())
+            },
+        );
+    }
+
     join!(storage_manager_handle);
 }
 
-fn extract_state(socket: &Arc<Socket<LocalAdapter>>) -> Ref<SharedTexlaState> {
+fn extract_state(socket: &TexlaSocket) -> Ref<SharedTexlaState> {
     socket.extensions.get::<SharedTexlaState>().unwrap()
 }
 
@@ -125,4 +139,41 @@ fn perform_and_check_operation(
     let reparsed_ast = TexlaAst::from_latex(latex_single_string)?;
 
     Ok(reparsed_ast)
+}
+
+fn stringify_and_save(
+    state: &TexlaState,
+    options: StringificationOptions,
+) -> Result<(), TexlaError> {
+    let latex_single_string = state.ast.to_latex(options)?;
+    state
+        .storage_manager
+        .lock()
+        .unwrap()
+        .save(latex_single_string)?;
+
+    Ok(())
+}
+
+async fn handle_export(
+    socket: TexlaSocket,
+    options: StringificationOptions,
+    core: Arc<RwLock<TexlaCore>>,
+) {
+    let state_ref = extract_state(&socket);
+    let state = state_ref.lock().unwrap();
+
+    if let Err(err) = stringify_and_save(&state, options) {
+        socket.emit("error", err).ok();
+        return;
+    }
+
+    match core.write().unwrap().export_manager.zip_files() {
+        Ok(url) => {
+            socket.emit("export_ready", url).ok();
+        }
+        Err(err) => {
+            socket.emit("error", TexlaError::from(err)).ok();
+        }
+    }
 }

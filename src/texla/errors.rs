@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use crate::ast::errors::AstError;
 use crate::infrastructure::errors::InfrastructureError;
+use crate::texla::socket::TexlaSocket;
 
 #[derive(Debug, Serialize)]
 pub struct TexlaError {
