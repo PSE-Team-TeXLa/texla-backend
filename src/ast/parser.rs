@@ -145,6 +145,22 @@ impl LatexParser {
             )
             .boxed();
 
+        let section = just("\\section")
+            .ignore_then(heading.clone().delimited_by(just('{'), just('}')))
+            .then_ignore(newline())
+            .then(prelude.clone().repeated())
+            .then(subsection.clone().repeated())
+            .map(
+                |((heading, mut blocks), mut subsections): (
+                    (String, Vec<NodeRef>),
+                    Vec<NodeRef>,
+                )| {
+                    blocks.append(&mut subsections);
+                    self.build_segment(heading.clone(), blocks, format!("\\section{{{heading}}}"))
+                },
+            )
+            .boxed();
+
         let root_children = prelude.clone().repeated().then(choice((
             section.clone().repeated().at_least(1), //at_least used so this doesnt match with 0 occurrences and quit
             subsection.clone().repeated(), // Last Item should not have at_least to allow for empty document
@@ -167,12 +183,12 @@ impl LatexParser {
             .boxed();
         document
     }
-    fn find_highest_level(&self) -> impl Parser<char, u8, Error = Simple<char>> + '_ {
+    fn find_highest_level(&self) -> impl Parser<char, i8, Error = Simple<char>> + '_ {
         take_until(just("\\section").or(just("\\subsection"))).map(
             |(_trash, keyword)| match keyword {
                 "\\section" => 2,
                 "\\subsection" => 3,
-                _ => 7,
+                _ => 8,
             },
         )
     }

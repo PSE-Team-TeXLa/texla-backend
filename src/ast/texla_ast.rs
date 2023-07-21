@@ -18,7 +18,7 @@ pub struct TexlaAst {
     pub(crate) root: NodeRef,
     #[serde(skip_serializing)]
     pub(crate) uuid_provider: TexlaUuidProvider,
-    pub(crate) highest_level: u8,
+    pub(crate) highest_level: i8,
 }
 
 impl TexlaAst {

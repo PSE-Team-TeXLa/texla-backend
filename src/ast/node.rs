@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::format;
 use std::string::String;
 use std::sync::{Arc, Mutex, Weak};
 
@@ -22,108 +23,10 @@ pub struct Node {
     pub(crate) raw_latex: String,
 }
 impl Node {
-    pub(crate) fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
+    pub(crate) fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
         self.node_type.to_latex(level)
     }
-}
 
-#[derive(Debug, Serialize)]
-#[serde(tag = "type")]
-pub enum NodeType {
-    Expandable {
-        data: ExpandableData,
-        children: Vec<NodeRef>,
-    },
-    Leaf {
-        data: LeafData,
-    },
-}
-
-impl NodeType {
-    pub fn children_to_latex(&self, level: u8) -> Result<String, StringificationError> {
-        match self {
-            NodeType::Expandable { children, .. } => children
-                .iter()
-                .map(|child| child.lock().unwrap().to_latex(level))
-                .collect(),
-            NodeType::Leaf { .. } => Ok(String::new()),
-        }
-    }
-    pub fn to_latex(&self, level: u8) -> Result<String, StringificationError> {
-        match self {
-            NodeType::Expandable { data, .. } => match data {
-                ExpandableData::Segment { heading } => {
-                    let keyword = match level {
-                        2 => "section".to_string(),
-                        3 => "subsection".to_string(),
-                        other => {
-                            return Err(StringificationError {
-                                message: format!("Invalid Nesting Level: {}", other),
-                            })
-                        }
-                    };
-                    let children = self.children_to_latex(level + 1)?;
-                    Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
-                }
-                ExpandableData::Document {
-                    preamble,
-                    postamble,
-                } => {
-                    let children: String = self.children_to_latex(level)?;
-                    Ok(format!(
-                        "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
-                    ))
-                }
-                ExpandableData::Dummy { text } => {
-                    let children: String = self.children_to_latex(level + 1)?;
-                    Ok(format!("{text}\n{children}"))
-                }
-            },
-            NodeType::Leaf { data } => match data {
-                LeafData::Text { text } => Ok(text.to_string() + "\n\n"),
-                LeafData::Image { path } => Ok(format!("\\includegraphics{{{}}}\n", path)),
-            },
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-#[serde(tag = "type")]
-pub enum ExpandableData {
-    Document { preamble: String, postamble: String },
-    Segment { heading: String },
-    Dummy { text: String }, // File { path: String },
-                            // Environment { name: String },
-}
-
-#[derive(Debug, Serialize)]
-#[serde(tag = "type")]
-pub enum LeafData {
-    Text { text: String },
-    // Math { kind: MathKind, content: String },
-    Image { path: String },
-    // Label { label: String },
-    // Caption { caption: String },
-}
-
-enum MathKind {
-    SquareBrackets,
-    DoubleDollars,
-    Displaymath,
-    Equation,
-}
-
-impl LeafData {
-    // This does not consume the node
-    fn to_latex(&self) -> String {
-        match self {
-            LeafData::Text { text } => text.to_string(),
-            LeafData::Image { path } => format!("\\includegraphics{{{}}}\n", path),
-        }
-    }
-}
-
-impl Node {
     pub fn new_leaf(
         data: LeafData,
         uuid_provider: &mut impl UuidProvider,
@@ -175,6 +78,114 @@ impl Node {
         portal.insert(uuid, Arc::downgrade(&this));
         this
     }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum NodeType {
+    Expandable {
+        data: ExpandableData,
+        children: Vec<NodeRef>,
+    },
+    Leaf {
+        data: LeafData,
+    },
+}
+
+impl NodeType {
+    pub fn children_to_latex(&self, level: i8) -> Result<String, StringificationError> {
+        match self {
+            NodeType::Expandable { children, .. } => children
+                .iter()
+                .map(|child| child.lock().unwrap().to_latex(level))
+                .collect(),
+            NodeType::Leaf { .. } => Ok(String::new()),
+        }
+    }
+    pub fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
+        match self {
+            NodeType::Leaf { data } => Ok(data.to_latex()),
+            NodeType::Expandable { data, children } => {
+                let children = self.children_to_latex(level + 1)?;
+                match data {
+                    ExpandableData::Segment { heading } => {
+                        let keyword = match level {
+                            3 => "section".to_string(),
+                            4 => "subsection".to_string(),
+                            other => {
+                                return Err(StringificationError {
+                                    message: format!("Invalid Nesting Level: {}", other),
+                                })
+                            }
+                        };
+                        Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
+                    }
+                    ExpandableData::Document {
+                        preamble,
+                        postamble,
+                    } => Ok(format!(
+                        "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
+                    )),
+                    ExpandableData::File { path } => Ok(format!(
+                        "% TEXLA FILE BEGIN ({path})\n{children}\n% TEXLA FILE END"
+                    )),
+                    ExpandableData::Environment { name } => {
+                        Ok(format!("\\begin{{{name}}}\n{children}\n\\end{{{name}}}"))
+                    }
+                    ExpandableData::Dummy { text } => Ok(format!("{text}\n{children}")),
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum ExpandableData {
+    Document { preamble: String, postamble: String },
+    Segment { heading: String },
+    File { path: String },
+    Environment { name: String },
+    Dummy { text: String },
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum LeafData {
+    Text { text: String },
+    Math { kind: MathKind, content: String },
+    Image { path: String },
+    Label { label: String },
+    Caption { caption: String },
+}
+impl LeafData {
+    // This does not consume the node
+    fn to_latex(&self) -> String {
+        match self {
+            LeafData::Text { text } => format!("{text}\n\n"),
+            LeafData::Image { path } => format!("\\includegraphics{{{path}}}\n"),
+            LeafData::Label { label } => format!("\\label{{{label}}}\n"),
+            LeafData::Caption { caption } => format!("\\caption{{{caption}}}\n"),
+            LeafData::Math { kind, content } => match kind {
+                MathKind::SquareBrackets => format!("\\[{content}\\]\n"),
+                MathKind::DoubleDollars => format!("$$\n{content}\n$$\n"),
+                MathKind::Displaymath => {
+                    format!("\\begin{{displaymath}}\n{content}\n\\end{{displaymath}}\n")
+                }
+                MathKind::Equation => {
+                    format!("\\begin{{equation}}\n{content}\n\\end{{equation}}\n")
+                }
+            },
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub enum MathKind {
+    SquareBrackets,
+    DoubleDollars,
+    Displaymath,
+    Equation,
 }
 
 #[cfg(test)]
