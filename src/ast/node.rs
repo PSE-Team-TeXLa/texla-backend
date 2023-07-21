@@ -80,7 +80,7 @@ impl NodeType {
                 }
             },
             NodeType::Leaf { data } => match data {
-                LeafData::Text { text } => Ok(text.to_string() + "\n"),
+                LeafData::Text { text } => Ok(text.to_string() + "\n\n"),
                 LeafData::Image { path } => Ok(format!("\\includegraphics{{{}}}\n", path)),
             },
         }

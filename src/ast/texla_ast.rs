@@ -68,6 +68,7 @@ mod tests {
 
     use crate::ast::meta_data::MetaData;
     use crate::ast::node::{LeafData, Node, NodeType};
+    use crate::ast::options::StringificationOptions;
     use crate::ast::parser::parse_latex;
     use crate::ast::texla_ast::TexlaAst;
     use crate::ast::uuid_provider::Uuid;
@@ -114,5 +115,19 @@ mod tests {
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         let out = serde_json::to_string_pretty(&ast).unwrap();
         fs::write("out.json", out).expect("File write error");
+    }
+    #[test]
+    fn simple_latex_mod_formatting() {
+        let formatted_latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
+        let unformatted_latex =
+            fs::read_to_string("latex_test_files/simple_latex_unformatted.tex").unwrap();
+        let ast = parse_latex(unformatted_latex.clone()).expect("Valid Latex");
+        let out = ast
+            .to_latex(StringificationOptions {
+                include_comments: false,
+                include_metadata: false,
+            })
+            .unwrap();
+        assert_eq!(out, formatted_latex);
     }
 }

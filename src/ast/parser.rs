@@ -75,8 +75,6 @@ impl LatexParser {
         )
     }
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
-        // FIXME parsing aborts
-
         let word = filter(|char: &char| char.is_ascii_alphanumeric())
             .repeated()
             .at_least(1)
@@ -89,9 +87,8 @@ impl LatexParser {
             just("\\subsection").rewind(),
             just("\\begin").rewind(),
             just("\\end{document}").rewind(),
-            just("\n\n"),
+            newline().then(newline()).to("\n\n"),
             // TODO recognize and consume also more than 2 newlines
-            // TODO use newline() instead of \n?
         ));
 
         // TODO write parsers
@@ -103,13 +100,12 @@ impl LatexParser {
                 if !v.is_empty() {
                     return Ok(v);
                 } else {
-                    println!("VALIDATION FAILED"); // TODO remove statement
                     return Err(Simple::custom(span, format!("Found empty text")));
                 }
             })
             .collect::<String>()
             .then_ignore(newline().or_not())
-            .map(|x: String| self.build_text(x))
+            .map(|x: String| self.build_text(x.trim_end().to_string()))
             .boxed();
 
         let leaf = text_node.clone();
@@ -150,9 +146,9 @@ impl LatexParser {
             .boxed();
 
         let root_children = prelude.clone().repeated().then(choice((
-            section.clone().repeated(),
-            subsection.clone().repeated(),
-            // TODO others
+            section.clone().repeated().at_least(1), //at_least used so this doesnt match with 0 occurrences and quit
+            subsection.clone().repeated(), // Last Item should not have at_least to allow for empty document
+                                           // TODO others
         )));
 
         // TODO implement preamble
