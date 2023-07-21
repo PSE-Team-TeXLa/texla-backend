@@ -56,11 +56,9 @@ impl Operation<TexlaAst> for EditNode {
                 NodeType::Leaf { .. } => panic!("Parent is a leaf"),
             };
 
-            drop(node); // drop lock, because we need want to lock again in the next step
-
             let child_index = parent_children
                 .iter()
-                .position(|child_ref| child_ref.lock().unwrap().uuid == self.target)
+                .position(|child_ref| Arc::ptr_eq(child_ref, &node_ref))
                 .expect("Could not find child");
 
             parent_children[child_index] = new_node_ref.clone();
