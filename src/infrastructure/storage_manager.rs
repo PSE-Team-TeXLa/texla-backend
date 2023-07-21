@@ -40,13 +40,15 @@ where
         }
     }
 
-    fn attach_handlers(
+    pub async fn attach_handlers_and_start(
         &mut self,
         dc_handler: Box<dyn DirectoryChangeHandler>,
         mc_handler: Box<dyn MergeConflictHandler>,
     ) {
         self.directory_change_handler = Some(dc_handler);
         self.merge_conflict_handler = Some(mc_handler);
+
+        // TODO: start async timer-based background tasks and start DirectoryChangeHandler
     }
 }
 

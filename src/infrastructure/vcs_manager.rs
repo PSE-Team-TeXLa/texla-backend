@@ -14,6 +14,8 @@ pub struct GitManager {
 impl GitManager {
     pub fn new(repository_path: String) -> Self {
         // TODO after VS: check that the given directory is a repository and get remote url
+        // Linus: we probably want to go up the file tree until we find a .git folder
+        // (or get the git repository_path root from a git command directly)
 
         Self {
             repository_path,
