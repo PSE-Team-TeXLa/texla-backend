@@ -76,7 +76,7 @@ impl NodeType {
                 }
                 ExpandableData::Dummy { text } => {
                     let children: String = self.children_to_latex(level + 1)?;
-                    Ok(format!("{text}\n{children}"))
+                    Ok(format!("{text}\n{children}\n"))
                 }
             },
             NodeType::Leaf { data } => match data {
