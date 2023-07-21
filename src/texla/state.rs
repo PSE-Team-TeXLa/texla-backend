@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::Socket;
@@ -13,6 +13,8 @@ use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
 use crate::texla::errors::TexlaError;
 
 pub type TexlaState = State<TexlaAst, TexlaStorageManager<GitManager>>;
+// TODO: maybe Mutex is not needed (if it is, use RwLock instead)
+pub type SharedTexlaState = Arc<Mutex<TexlaState>>;
 
 pub struct State<A, SM>
 where
@@ -20,7 +22,7 @@ where
     SM: StorageManager,
 {
     pub ast: A,
-    pub storage_manager: SM,
+    pub storage_manager: Arc<Mutex<SM>>,
     pub socket: Arc<Socket<LocalAdapter>>,
 }
 

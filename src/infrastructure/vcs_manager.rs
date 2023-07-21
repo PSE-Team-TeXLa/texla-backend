@@ -12,13 +12,14 @@ pub struct GitManager {
 }
 
 impl GitManager {
-    pub fn new(repository_path: String) -> Self {
-        // TODO after VS: check that the given directory is a repository and get remote url
+    pub fn new(main_file: String) -> Self {
+        // TODO: find repository_path from main_file
         // Linus: we probably want to go up the file tree until we find a .git folder
         // (or get the git repository_path root from a git command directly)
+        // if there is no repository, all git operations should do nothing
 
         Self {
-            repository_path,
+            repository_path: format!("TEMPORARY, deduce from main_file: {}", main_file),
             remote_url: None, // TODO!
         }
     }

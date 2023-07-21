@@ -1,8 +1,9 @@
-use std::path::Path;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use socketioxide::adapter::LocalAdapter;
+use socketioxide::extensions::Ref;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
+use tokio::join;
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -14,7 +15,7 @@ use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
-use crate::texla::state::TexlaState;
+use crate::texla::state::{SharedTexlaState, TexlaState};
 
 pub fn socket_service(
     core: Arc<RwLock<TexlaCore>>,
@@ -35,44 +36,49 @@ pub fn socket_service(
 async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>) {
     println!("Socket connected with id: {}", socket.sid);
 
-    let core = core.read().unwrap();
+    let storage_manager = {
+        let core = core.read().unwrap();
 
-    // initial parse
-    // TODO call TexlaStorageManager<T>::attach_handlers() later
-    // TODO: error handling! -> close connection if unable to set a state!
+        let vcs_manager = GitManager::new(core.main_file.clone());
+        TexlaStorageManager::new(vcs_manager, core.main_file.clone())
+    };
 
-    // TODO after VS: is there a shorter way to get the parent directory as String?
-    // Linus: i think we should not assume, that we only want to watch the surrounding directory
-    let parent_directory = Path::new(&core.main_file)
-        .parent()
-        .expect("No parent directory found")
-        .to_str()
-        .expect("No parent directory found")
-        .to_string();
-
-    // TODO: allow asynchronicity here
-    let vcs_manager = GitManager::new(parent_directory);
-    let storage_manager = TexlaStorageManager::new(vcs_manager, core.main_file.clone());
-
-    let latex_single_string = storage_manager.multiplex_files().unwrap();
-    let ast = TexlaAst::from_latex(latex_single_string).unwrap();
-    // TODO: validate ast (by calling to_latex())
+    let ast = {
+        let latex_single_string = storage_manager.multiplex_files().unwrap();
+        let ast = TexlaAst::from_latex(latex_single_string).unwrap();
+        // TODO: validate ast (by calling to_latex())
+        // TODO: error handling! -> close connection if unable to set a state!
+        ast
+    };
 
     let state = TexlaState {
         socket: socket.clone(),
-        storage_manager,
+        storage_manager: Arc::new(Mutex::new(storage_manager)),
         ast,
     };
+    socket.extensions.insert(Arc::new(Mutex::new(state)));
 
-    socket.extensions.insert(state);
-    let state = socket.extensions.get::<TexlaState>().unwrap();
+    let storage_manager_handle = {
+        let state_ref = extract_state(&socket);
+        let state = state_ref.lock().unwrap();
 
-    // initial messages
-    socket
-        .emit("remote_url", state.storage_manager.remote_url())
-        .ok();
+        state
+            .storage_manager
+            .lock()
+            .unwrap()
+            .attach_handlers(state_ref.clone(), state_ref.clone());
+        StorageManager::start(state.storage_manager.clone())
+    };
 
-    socket.emit("new_ast", &state.ast).ok();
+    {
+        let state_ref = extract_state(&socket);
+        let state = state_ref.lock().unwrap();
+        let storage_manager = state.storage_manager.lock().unwrap();
+
+        // initial messages
+        socket.emit("remote_url", storage_manager.remote_url()).ok();
+        socket.emit("new_ast", &state.ast).ok();
+    }
 
     socket.on("operation", |socket, json: String, _, _| async move {
         print!("Received operation:");
@@ -82,7 +88,8 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
             .to_trait_obj();
         println!("{:?}", operation);
 
-        let mut state = socket.extensions.get_mut::<TexlaState>().unwrap();
+        let state_ref = extract_state(&socket);
+        let mut state = state_ref.lock().unwrap();
         match perform_and_check_operation(&state.ast, operation) {
             Ok(ast) => {
                 state.ast = ast;
@@ -98,6 +105,12 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
             }
         }
     });
+
+    join!(storage_manager_handle);
+}
+
+fn extract_state(socket: &Arc<Socket<LocalAdapter>>) -> Ref<SharedTexlaState> {
+    socket.extensions.get::<SharedTexlaState>().unwrap()
 }
 
 fn perform_and_check_operation(
