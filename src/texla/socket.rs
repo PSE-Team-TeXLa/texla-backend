@@ -74,7 +74,6 @@ async fn handler(socket: Arc<Socket<LocalAdapter>>, core: Arc<RwLock<TexlaCore>>
 
     socket.emit("new_ast", &state.ast).ok();
 
-    // TODO: maybe someday use implicit deserialization
     socket.on("operation", |socket, json: String, _, _| async move {
         print!("Received operation:");
 
