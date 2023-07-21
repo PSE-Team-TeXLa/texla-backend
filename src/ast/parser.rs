@@ -75,11 +75,11 @@ impl LatexParser {
         )
     }
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
-        let word = filter(|char: &char| char.is_ascii_alphanumeric())
-            .repeated()
-            .at_least(1)
-            .collect::<String>()
-            .boxed();
+        // let word = filter(|char: &char| char.is_ascii_alphanumeric())
+        //     .repeated()
+        //     .at_least(1)
+        //     .collect::<String>()
+        //     .boxed();
 
         // TODO find way to ignore \sectioning (use keyword?)
         let terminator = choice((
@@ -108,15 +108,16 @@ impl LatexParser {
             .map(|x: String| self.build_text(x.trim_end().to_string()))
             .boxed();
 
-        let leaf = text_node.clone();
+        let leaf = text_node.clone().boxed();
         // TODO or image...
 
-        let prelude = choice((environment.clone(), input.clone(), leaf.clone()));
+        let prelude = choice((environment.clone(), input.clone(), leaf.clone())).boxed();
+
+        let heading = none_of("}").repeated().at_least(1).collect().boxed();
 
         // TODO extract method
-        // TODO use prelude parser
         let subsection = just("\\subsection")
-            .ignore_then(word.clone().delimited_by(just('{'), just('}')))
+            .ignore_then(heading.clone().delimited_by(just('{'), just('}')))
             .then_ignore(newline())
             .then(prelude.clone().repeated())
             .map(|(heading, blocks): (String, Vec<NodeRef>)| {
@@ -128,9 +129,8 @@ impl LatexParser {
             })
             .boxed();
 
-        // TODO use prelude parser
         let section = just("\\section")
-            .ignore_then(word.clone().delimited_by(just('{'), just('}')))
+            .ignore_then(heading.clone().delimited_by(just('{'), just('}')))
             .then_ignore(newline())
             .then(prelude.clone().repeated())
             .then(subsection.clone().repeated())

@@ -110,6 +110,13 @@ mod tests {
         assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
     }
     #[test]
+    fn large_latex_identical() {
+        let latex = fs::read_to_string("latex_test_files/large_latex.tex").unwrap();
+        let ast = parse_latex(latex.clone()).expect("Valid Latex");
+        assert!(ast.to_latex(Default::default()).is_ok());
+        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
+    }
+    #[test]
     fn parse_and_to_json() {
         let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
