@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
+use std::os::unix::prelude::OsStringExt;
 
 use axum::body::HttpBody;
 use chumsky::prelude::*;
@@ -48,6 +49,24 @@ impl LatexParser {
             text,
         )
     }
+    fn build_image(&self, options: Option<String>, path: String) -> NodeRef {
+        Node::new_leaf(
+            LeafData::Image {
+                path: path.clone(),
+                options: options.clone(),
+            },
+            self.uuid_provider.borrow_mut().deref_mut(),
+            self.portal.borrow_mut().deref_mut(),
+            match options {
+                None => {
+                    format!("\\includegraphics{{{path}}}")
+                }
+                Some(option) => {
+                    format!("\\includegraphics[{option}]{{{path}}}")
+                }
+            },
+        )
+    }
     fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
@@ -87,6 +106,7 @@ impl LatexParser {
             just("\\subsection").rewind(),
             just("\\begin").rewind(),
             just("\\end{document}").rewind(),
+            just("\\includegraphics").rewind(),
             newline().then(newline()).to("\n\n"),
             // TODO recognize and consume also more than 2 newlines
         ));
@@ -108,10 +128,29 @@ impl LatexParser {
             .map(|x: String| self.build_text(x.trim_end().to_string()))
             .boxed();
 
-        let leaf = text_node.clone().boxed();
+        let options = just("[")
+            .ignore_then(none_of("]").repeated())
+            .then_ignore(just("]"))
+            .collect()
+            .boxed();
+
+        let image = just("\\includegraphics")
+            .ignore_then(options.or_not())
+            .then(
+                none_of("}")
+                    .repeated()
+                    .at_least(1)
+                    .collect()
+                    .delimited_by(just("{"), just("}")),
+            )
+            .padded()
+            .map(|(options, path): (Option<String>, String)| self.build_image(options, path))
+            .boxed();
+
+        let leaf = choice((image.clone(), text_node.clone())).boxed();
         // TODO or image...
 
-        let prelude = choice((environment.clone(), input.clone(), leaf.clone())).boxed();
+        let prelude = choice((environment.clone(), input.clone(), leaf.clone()));
 
         let heading = none_of("}").repeated().at_least(1).collect().boxed();
 
@@ -127,22 +166,6 @@ impl LatexParser {
                     format!("\\subsection{{{heading}}}"),
                 )
             })
-            .boxed();
-
-        let section = just("\\section")
-            .ignore_then(heading.clone().delimited_by(just('{'), just('}')))
-            .then_ignore(newline())
-            .then(prelude.clone().repeated())
-            .then(subsection.clone().repeated())
-            .map(
-                |((heading, mut blocks), mut subsections): (
-                    (String, Vec<NodeRef>),
-                    Vec<NodeRef>,
-                )| {
-                    blocks.append(&mut subsections);
-                    self.build_segment(heading.clone(), blocks, format!("\\section{{{heading}}}"))
-                },
-            )
             .boxed();
 
         let section = just("\\section")

@@ -117,8 +117,15 @@ mod tests {
         assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
     }
     #[test]
+    fn lots_identical() {
+        let latex = fs::read_to_string("latex_test_files/lots_of_features.tex").unwrap();
+        let ast = parse_latex(latex.clone()).expect("Valid Latex");
+        assert!(ast.to_latex(Default::default()).is_ok());
+        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
+    }
+    #[test]
     fn parse_and_to_json() {
-        let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
+        let latex = fs::read_to_string("latex_test_files/lots_of_features.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         let out = serde_json::to_string_pretty(&ast).unwrap();
         fs::write("out.json", out).expect("File write error");

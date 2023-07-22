@@ -152,18 +152,33 @@ pub enum ExpandableData {
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum LeafData {
-    Text { text: String },
-    Math { kind: MathKind, content: String },
-    Image { path: String },
-    Label { label: String },
-    Caption { caption: String },
+    Text {
+        text: String,
+    },
+    Math {
+        kind: MathKind,
+        content: String,
+    },
+    Image {
+        path: String,
+        options: Option<String>,
+    },
+    Label {
+        label: String,
+    },
+    Caption {
+        caption: String,
+    },
 }
 impl LeafData {
     // This does not consume the node
     fn to_latex(&self) -> String {
         match self {
             LeafData::Text { text } => format!("{text}\n\n"),
-            LeafData::Image { path } => format!("\\includegraphics{{{path}}}\n"),
+            LeafData::Image { path, options } => match options {
+                None => format!("\\includegraphics{{{path}}}\n"),
+                Some(option) => format!("\\includegraphics[{option}]{{{path}}}\n"),
+            },
             LeafData::Label { label } => format!("\\label{{{label}}}\n"),
             LeafData::Caption { caption } => format!("\\caption{{{caption}}}\n"),
             LeafData::Math { kind, content } => match kind {
