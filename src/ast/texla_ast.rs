@@ -58,7 +58,7 @@ impl Ast for TexlaAst {
             .get(&uuid)
             .expect("unknown uuid")
             .upgrade()
-            .expect("portal should never contain invalid weak pointers when a operation comes")
+            .expect("portal should never contain invalid weak pointers when an operation comes")
     }
 }
 

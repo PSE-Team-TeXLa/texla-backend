@@ -101,6 +101,7 @@ impl LatexParser {
         let terminator = choice((
             just("\\section").rewind(),
             just("\\subsection").rewind(),
+            // TODO implement all segment levels
             just("\\begin").rewind(),
             just("\\end{document}").rewind(),
             just("\\includegraphics").rewind(),
@@ -181,10 +182,12 @@ impl LatexParser {
             )
             .boxed();
 
+        // TODO implement all segment levels
+
         let root_children = prelude.clone().repeated().then(choice((
-            section.clone().repeated().at_least(1), //at_least used so this doesnt match with 0 occurrences and quit
-            subsection.clone().repeated(), // Last Item should not have at_least to allow for empty document
-                                           // TODO others
+            section.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
+            subsection.clone().repeated(), // last item shouldn't have at_least to allow for empty document
+                                           // TODO implement all segment levels
         )));
 
         // TODO implement preamble
@@ -211,6 +214,7 @@ impl LatexParser {
                 _ => 8,
             },
         )
+        // TODO implement all segment levels
     }
 }
 

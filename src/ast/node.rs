@@ -111,6 +111,7 @@ impl NodeType {
                         let keyword = match level {
                             3 => "section".to_string(),
                             4 => "subsection".to_string(),
+                            // TODO implement all segment levels
                             other => {
                                 return Err(StringificationError {
                                     message: format!("Invalid Nesting Level: {}", other),
@@ -145,7 +146,7 @@ pub enum ExpandableData {
     Segment { heading: String },
     File { path: String },
     Environment { name: String },
-    Dummy { text: String },
+    Dummy { text: String }, // TODO remove variant later?
 }
 
 #[derive(Debug, Serialize)]
