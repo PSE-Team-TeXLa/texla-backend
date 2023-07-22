@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::format;
 use std::string::String;
 use std::sync::{Arc, Mutex, Weak};
 
@@ -22,6 +21,7 @@ pub struct Node {
     pub(crate) parent: Option<NodeRefWeak>,
     pub(crate) raw_latex: String,
 }
+
 impl Node {
     pub(crate) fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
         self.node_type.to_latex(level)
@@ -57,10 +57,7 @@ impl Node {
         let uuid = uuid_provider.new_uuid();
         let this = Arc::new(Mutex::new(Node {
             uuid,
-            node_type: NodeType::Expandable {
-                data,
-                children: children,
-            },
+            node_type: NodeType::Expandable { data, children },
             meta_data: MetaData {
                 data: Default::default(),
             },
@@ -102,16 +99,18 @@ impl NodeType {
             NodeType::Leaf { .. } => Ok(String::new()),
         }
     }
+
     pub fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
         match self {
             NodeType::Leaf { data } => Ok(data.to_latex()),
-            NodeType::Expandable { data, children } => {
+            NodeType::Expandable { data, .. } => {
                 let children = self.children_to_latex(level + 1)?;
                 match data {
                     ExpandableData::Segment { heading } => {
                         let keyword = match level {
                             3 => "section".to_string(),
                             4 => "subsection".to_string(),
+                            // TODO implement all segment levels
                             other => {
                                 return Err(StringificationError {
                                     message: format!("Invalid Nesting Level: {}", other),
@@ -124,7 +123,7 @@ impl NodeType {
                         preamble,
                         postamble,
                     } => Ok(format!(
-                        "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
+                        "{preamble}\n\\begin{{document}}\n{children}\n\\end{{document}}\n{postamble}"
                     )),
                     ExpandableData::File { path } => Ok(format!(
                         "% TEXLA FILE BEGIN ({path})\n{children}\n% TEXLA FILE END"
@@ -146,7 +145,7 @@ pub enum ExpandableData {
     Segment { heading: String },
     File { path: String },
     Environment { name: String },
-    Dummy { text: String },
+    Dummy { text: String }, // TODO remove variant later?
 }
 
 #[derive(Debug, Serialize)]
@@ -170,6 +169,7 @@ pub enum LeafData {
         caption: String,
     },
 }
+
 impl LeafData {
     // This does not consume the node
     fn to_latex(&self) -> String {
@@ -207,7 +207,6 @@ pub enum MathKind {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::ast::errors::StringificationError;
     use crate::ast::node::{LeafData, Node};
     use crate::ast::uuid_provider::TexlaUuidProvider;
 

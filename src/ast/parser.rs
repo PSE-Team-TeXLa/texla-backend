@@ -3,12 +3,9 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::os::unix::prelude::OsStringExt;
 
-use axum::body::HttpBody;
 use chumsky::prelude::*;
-use chumsky::text::{keyword, newline};
+use chumsky::text::newline;
 use chumsky::Parser;
-use tokio::io::AsyncSeekExt;
-use tower::ServiceExt;
 
 use crate::ast;
 use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
@@ -20,6 +17,7 @@ struct LatexParser {
     uuid_provider: RefCell<TexlaUuidProvider>,
     portal: RefCell<HashMap<Uuid, NodeRefWeak>>,
 }
+
 pub fn parse_latex(string: String) -> Result<TexlaAst, ast::errors::ParseError> {
     // TODO: for performance, the parser should not be created every time, but reused
     let parser = LatexParser::new();
@@ -41,6 +39,7 @@ impl LatexParser {
             portal: RefCell::new(HashMap::new()),
         }
     }
+
     fn build_text(&self, text: String) -> NodeRef {
         Node::new_leaf(
             LeafData::Text { text: text.clone() },
@@ -73,6 +72,7 @@ impl LatexParser {
             },
         )
     }
+
     fn build_image(&self, options: Option<String>, path: String) -> NodeRef {
         Node::new_leaf(
             LeafData::Image {
@@ -91,6 +91,7 @@ impl LatexParser {
             },
         )
     }
+
     fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
@@ -100,6 +101,7 @@ impl LatexParser {
             raw,
         )
     }
+
     fn build_document(
         &self,
         preamble: String,
@@ -117,6 +119,7 @@ impl LatexParser {
             String::new(),
         )
     }
+
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
         // let word = filter(|char: &char| char.is_ascii_alphanumeric())
         //     .repeated()
@@ -208,6 +211,7 @@ impl LatexParser {
         let prelude = choice((environment.clone(), input.clone(), leaf.clone()));
 
         let heading = none_of("}").repeated().at_least(1).collect().boxed();
+        // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
         // TODO extract method
         let subsection = just("\\subsection")
@@ -239,10 +243,12 @@ impl LatexParser {
             )
             .boxed();
 
+        // TODO implement all segment levels
+
         let root_children = prelude.clone().repeated().then(choice((
-            section.clone().repeated().at_least(1), //at_least used so this doesnt match with 0 occurrences and quit
-            subsection.clone().repeated(), // Last Item should not have at_least to allow for empty document
-                                           // TODO others
+            section.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
+            subsection.clone().repeated(), // last item shouldn't have at_least to allow for empty document
+                                           // TODO implement all segment levels
         )));
 
         // TODO implement preamble
@@ -261,6 +267,7 @@ impl LatexParser {
             .boxed();
         document
     }
+
     fn find_highest_level(&self) -> impl Parser<char, i8, Error = Simple<char>> + '_ {
         take_until(just("\\section").or(just("\\subsection"))).map(
             |(_trash, keyword)| match keyword {
@@ -269,6 +276,7 @@ impl LatexParser {
                 _ => 8,
             },
         )
+        // TODO implement all segment levels
     }
 }
 
