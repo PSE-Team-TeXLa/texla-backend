@@ -58,7 +58,7 @@ impl Node {
             uuid,
             node_type: NodeType::Expandable {
                 data,
-                children: children,
+                children,
             },
             meta_data: MetaData {
                 data: Default::default(),
@@ -104,7 +104,7 @@ impl NodeType {
     pub fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
         match self {
             NodeType::Leaf { data } => Ok(data.to_latex()),
-            NodeType::Expandable { data, children } => {
+            NodeType::Expandable { data, .. } => {
                 let children = self.children_to_latex(level + 1)?;
                 match data {
                     ExpandableData::Segment { heading } => {

@@ -116,9 +116,9 @@ impl LatexParser {
         let text_node = take_until(terminator)
             .try_map(|(v, _), span| {
                 if !v.is_empty() {
-                    return Ok(v);
+                    Ok(v)
                 } else {
-                    return Err(Simple::custom(span, format!("Found empty text")));
+                    Err(Simple::custom(span, "Found empty text".to_string()))
                 }
             })
             .collect::<String>()
