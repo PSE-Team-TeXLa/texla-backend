@@ -157,9 +157,24 @@ impl LatexParser {
             .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::SquareBrackets))
             .boxed();
 
-        let math = choice((double_dollar_math, square_br_math))
-            .padded()
+        let equation_math = take_until(just("\\end{equation}").rewind())
+            .delimited_by(just("\\begin{equation}"), just("\\end{equation}"))
+            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::Equation))
             .boxed();
+
+        let displaymath = take_until(just("\\end{displaymath}").rewind())
+            .delimited_by(just("\\begin{displaymath}"), just("\\end{displaymath}"))
+            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::Displaymath))
+            .boxed();
+
+        let math = choice((
+            double_dollar_math,
+            square_br_math,
+            equation_math,
+            displaymath,
+        ))
+        .padded()
+        .boxed();
 
         // TODO find way to ignore \sectioning (use keyword?)
         let terminator = choice((

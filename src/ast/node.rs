@@ -185,10 +185,10 @@ impl LeafData {
                 MathKind::SquareBrackets => format!("\\[{content}\\]\n"),
                 MathKind::DoubleDollars => format!("$${content}$$\n"),
                 MathKind::Displaymath => {
-                    format!("\\begin{{displaymath}}\n{content}\n\\end{{displaymath}}\n")
+                    format!("\\begin{{displaymath}}{content}\\end{{displaymath}}\n")
                 }
                 MathKind::Equation => {
-                    format!("\\begin{{equation}}\n{content}\n\\end{{equation}}\n")
+                    format!("\\begin{{equation}}{content}\\end{{equation}}\n")
                 }
             },
         }
