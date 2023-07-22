@@ -123,7 +123,7 @@ impl NodeType {
                         preamble,
                         postamble,
                     } => Ok(format!(
-                        "{preamble}\\begin{{document}}\n{children}\\end{{document}}{postamble}"
+                        "{preamble}\n\\begin{{document}}\n{children}\n\\end{{document}}\n{postamble}"
                     )),
                     ExpandableData::File { path } => Ok(format!(
                         "% TEXLA FILE BEGIN ({path})\n{children}\n% TEXLA FILE END"
@@ -182,7 +182,7 @@ impl LeafData {
             LeafData::Caption { caption } => format!("\\caption{{{caption}}}\n"),
             LeafData::Math { kind, content } => match kind {
                 MathKind::SquareBrackets => format!("\\[{content}\\]\n"),
-                MathKind::DoubleDollars => format!("$$\n{content}\n$$\n"),
+                MathKind::DoubleDollars => format!("$${content}$$\n"),
                 MathKind::Displaymath => {
                     format!("\\begin{{displaymath}}\n{content}\n\\end{{displaymath}}\n")
                 }
