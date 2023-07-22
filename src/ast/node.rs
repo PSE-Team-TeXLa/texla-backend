@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::format;
 use std::string::String;
 use std::sync::{Arc, Mutex, Weak};
 
@@ -207,7 +206,6 @@ pub enum MathKind {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::ast::errors::StringificationError;
     use crate::ast::node::{LeafData, Node};
     use crate::ast::uuid_provider::TexlaUuidProvider;
 
