@@ -151,6 +151,7 @@ impl LatexParser {
         let prelude = choice((environment.clone(), input.clone(), leaf.clone()));
 
         let heading = none_of("}").repeated().at_least(1).collect().boxed();
+        // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
         // TODO extract method
         let subsection = just("\\subsection")
