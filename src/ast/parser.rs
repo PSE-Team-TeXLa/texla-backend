@@ -17,6 +17,7 @@ struct LatexParser {
     uuid_provider: RefCell<TexlaUuidProvider>,
     portal: RefCell<HashMap<Uuid, NodeRefWeak>>,
 }
+
 pub fn parse_latex(string: String) -> Result<TexlaAst, ast::errors::ParseError> {
     // TODO: for performance, the parser should not be created every time, but reused
     let parser = LatexParser::new();
@@ -38,6 +39,7 @@ impl LatexParser {
             portal: RefCell::new(HashMap::new()),
         }
     }
+
     fn build_text(&self, text: String) -> NodeRef {
         Node::new_leaf(
             LeafData::Text { text: text.clone() },
@@ -46,6 +48,7 @@ impl LatexParser {
             text,
         )
     }
+
     fn build_image(&self, options: Option<String>, path: String) -> NodeRef {
         Node::new_leaf(
             LeafData::Image {
@@ -64,6 +67,7 @@ impl LatexParser {
             },
         )
     }
+
     fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
@@ -73,6 +77,7 @@ impl LatexParser {
             raw,
         )
     }
+
     fn build_document(
         &self,
         preamble: String,
@@ -90,6 +95,7 @@ impl LatexParser {
             String::new(),
         )
     }
+
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
         // let word = filter(|char: &char| char.is_ascii_alphanumeric())
         //     .repeated()
@@ -207,6 +213,7 @@ impl LatexParser {
             .boxed();
         document
     }
+
     fn find_highest_level(&self) -> impl Parser<char, i8, Error = Simple<char>> + '_ {
         take_until(just("\\section").or(just("\\subsection"))).map(
             |(_trash, keyword)| match keyword {

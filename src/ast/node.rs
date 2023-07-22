@@ -21,6 +21,7 @@ pub struct Node {
     pub(crate) parent: Option<NodeRefWeak>,
     pub(crate) raw_latex: String,
 }
+
 impl Node {
     pub(crate) fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
         self.node_type.to_latex(level)
@@ -56,10 +57,7 @@ impl Node {
         let uuid = uuid_provider.new_uuid();
         let this = Arc::new(Mutex::new(Node {
             uuid,
-            node_type: NodeType::Expandable {
-                data,
-                children,
-            },
+            node_type: NodeType::Expandable { data, children },
             meta_data: MetaData {
                 data: Default::default(),
             },
@@ -101,6 +99,7 @@ impl NodeType {
             NodeType::Leaf { .. } => Ok(String::new()),
         }
     }
+
     pub fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
         match self {
             NodeType::Leaf { data } => Ok(data.to_latex()),
@@ -170,6 +169,7 @@ pub enum LeafData {
         caption: String,
     },
 }
+
 impl LeafData {
     // This does not consume the node
     fn to_latex(&self) -> String {
