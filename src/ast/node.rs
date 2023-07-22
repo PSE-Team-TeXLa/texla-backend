@@ -183,7 +183,7 @@ impl LeafData {
             LeafData::Caption { caption } => format!("\\caption{{{caption}}}\n"),
             LeafData::Math { kind, content } => match kind {
                 MathKind::SquareBrackets => format!("\\[{content}\\]\n"),
-                MathKind::DoubleDollars => format!("$$\n{content}\n$$\n"),
+                MathKind::DoubleDollars => format!("$${content}$$\n"),
                 MathKind::Displaymath => {
                     format!("\\begin{{displaymath}}\n{content}\n\\end{{displaymath}}\n")
                 }
@@ -195,7 +195,7 @@ impl LeafData {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub enum MathKind {
     SquareBrackets,
     DoubleDollars,

@@ -11,7 +11,7 @@ use tokio::io::AsyncSeekExt;
 use tower::ServiceExt;
 
 use crate::ast;
-use crate::ast::node::{ExpandableData, LeafData, Node, NodeRef, NodeRefWeak};
+use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid};
 
@@ -47,6 +47,30 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             text,
+        )
+    }
+    fn build_math(&self, text: String, kind: MathKind) -> NodeRef {
+        Node::new_leaf(
+            LeafData::Math {
+                kind: kind.clone(),
+                content: text.clone(),
+            },
+            self.uuid_provider.borrow_mut().deref_mut(),
+            self.portal.borrow_mut().deref_mut(),
+            match kind {
+                MathKind::SquareBrackets => {
+                    format!("\\[{}\\]", text.clone())
+                }
+                MathKind::DoubleDollars => {
+                    format!("$${}$$", text.clone())
+                }
+                MathKind::Displaymath => {
+                    format!("\\begin{{displaymath}}{}\\end{{displaymath}}", text.clone())
+                }
+                MathKind::Equation => {
+                    format!("\\begin{{equation}}{}\\end{{equation}}", text.clone())
+                }
+            },
         )
     }
     fn build_image(&self, options: Option<String>, path: String) -> NodeRef {
@@ -100,33 +124,9 @@ impl LatexParser {
         //     .collect::<String>()
         //     .boxed();
 
-        // TODO find way to ignore \sectioning (use keyword?)
-        let terminator = choice((
-            just("\\section").rewind(),
-            just("\\subsection").rewind(),
-            just("\\begin").rewind(),
-            just("\\end{document}").rewind(),
-            just("\\includegraphics").rewind(),
-            newline().then(newline()).to("\n\n"),
-            // TODO recognize and consume also more than 2 newlines
-        ));
-
         // TODO write parsers
         let environment = just(" ").map(|_| self.build_text(" ".to_string()));
         let input = just(" ").map(|_| self.build_text(" ".to_string()));
-
-        let text_node = take_until(terminator)
-            .try_map(|(v, _), span| {
-                if !v.is_empty() {
-                    return Ok(v);
-                } else {
-                    return Err(Simple::custom(span, format!("Found empty text")));
-                }
-            })
-            .collect::<String>()
-            .then_ignore(newline().or_not())
-            .map(|x: String| self.build_text(x.trim_end().to_string()))
-            .boxed();
 
         let options = just("[")
             .ignore_then(none_of("]").repeated())
@@ -147,7 +147,47 @@ impl LatexParser {
             .map(|(options, path): (Option<String>, String)| self.build_image(options, path))
             .boxed();
 
-        let leaf = choice((image.clone(), text_node.clone())).boxed();
+        let double_dollar_math = take_until(just("$$").rewind())
+            .delimited_by(just("$$"), just("$$"))
+            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::DoubleDollars))
+            .boxed();
+
+        let square_br_math = take_until(just("\\]").rewind())
+            .delimited_by(just("\\["), just("\\]"))
+            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::SquareBrackets))
+            .boxed();
+
+        let math = choice((double_dollar_math, square_br_math))
+            .padded()
+            .boxed();
+
+        // TODO find way to ignore \sectioning (use keyword?)
+        let terminator = choice((
+            just("\\section").rewind(),
+            just("\\subsection").rewind(),
+            just("\\begin").rewind(),
+            just("\\end{document}").rewind(),
+            image.clone().to("image").rewind(),
+            math.clone().to("math").rewind(),
+            newline().then(newline()).to("\n\n"),
+            // TODO recognize and consume also more than 2 newlines
+        ))
+        .boxed();
+
+        let text_node = take_until(terminator)
+            .try_map(|(v, _), span| {
+                if !v.is_empty() {
+                    return Ok(v);
+                } else {
+                    return Err(Simple::custom(span, format!("Found empty text")));
+                }
+            })
+            .collect::<String>()
+            .then_ignore(newline().or_not())
+            .map(|x: String| self.build_text(x.trim_end().to_string()))
+            .boxed();
+
+        let leaf = choice((image.clone(), math.clone(), text_node.clone())).boxed();
         // TODO or image...
 
         let prelude = choice((environment.clone(), input.clone(), leaf.clone()));
