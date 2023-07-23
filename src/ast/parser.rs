@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::mem::take;
 use std::ops::DerefMut;
 
+use axum::body::HttpBody;
 use chumsky::prelude::*;
 use chumsky::text::newline;
 use chumsky::Parser;
@@ -92,6 +93,26 @@ impl LatexParser {
         )
     }
 
+    fn build_caption(&self, caption: String) -> NodeRef {
+        Node::new_leaf(
+            LeafData::Caption {
+                caption: caption.clone(),
+            },
+            self.uuid_provider.borrow_mut().deref_mut(),
+            self.portal.borrow_mut().deref_mut(),
+            format!("\\caption{{{caption}}}"),
+        )
+    }
+    fn build_label(&self, label: String) -> NodeRef {
+        Node::new_leaf(
+            LeafData::Label {
+                label: label.clone(),
+            },
+            self.uuid_provider.borrow_mut().deref_mut(),
+            self.portal.borrow_mut().deref_mut(),
+            format!("\\label{{{label}}}"),
+        )
+    }
     fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
@@ -121,12 +142,6 @@ impl LatexParser {
     }
 
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
-        // let word = filter(|char: &char| char.is_ascii_alphanumeric())
-        //     .repeated()
-        //     .at_least(1)
-        //     .collect::<String>()
-        //     .boxed();
-
         // TODO write parsers
         let environment = just(" ").map(|_| self.build_text(" ".to_string()));
         let input = just(" ").map(|_| self.build_text(" ".to_string()));
@@ -136,6 +151,14 @@ impl LatexParser {
             .then_ignore(just("]"))
             .collect()
             .boxed();
+
+        let heading = none_of("}")
+            .repeated()
+            .at_least(1)
+            .delimited_by(just("{"), just("}"))
+            .collect::<String>()
+            .boxed();
+        // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
         let image = just("\\includegraphics")
             .ignore_then(options.or_not())
@@ -179,6 +202,17 @@ impl LatexParser {
         .padded()
         .boxed();
 
+        let caption = just("\\caption")
+            .ignore_then(heading.clone())
+            .map(|text| self.build_caption(text))
+            .padded()
+            .boxed();
+        let label = just("\\label")
+            .ignore_then(heading.clone())
+            .map(|text| self.build_label(text))
+            .padded()
+            .boxed();
+
         // TODO find way to ignore \sectioning (use keyword?)
         let terminator = choice((
             just("\\section").rewind(),
@@ -187,6 +221,8 @@ impl LatexParser {
             just("\\end{document}").rewind(),
             image.clone().to("image").rewind(),
             math.clone().to("math").rewind(),
+            caption.clone().to("caption").rewind(),
+            label.clone().to("label").rewind(),
             newline().then(newline()).to("\n\n"),
             // TODO recognize and consume also more than 2 newlines
         ))
@@ -205,17 +241,20 @@ impl LatexParser {
             .map(|x: String| self.build_text(x.trim_end().to_string()))
             .boxed();
 
-        let leaf = choice((image.clone(), math.clone(), text_node.clone())).boxed();
-        // TODO or image...
+        let leaf = choice((
+            image.clone(),
+            math.clone(),
+            caption.clone(),
+            label.clone(),
+            text_node.clone(),
+        ))
+        .boxed();
 
-        let prelude = choice((environment.clone(), input.clone(), leaf.clone()));
-
-        let heading = none_of("}").repeated().at_least(1).collect().boxed();
-        // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
+        let prelude = choice((environment.clone(), input.clone(), leaf.clone())).boxed();
 
         // TODO extract method
         let subsection = just("\\subsection")
-            .ignore_then(heading.clone().delimited_by(just('{'), just('}')))
+            .ignore_then(heading.clone())
             .then_ignore(newline())
             .then(prelude.clone().repeated())
             .map(|(heading, blocks): (String, Vec<NodeRef>)| {
@@ -228,7 +267,7 @@ impl LatexParser {
             .boxed();
 
         let section = just("\\section")
-            .ignore_then(heading.clone().delimited_by(just('{'), just('}')))
+            .ignore_then(heading.clone())
             .then_ignore(newline())
             .then(prelude.clone().repeated())
             .then(subsection.clone().repeated())
@@ -245,16 +284,20 @@ impl LatexParser {
 
         // TODO implement all segment levels
 
-        let root_children = prelude.clone().repeated().then(choice((
-            section.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
-            subsection.clone().repeated(), // last item shouldn't have at_least to allow for empty document
-                                           // TODO implement all segment levels
-        )));
+        let root_children = prelude
+            .clone()
+            .repeated()
+            .then(choice((
+                section.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
+                subsection.clone().repeated(), // last item shouldn't have at_least to allow for empty document
+                                               // TODO implement all segment levels
+            )))
+            .boxed();
 
         let preamble = take_until(just("\\begin{document}").rewind())
             .map(|(preamble, _)| preamble.iter().collect())
             .boxed();
-        // TODO implement preamble
+
         let document = preamble
             .clone()
             .or_not()
@@ -273,13 +316,13 @@ impl LatexParser {
     }
 
     fn find_highest_level(&self) -> impl Parser<char, i8, Error = Simple<char>> + '_ {
-        take_until(just("\\section").or(just("\\subsection"))).map(
-            |(_trash, keyword)| match keyword {
+        take_until(just("\\section").or(just("\\subsection")))
+            .map(|(_trash, keyword)| match keyword {
                 "\\section" => 2,
                 "\\subsection" => 3,
                 _ => 8,
-            },
-        )
+            })
+            .boxed()
         // TODO implement all segment levels
     }
 }

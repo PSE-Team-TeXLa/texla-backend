@@ -126,7 +126,7 @@ impl NodeType {
                         "{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"
                     )),
                     ExpandableData::File { path } => Ok(format!(
-                        "% TEXLA FILE BEGIN ({path})\n{children}\n% TEXLA FILE END"
+                        "% TEXLA FILE BEGIN ({path})\n{children}% TEXLA FILE END"
                     )),
                     ExpandableData::Environment { name } => {
                         Ok(format!("\\begin{{{name}}}\n{children}\n\\end{{{name}}}"))
