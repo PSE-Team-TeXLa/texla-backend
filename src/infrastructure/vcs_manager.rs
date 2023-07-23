@@ -37,12 +37,11 @@ impl VcsManager for GitManager {
 
     fn commit(&self, message: Option<String>) -> Result<(), InfrastructureError> {
         // TODO after VS: use default commit message if no message is given
-
-        todo!()
+        Ok(()) // TODO!
     }
 
     fn push(&self) -> Result<(), InfrastructureError> {
-        todo!()
+        Ok(()) // TODO!
     }
 }
 

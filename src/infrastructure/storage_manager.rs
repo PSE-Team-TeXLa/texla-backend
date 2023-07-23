@@ -63,6 +63,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
     async fn start(this: Arc<Mutex<Self>>) {
         // TODO after VS: start async timer-based background tasks and start DirectoryChangeHandler
+        // we probably want to use tokio::spawn() here
     }
 
     fn remote_url(&self) -> Option<&String> {

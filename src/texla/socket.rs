@@ -1,9 +1,11 @@
+use std::process::exit;
 use std::sync::{Arc, Mutex, RwLock};
 
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::extensions::Ref;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
 use tokio::join;
+use tokio::time::sleep;
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -38,6 +40,7 @@ pub fn socket_service(
     service
 }
 
+// TODO: a bit of reorganization, maybe split into multiple functions
 async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     println!("Socket connected with id: {}", socket.sid);
 
@@ -128,6 +131,27 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
             },
         );
     }
+
+    socket.on("quit", |socket, _: String, _, _| async move {
+        println!("Saving Changes...");
+        let result = {
+            let state_ref = extract_state(&socket);
+            let state = state_ref.lock().unwrap();
+            let mut storage_manager = state.storage_manager.lock().unwrap();
+            storage_manager.end_session()
+        };
+        match result {
+            Ok(_) => {
+                println!("Quitting...");
+                socket.emit("quit", "ok").ok();
+                sleep(std::time::Duration::from_secs(1)).await;
+                exit(0);
+            }
+            Err(err) => {
+                socket.emit("error", TexlaError::from(err)).ok();
+            }
+        };
+    });
 
     // let the tasks in storage_manager be executed
     join!(storage_manager_handle);
