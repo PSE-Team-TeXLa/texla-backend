@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::mem::take;
 use std::ops::DerefMut;
 
 use axum::body::HttpBody;
@@ -117,7 +116,7 @@ impl LatexParser {
 
     fn build_file(&self, path: String, children: Vec<NodeRef>) -> NodeRef {
         Node::new_expandable(
-            ExpandableData::File { path },
+            ExpandableData::File { path: path.clone() },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
@@ -125,13 +124,15 @@ impl LatexParser {
         )
     }
 
-    fn build_env(&self, name: String, children: Vec<NodeRef>) -> NodeRef {
+    fn build_env(&self, name: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Environment { name },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\begin{{{name}}}\n{children}\\end{{{name}}}"),
+            raw,
+            // TODO include children into raw_latex?
+            // TODO construct raw_latex here instead of passing as argument?
         )
     }
 
@@ -142,6 +143,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             raw,
+            // TODO only pass segment level as argument and construct raw_latex here?
         )
     }
 
@@ -159,7 +161,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            String::new(),
+            String::new(), // TODO should raw_latex include '\begin{document}' and '\end{document}'?
         )
     }
 
@@ -173,7 +175,7 @@ impl LatexParser {
         // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
         // TODO write parsers
-        let environment = todo();
+        let environment = just(" ").map(|_| self.build_text(" ".to_string()));
         let input = just(" ").map(|_| self.build_text(" ".to_string()));
 
         let options = just("[")
