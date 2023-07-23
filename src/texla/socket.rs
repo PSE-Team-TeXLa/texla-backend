@@ -85,6 +85,14 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         socket.emit("new_ast", &state.ast).ok();
     }
 
+    socket.on("active", |socket, _: String, _, _| async move {
+        let state_ref = extract_state(&socket);
+        let state = state_ref.lock().unwrap();
+        // stop synchronization in order to prevent losing changes
+        state.storage_manager.lock().unwrap().stop_timers();
+        println!("Waiting for frontend to finalize operation...");
+    });
+
     socket.on("operation", |socket, json: String, _, _| async move {
         print!("Received operation:");
 
@@ -112,6 +120,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     });
 
     {
+        let core = core.clone();
         socket.on(
             "prepare_export",
             move |socket, options: StringificationOptions, _, _| {
@@ -120,6 +129,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         );
     }
 
+    // let the tasks in storage_manager be executed
     join!(storage_manager_handle);
 }
 
