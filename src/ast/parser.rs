@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::mem::take;
 use std::ops::DerefMut;
 
 use chumsky::prelude::*;
@@ -250,14 +251,18 @@ impl LatexParser {
                                            // TODO implement all segment levels
         )));
 
+        let preamble = take_until(just("\\begin{document}").rewind())
+            .map(|(preamble, _)| preamble.iter().collect())
+            .boxed();
         // TODO implement preamble
-        let document = just::<_, _, Simple<char>>("\\begin{document}")
-            .then(newline())
+        let document = preamble
+            .clone()
             .or_not()
-            .ignore_then(root_children.clone())
+            .then_ignore(just::<_, _, Simple<char>>("\\begin{document}").padded())
+            .then(root_children.clone())
             .then_ignore(just("\\end{document}"))
-            .map(|(mut leaves, mut segments)| {
-                self.build_document(String::new(), String::new(), {
+            .map(|(preamble, (mut leaves, mut segments))| {
+                self.build_document(preamble.unwrap_or(String::new()), String::new(), {
                     leaves.append(&mut segments);
                     leaves
                 })
