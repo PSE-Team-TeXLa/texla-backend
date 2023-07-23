@@ -27,17 +27,14 @@ pub type TexlaSocket = Arc<Socket<LocalAdapter>>;
 pub fn socket_service(
     core: Arc<RwLock<TexlaCore>>,
 ) -> ServiceBuilder<Stack<SocketIoLayer<LocalAdapter>, Stack<CorsLayer, Identity>>> {
-    // TODO: Arc<RwLock<TexlaCor>> is technically not needed until here
     let ns = Namespace::builder()
         .add("/", move |socket| handler(socket, core.clone()))
         .build();
 
     // ServiceBuilder executes layer top to bottom
-    let service = ServiceBuilder::new()
+    ServiceBuilder::new()
         .layer(CorsLayer::permissive())
-        .layer(SocketIoLayer::new(ns));
-
-    service
+        .layer(SocketIoLayer::new(ns))
 }
 
 // TODO: a bit of reorganization, maybe split into multiple functions
@@ -54,8 +51,13 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     let ast = {
         let latex_single_string = storage_manager.multiplex_files().unwrap();
         let ast = TexlaAst::from_latex(latex_single_string).unwrap();
-        // TODO: validate ast (by calling to_latex())
-        // TODO: error handling! -> close connection if unable to set a state!
+        if let Err(err) = ast.to_latex(Default::default()) {
+            println!("Found invalid ast: {}", err);
+            socket.emit("error", TexlaError::from(err)).ok();
+            return;
+            // this will display the error in the frontend
+            // the frontend will not receive any further messages
+        }
         ast
     };
 
