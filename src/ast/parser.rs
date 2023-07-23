@@ -7,6 +7,7 @@ use axum::body::HttpBody;
 use chumsky::prelude::*;
 use chumsky::text::newline;
 use chumsky::Parser;
+use tower::ServiceExt;
 
 use crate::ast;
 use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
@@ -113,6 +114,27 @@ impl LatexParser {
             format!("\\label{{{label}}}"),
         )
     }
+
+    fn build_file(&self, path: String, children: Vec<NodeRef>) -> NodeRef {
+        Node::new_expandable(
+            ExpandableData::File { path },
+            children,
+            self.uuid_provider.borrow_mut().deref_mut(),
+            self.portal.borrow_mut().deref_mut(),
+            format!("\\input{{{path}}}"),
+        )
+    }
+
+    fn build_env(&self, name: String, children: Vec<NodeRef>) -> NodeRef {
+        Node::new_expandable(
+            ExpandableData::Environment { name },
+            children,
+            self.uuid_provider.borrow_mut().deref_mut(),
+            self.portal.borrow_mut().deref_mut(),
+            format!("\\begin{{{name}}}\n{children}\\end{{{name}}}"),
+        )
+    }
+
     fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
@@ -142,16 +164,6 @@ impl LatexParser {
     }
 
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
-        // TODO write parsers
-        let environment = just(" ").map(|_| self.build_text(" ".to_string()));
-        let input = just(" ").map(|_| self.build_text(" ".to_string()));
-
-        let options = just("[")
-            .ignore_then(none_of("]").repeated())
-            .then_ignore(just("]"))
-            .collect()
-            .boxed();
-
         let heading = none_of("}")
             .repeated()
             .at_least(1)
@@ -159,6 +171,16 @@ impl LatexParser {
             .collect::<String>()
             .boxed();
         // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
+
+        // TODO write parsers
+        let environment = todo();
+        let input = just(" ").map(|_| self.build_text(" ".to_string()));
+
+        let options = just("[")
+            .ignore_then(none_of("]").repeated())
+            .then_ignore(just("]"))
+            .collect()
+            .boxed();
 
         let image = just("\\includegraphics")
             .ignore_then(options.or_not())
