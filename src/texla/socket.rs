@@ -122,15 +122,12 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         }
     });
 
-    {
-        let core = core.clone();
-        socket.on(
-            "prepare_export",
-            move |socket, options: StringificationOptions, _, _| {
-                handle_export(socket, options, core.clone())
-            },
-        );
-    }
+    let core_clone = core.clone();
+    socket.on("prepare_export", move |socket, json: String, _, _| {
+        let options = serde_json::from_str::<StringificationOptions>(&json)
+            .expect("Got invalid options from frontend");
+        handle_export(socket, options, core_clone.clone())
+    });
 
     socket.on("quit", |socket, _: String, _, _| async move {
         println!("Saving Changes...");
@@ -194,6 +191,7 @@ async fn handle_export(
     options: StringificationOptions,
     core: Arc<RwLock<TexlaCore>>,
 ) {
+    println!("Preparing export with options: {:?}", options);
     let state_ref = extract_state(&socket);
     let state = state_ref.lock().unwrap();
 

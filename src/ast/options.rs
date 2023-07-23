@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct StringificationOptions {
     pub include_comments: bool,
     pub include_metadata: bool,

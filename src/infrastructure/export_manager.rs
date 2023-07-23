@@ -8,6 +8,7 @@ pub struct TexlaExportManager;
 
 impl ExportManager for TexlaExportManager {
     fn zip_files(&mut self) -> Result<String, InfrastructureError> {
-        todo!()
+        // TODO
+        Ok("http://127.0.0.1:3002/src/lib/assets/logo/logo.svg".to_string())
     }
 }
