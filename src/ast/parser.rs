@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
-use std::os::unix::prelude::OsStringExt;
 
 use chumsky::prelude::*;
 use chumsky::text::newline;
