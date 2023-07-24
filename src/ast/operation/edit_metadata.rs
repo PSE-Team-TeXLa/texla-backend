@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::ast::Ast;
 use serde::Deserialize;
 
 use crate::ast::errors::OperationError;
@@ -15,6 +16,10 @@ pub struct EditMetadata {
 
 impl Operation<TexlaAst> for EditMetadata {
     fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), OperationError> {
-        todo!()
+        let node_ref = ast.get_node(self.target);
+        let mut node = node_ref.lock().unwrap();
+        node.meta_data.data.extend(self.new.clone());
+
+        Ok(())
     }
 }

@@ -1,3 +1,4 @@
+use crate::ast::Ast;
 use serde::Deserialize;
 
 use crate::ast::errors::OperationError;
@@ -13,6 +14,10 @@ pub struct DeleteMetadata {
 
 impl Operation<TexlaAst> for DeleteMetadata {
     fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), OperationError> {
-        todo!()
+        let node_ref = ast.get_node(self.target);
+        let mut node = node_ref.lock().unwrap();
+        node.meta_data.data.remove(&self.key);
+
+        Ok(())
     }
 }
