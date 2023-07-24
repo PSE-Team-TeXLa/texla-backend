@@ -104,9 +104,9 @@ impl NodeType {
         match self {
             NodeType::Leaf { data } => Ok(data.to_latex()),
             NodeType::Expandable { data, .. } => {
-                let children = self.children_to_latex(level + 1)?;
                 match data {
                     ExpandableData::Segment { heading } => {
+                        let children = self.children_to_latex(level + 1)?;
                         let keyword = match level {
                             3 => "section".to_string(),
                             4 => "subsection".to_string(),
@@ -122,16 +122,25 @@ impl NodeType {
                     ExpandableData::Document {
                         preamble,
                         postamble,
-                    } => Ok(format!(
-                        "{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"
-                    )),
-                    ExpandableData::File { path } => Ok(format!(
-                        "% TEXLA FILE BEGIN ({path})\n{children}% TEXLA FILE END"
-                    )),
+                    } => {
+                        let children = self.children_to_latex(level + 1)?;
+                        Ok(format!("{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"
+                    ))
+                    }
+                    ExpandableData::File { path } => {
+                        let children = self.children_to_latex(level)?; //Dont increase the nesting level since file is not in hierarchy
+                        Ok(format!(
+                            "% TEXLA FILE BEGIN {{{path}}}\n{children}% TEXLA FILE END\n"
+                        ))
+                    }
                     ExpandableData::Environment { name } => {
+                        let children = self.children_to_latex(level + 1)?;
                         Ok(format!("\\begin{{{name}}}\n{children}\n\\end{{{name}}}"))
                     }
-                    ExpandableData::Dummy { text } => Ok(format!("{text}\n{children}")),
+                    ExpandableData::Dummy { text } => {
+                        let children = self.children_to_latex(level + 1)?;
+                        Ok(format!("{text}\n{children}"))
+                    }
                 }
             }
         }

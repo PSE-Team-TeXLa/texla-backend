@@ -178,7 +178,6 @@ impl LatexParser {
 
         // TODO write parsers
         let environment = just(" ").map(|_| self.build_text(" ".to_string()));
-        let input = just(" ").map(|_| self.build_text(" ".to_string()));
 
         let options = just("[")
             .ignore_then(none_of("]").repeated())
@@ -246,6 +245,7 @@ impl LatexParser {
             // TODO implement all segment levels
             just("\\begin").rewind(),
             just("\\end{document}").rewind(),
+            just("% TEXLA").rewind(),
             image.clone().to("image").rewind(),
             math.clone().to("math").rewind(),
             caption.clone().to("caption").rewind(),
@@ -277,13 +277,28 @@ impl LatexParser {
         ))
         .boxed();
 
-        let prelude = choice((environment.clone(), input.clone(), leaf.clone())).boxed();
+        let prelude = choice((environment.clone(), leaf.clone())).boxed();
 
+        let prelude_in_inputs = recursive(|prelude_in_inputs| {
+            just("% TEXLA FILE BEGIN")
+                .ignore_then(heading.clone().padded())
+                .then(prelude.clone().or(prelude_in_inputs).repeated())
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|(path, children)| self.build_file(path, children))
+        })
+        .boxed();
+
+        let prelude_any = prelude_in_inputs
+            .clone()
+            .or(prelude.clone())
+            .repeated()
+            .padded()
+            .boxed();
         // TODO extract method
         let subsection = just("\\subsection")
             .ignore_then(heading.clone())
             .then_ignore(newline())
-            .then(prelude.clone().repeated())
+            .then(prelude_any.clone())
             .map(|(heading, blocks): (String, Vec<NodeRef>)| {
                 self.build_segment(
                     heading.clone(),
@@ -293,11 +308,32 @@ impl LatexParser {
             })
             .boxed();
 
+        let subsections_in_inputs = recursive(|subsections_in_inputs| {
+            just("% TEXLA FILE BEGIN")
+                .ignore_then(heading.clone().padded())
+                .then(prelude_any.clone())
+                .then(subsections_in_inputs.or(subsection.clone()).repeated())
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|((path, mut prelude), mut children)| {
+                    self.build_file(path, {
+                        prelude.append(&mut children);
+                        prelude
+                    })
+                })
+        })
+        .boxed();
+
+        let subsection_any = subsections_in_inputs
+            .clone()
+            .or(subsection.clone())
+            .padded()
+            .boxed();
+
         let section = just("\\section")
             .ignore_then(heading.clone())
             .then_ignore(newline())
-            .then(prelude.clone().repeated())
-            .then(subsection.clone().repeated())
+            .then(prelude_any.clone())
+            .then(subsection_any.clone().repeated())
             .map(
                 |((heading, mut blocks), mut subsections): (
                     (String, Vec<NodeRef>),
@@ -309,15 +345,34 @@ impl LatexParser {
             )
             .boxed();
 
+        let sections_in_inputs = recursive(|sections_in_inputs| {
+            just("% TEXLA FILE BEGIN")
+                .ignore_then(heading.clone().padded())
+                .then(prelude_any.clone())
+                .then(sections_in_inputs.or(section.clone()).repeated())
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|((path, mut prelude), mut children)| {
+                    self.build_file(path, {
+                        prelude.append(&mut children);
+                        prelude
+                    })
+                })
+        })
+        .boxed();
         // TODO implement all segment levels
 
-        let root_children = prelude
+        let section_any = sections_in_inputs
             .clone()
-            .repeated()
+            .or(section.clone())
+            .padded()
+            .boxed();
+
+        let root_children = prelude_any
+            .clone()
             .then(choice((
-                section.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
-                subsection.clone().repeated(), // last item shouldn't have at_least to allow for empty document
-                                               // TODO implement all segment levels
+                section_any.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
+                subsection_any.clone().repeated(), // last item shouldn't have at_least to allow for empty document
+                                                   // TODO implement all segment levels
             )))
             .boxed();
 
