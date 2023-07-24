@@ -10,19 +10,19 @@ pub struct MetaData {
 
 // TODO: maybe &str is sufficient here
 impl MetaData {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             data: HashMap::new(),
         }
     }
 
-    fn edit_meta_data(&mut self, new_meta_data: HashMap<String, String>) {
+    pub fn edit_meta_data(&mut self, new_meta_data: HashMap<String, String>) {
         for (key, value) in new_meta_data {
             self.data.insert(key, value);
         }
     }
 
-    fn delete_meta_data(&mut self, key: String) {
+    pub fn delete_meta_data(&mut self, key: String) {
         self.data.remove(&key);
     }
 }

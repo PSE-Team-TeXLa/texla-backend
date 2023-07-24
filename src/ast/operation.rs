@@ -79,7 +79,7 @@ impl JsonOperation {
 }
 
 // TODO move into uuid_provider?
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 pub struct Position {
     pub parent: Uuid,
     pub after_sibling: Option<Uuid>,
