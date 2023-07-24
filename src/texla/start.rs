@@ -22,7 +22,7 @@ pub async fn start() {
 
     let core = TexlaCore {
         export_manager: TexlaExportManager,
-        main_file: args.main_file,
+        main_file: args.main_file, // TODO use Path instead of String
     };
 
     let core = Arc::new(RwLock::new(core));

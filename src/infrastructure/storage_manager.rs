@@ -29,7 +29,7 @@ where
     directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
     merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
     main_file: String,
-    // TODO: should maybe be a reference and maybe a Path
+    // TODO use Path instead of String
     pull_timer_running: bool,
     worksession_timer_running: bool,
 }
@@ -39,6 +39,7 @@ where
     V: VcsManager,
 {
     pub fn new(vcs_manager: V, main_file: String) -> Self {
+        // TODO use Path instead of String for main_file
         Self {
             vcs_manager,
             directory_change_handler: None,
