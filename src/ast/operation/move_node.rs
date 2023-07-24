@@ -1,5 +1,6 @@
 use serde::Deserialize;
 
+use crate::ast::errors::OperationError;
 use crate::ast::errors::AstError;
 use crate::ast::operation::{Operation, Position};
 use crate::ast::texla_ast::TexlaAst;
@@ -12,7 +13,7 @@ pub struct MoveNode {
 }
 
 impl Operation<TexlaAst> for MoveNode {
-    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), AstError> {
+    fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), OperationError> {
         todo!()
     }
 }

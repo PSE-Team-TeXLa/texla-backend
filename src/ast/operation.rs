@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use serde::Deserialize;
 
-use crate::ast::errors::AstError;
+use crate::ast::errors::OperationError;
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::Uuid;
 use crate::ast::Ast;
@@ -20,7 +20,7 @@ pub trait Operation<A>: Send + Sync + Debug
 where
     A: Ast,
 {
-    fn execute_on(&self, ast: &mut A) -> Result<(), AstError>;
+    fn execute_on(&self, ast: &mut A) -> Result<(), OperationError>;
 }
 
 #[derive(Deserialize)]

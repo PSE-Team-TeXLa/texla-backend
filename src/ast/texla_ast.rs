@@ -54,7 +54,7 @@ impl Ast for TexlaAst {
     }
 
     fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
-        operation.execute_on(self)
+        Ok(operation.execute_on(self)?)
     }
 
     fn get_node(&self, uuid: Uuid) -> NodeRef {
