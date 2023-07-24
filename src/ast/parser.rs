@@ -49,6 +49,7 @@ impl LatexParser {
             text,
         )
     }
+
     fn build_math(&self, text: String, kind: MathKind) -> NodeRef {
         Node::new_leaf(
             LeafData::Math {
@@ -103,6 +104,7 @@ impl LatexParser {
             format!("\\caption{{{caption}}}"),
         )
     }
+
     fn build_label(&self, label: String) -> NodeRef {
         Node::new_leaf(
             LeafData::Label {
@@ -241,6 +243,7 @@ impl LatexParser {
         let terminator = choice((
             just("\\section").rewind(),
             just("\\subsection").rewind(),
+            // TODO implement all segment levels
             just("\\begin").rewind(),
             just("\\end{document}").rewind(),
             image.clone().to("image").rewind(),
@@ -255,9 +258,9 @@ impl LatexParser {
         let text_node = take_until(terminator)
             .try_map(|(v, _), span| {
                 if !v.is_empty() {
-                    return Ok(v);
+                    Ok(v)
                 } else {
-                    return Err(Simple::custom(span, format!("Found empty text")));
+                    Err(Simple::custom(span, "Found empty text".to_string()))
                 }
             })
             .collect::<String>()
