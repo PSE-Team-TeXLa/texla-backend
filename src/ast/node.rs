@@ -135,7 +135,7 @@ impl NodeType {
                     }
                     ExpandableData::Environment { name } => {
                         let children = self.children_to_latex(level + 1)?;
-                        Ok(format!("\\begin{{{name}}}\n{children}\n\\end{{{name}}}"))
+                        Ok(format!("\\begin{{{name}}}\n{children}\\end{{{name}}}\n"))
                     }
                     ExpandableData::Dummy { text } => {
                         let children = self.children_to_latex(level + 1)?;

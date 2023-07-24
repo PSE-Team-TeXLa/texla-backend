@@ -126,15 +126,14 @@ impl LatexParser {
         )
     }
 
-    fn build_env(&self, name: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
+    fn build_env(&self, name: String, children: Vec<NodeRef>) -> NodeRef {
         Node::new_expandable(
-            ExpandableData::Environment { name },
+            ExpandableData::Environment { name: name.clone() },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            raw,
-            // TODO include children into raw_latex?
-            // TODO construct raw_latex here instead of passing as argument?
+            format!("\\begin{{{}\n...\n\\end{{{}}}", name.clone(), name),
+            // TODO how to edit this properly? We dont want so show all the children.
         )
     }
 
@@ -177,7 +176,6 @@ impl LatexParser {
         // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
         // TODO write parsers
-        let environment = just(" ").map(|_| self.build_text(" ".to_string()));
 
         let options = just("[")
             .ignore_then(none_of("]").repeated())
@@ -244,6 +242,7 @@ impl LatexParser {
             just("\\subsection").rewind(),
             // TODO implement all segment levels
             just("\\begin").rewind(),
+            just("\\end").rewind(),
             just("\\end{document}").rewind(),
             just("% TEXLA").rewind(),
             image.clone().to("image").rewind(),
@@ -277,7 +276,23 @@ impl LatexParser {
         ))
         .boxed();
 
-        let prelude = choice((environment.clone(), leaf.clone())).boxed();
+        let environment = recursive(|environment| {
+            just("\\begin")
+                .ignore_then(heading.clone())
+                .padded()
+                .then(leaf.clone().or(environment).repeated())
+                .then(just("\\end").ignore_then(heading.clone()).padded())
+                .try_map(|((name_begin, children), name_end), span| {
+                    if name_begin != name_end {
+                        Err(Simple::custom(span, "Environment not closed correctly"))
+                    } else {
+                        Ok(self.build_env(name_end, children))
+                    }
+                })
+        })
+        .boxed();
+
+        let prelude = choice((leaf.clone(), environment.clone())).boxed();
 
         let prelude_in_inputs = recursive(|prelude_in_inputs| {
             just("% TEXLA FILE BEGIN")
