@@ -4,9 +4,8 @@ use serde::Serialize;
 
 use crate::ast::errors::AstError;
 use crate::infrastructure::errors::InfrastructureError;
-use crate::texla::socket::TexlaSocket;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct TexlaError {
     message: String,
 }
