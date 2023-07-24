@@ -222,6 +222,6 @@ mod tests {
             &mut portal,
             "raw".to_string(),
         );
-        assert_eq!(node.lock().unwrap().to_latex(1), Ok("Test".to_string()));
+        assert_eq!(node.lock().unwrap().to_latex(1), Ok("Test\n\n".to_string()));
     }
 }

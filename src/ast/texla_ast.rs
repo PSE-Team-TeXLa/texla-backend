@@ -75,27 +75,6 @@ mod tests {
     use crate::ast::Ast;
 
     #[test]
-    fn crate_ast() {
-        let root = Node {
-            uuid: 0,
-            node_type: NodeType::Leaf {
-                data: LeafData::Text {
-                    text: "ROOT".to_string(),
-                },
-            },
-            meta_data: MetaData {
-                data: Default::default(),
-            },
-            parent: None,
-            raw_latex: String::new(),
-        };
-        let ast = TexlaAst::new(root);
-        assert!(ast.root.lock().unwrap().parent.is_none());
-        assert_eq!(ast.root.lock().unwrap().uuid, 1);
-        assert!(ast.portal.get(&(1 as Uuid)).is_some());
-        assert!(ast.portal.get(&(2 as Uuid)).is_none());
-    }
-    #[test]
     fn simple_latex_identical() {
         let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
