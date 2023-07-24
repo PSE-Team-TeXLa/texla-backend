@@ -8,7 +8,7 @@ use crate::ast::uuid_provider::Uuid;
 
 pub mod errors;
 mod meta_data;
-mod node;
+pub mod node;
 pub mod operation;
 pub mod options;
 mod parser;

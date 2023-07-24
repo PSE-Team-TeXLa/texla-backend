@@ -164,7 +164,6 @@ fn perform_and_check_operation(
     ast: &TexlaAst,
     operation: Box<dyn Operation<TexlaAst>>,
 ) -> Result<TexlaAst, TexlaError> {
-    // TODO alternative to cloning: mutable reference + atomic operations
     let mut cloned_ast = ast.clone();
 
     cloned_ast.execute(operation)?;
