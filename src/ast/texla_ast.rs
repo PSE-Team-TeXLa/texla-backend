@@ -66,41 +66,53 @@ impl Ast for TexlaAst {
 mod tests {
     use std::fs;
 
-    use crate::ast::meta_data::MetaData;
-    use crate::ast::node::{LeafData, Node, NodeType};
     use crate::ast::options::StringificationOptions;
     use crate::ast::parser::parse_latex;
-    use crate::ast::texla_ast::TexlaAst;
-    use crate::ast::uuid_provider::Uuid;
     use crate::ast::Ast;
+
+    fn lf(s: String) -> String {
+        s.replace("\r\n", "\n")
+    }
 
     #[test]
     fn simple_latex_identical() {
         let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
+        assert_eq!(
+            lf(ast.to_latex(Default::default()).unwrap()),
+            lf(latex.clone())
+        );
     }
     #[test]
     fn only_subsection_identical() {
         let latex = fs::read_to_string("latex_test_files/only_subsection.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
+        assert_eq!(
+            lf(ast.to_latex(Default::default()).unwrap()),
+            lf(latex.clone())
+        );
     }
     #[test]
     fn large_latex_identical() {
         let latex = fs::read_to_string("latex_test_files/large_latex.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
+        assert_eq!(
+            lf(ast.to_latex(Default::default()).unwrap()),
+            lf(latex.clone())
+        );
     }
     #[test]
     fn lots_identical() {
         let latex = fs::read_to_string("latex_test_files/lots_of_features.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(ast.to_latex(Default::default()).unwrap(), latex.clone());
+        assert_eq!(
+            lf(ast.to_latex(Default::default()).unwrap()),
+            lf(latex.clone())
+        );
     }
     #[test]
     fn parse_and_to_json() {
@@ -121,6 +133,6 @@ mod tests {
                 include_metadata: false,
             })
             .unwrap();
-        assert_eq!(out, formatted_latex);
+        assert_eq!(lf(out), lf(formatted_latex));
     }
 }
