@@ -144,6 +144,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
                 println!("Quitting...");
                 socket.emit("quit", "ok").ok();
                 sleep(std::time::Duration::from_secs(1)).await;
+                socket.disconnect().ok();
                 exit(0);
             }
             Err(err) => {
