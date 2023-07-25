@@ -47,10 +47,11 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             text,
+            Default::default(),
         )
     }
 
-    fn build_comment(&self, comment: String) -> NodeRef {
+    fn build_comment(&self, comment: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Comment {
                 comment: comment.clone(),
@@ -61,6 +62,7 @@ impl LatexParser {
                 acc.push_str(format!("% {line}\n").as_str());
                 acc
             }),
+            metadata,
         )
     }
 
@@ -86,6 +88,7 @@ impl LatexParser {
                     format!("\\begin{{equation}}{}\\end{{equation}}", text.clone())
                 }
             },
+            Default::default(),
         )
     }
 
@@ -105,6 +108,7 @@ impl LatexParser {
                     format!("\\includegraphics[{option}]{{{path}}}")
                 }
             },
+            Default::default(),
         )
     }
 
@@ -116,6 +120,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\caption{{{caption}}}"),
+            Default::default(),
         )
     }
 
@@ -127,6 +132,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\label{{{label}}}"),
+            Default::default(),
         )
     }
 
@@ -137,6 +143,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\input{{{path}}}"),
+            Default::default(),
         )
     }
 
@@ -147,7 +154,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\begin{{{}\n...\n\\end{{{}}}", name.clone(), name),
-            // TODO how to edit this properly? We dont want so show all the children.
+            Default::default(),
         )
     }
 
@@ -158,7 +165,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             raw,
-            // TODO only pass segment level as argument and construct raw_latex here?
+            Default::default(),
         )
     }
 
@@ -176,18 +183,42 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            String::new(), // TODO should raw_latex include '\begin{document}' and '\end{document}'?
+            String::new(),
+            Default::default(),
         )
     }
 
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
+        let key_value_pair = text::ident()
+            .then_ignore(just(":"))
+            .then(text::ident().padded())
+            .map(|(key, value)| (key, value))
+            .boxed();
+
+        let metadata = just("% TEXLA METADATA")
+            .padded()
+            .ignore_then(
+                key_value_pair
+                    .separated_by(just(","))
+                    .allow_trailing()
+                    .delimited_by(just("("), just(")")),
+            )
+            .padded()
+            .or_not()
+            .map(|option| match option {
+                Some(pairs) => pairs.into_iter().collect::<HashMap<String, String>>(),
+                None => HashMap::new(),
+            })
+            .boxed();
+
         let comment = just("%")
             .padded()
             .ignore_then(take_until(choice((
                 newline().then(none_of("%").rewind()).to("END"),
-                just("% TEXLA").to("END").rewind(),
+                just("% TEXLA").rewind(),
             ))))
-            .try_map(|(comment, _), span| {
+            .then(metadata.clone())
+            .try_map(|((comment, _), metadata), span| {
                 let string: String = comment.iter().collect();
                 if string.starts_with("TEXLA") {
                     Err(Simple::custom(
@@ -195,7 +226,7 @@ impl LatexParser {
                         "found TEXLA Metadata instead of regular Comment",
                     ))
                 } else {
-                    Ok(self.build_comment(comment.iter().collect()))
+                    Ok(self.build_comment(comment.iter().collect(), metadata))
                 }
             })
             .padded()

@@ -24,7 +24,15 @@ pub struct Node {
 
 impl Node {
     pub(crate) fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
-        self.node_type.to_latex(level)
+        if self.meta_data.data.is_empty() {
+            Ok(self.node_type.to_latex(level)?)
+        } else {
+            Ok(format!(
+                "{}% TEXLA METADATA {}\n",
+                self.node_type.to_latex(level)?,
+                self.meta_data
+            ))
+        }
     }
 
     pub fn new_leaf(
@@ -32,14 +40,13 @@ impl Node {
         uuid_provider: &mut impl UuidProvider,
         portal: &mut HashMap<Uuid, NodeRefWeak>,
         raw_latex: String,
+        metadata: HashMap<String, String>,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
         let this = Arc::new(Mutex::new(Node {
             uuid,
             node_type: NodeType::Leaf { data },
-            meta_data: MetaData {
-                data: Default::default(),
-            },
+            meta_data: MetaData { data: metadata },
             parent: None,
             raw_latex,
         }));
@@ -53,14 +60,13 @@ impl Node {
         uuid_provider: &mut impl UuidProvider,
         portal: &mut HashMap<Uuid, NodeRefWeak>,
         raw_latex: String,
+        metadata: HashMap<String, String>,
     ) -> NodeRef {
         let uuid = uuid_provider.new_uuid();
         let this = Arc::new(Mutex::new(Node {
             uuid,
             node_type: NodeType::Expandable { data, children },
-            meta_data: MetaData {
-                data: Default::default(),
-            },
+            meta_data: MetaData { data: metadata },
             parent: None,
             raw_latex,
         }));
@@ -239,6 +245,7 @@ mod tests {
             &mut uuidprov,
             &mut portal,
             "raw".to_string(),
+            Default::default(),
         );
         assert_eq!(node.lock().unwrap().to_latex(1), Ok("Test\n\n".to_string()));
     }
