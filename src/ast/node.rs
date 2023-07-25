@@ -177,6 +177,9 @@ pub enum LeafData {
     Caption {
         caption: String,
     },
+    Comment {
+        comment: String,
+    },
 }
 
 impl LeafData {
@@ -200,6 +203,12 @@ impl LeafData {
                     format!("\\begin{{equation}}{content}\\end{{equation}}\n")
                 }
             },
+            LeafData::Comment { comment } => {
+                comment.lines().fold(String::new(), |mut acc, line| {
+                    acc.push_str(format!("% {line}\n").as_str());
+                    acc
+                })
+            }
         }
     }
 }

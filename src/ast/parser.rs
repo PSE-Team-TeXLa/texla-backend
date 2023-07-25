@@ -50,6 +50,20 @@ impl LatexParser {
         )
     }
 
+    fn build_comment(&self, comment: String) -> NodeRef {
+        Node::new_leaf(
+            LeafData::Comment {
+                comment: comment.clone(),
+            },
+            self.uuid_provider.borrow_mut().deref_mut(),
+            self.portal.borrow_mut().deref_mut(),
+            comment.lines().fold(String::new(), |mut acc, line| {
+                acc.push_str(format!("% {line}\n").as_str());
+                acc
+            }),
+        )
+    }
+
     fn build_math(&self, text: String, kind: MathKind) -> NodeRef {
         Node::new_leaf(
             LeafData::Math {
@@ -167,6 +181,26 @@ impl LatexParser {
     }
 
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
+        let comment = just("%")
+            .padded()
+            .ignore_then(take_until(choice((
+                newline().then(none_of("%").rewind()).to("END"),
+                just("% TEXLA").to("END").rewind(),
+            ))))
+            .try_map(|(comment, _), span| {
+                let string: String = comment.iter().collect();
+                if string.starts_with("TEXLA") {
+                    Err(Simple::custom(
+                        span,
+                        "found TEXLA Metadata instead of regular Comment",
+                    ))
+                } else {
+                    Ok(self.build_comment(comment.iter().collect()))
+                }
+            })
+            .padded()
+            .boxed();
+
         let heading = none_of("}")
             .repeated()
             .at_least(1)
@@ -244,7 +278,7 @@ impl LatexParser {
             just("\\begin").rewind(),
             just("\\end").rewind(),
             just("\\end{document}").rewind(),
-            just("% TEXLA").rewind(),
+            just("%").rewind(),
             image.clone().to("image").rewind(),
             math.clone().to("math").rewind(),
             caption.clone().to("caption").rewind(),
@@ -272,6 +306,7 @@ impl LatexParser {
             math.clone(),
             caption.clone(),
             label.clone(),
+            comment.clone(),
             text_node.clone(),
         ))
         .boxed();
