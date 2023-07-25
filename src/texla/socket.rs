@@ -111,10 +111,8 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
             Ok(ast) => {
                 state.ast = ast;
                 socket.emit("new_ast", &state.ast).ok();
-                println!(
-                    "Operation was okay, new_ast {:?}",
-                    serde_json::to_string_pretty(&state.ast).unwrap()
-                );
+                println!("Operation was okay");
+                // println!("new_ast {:#?}", &state.ast);
             }
             Err(err) => {
                 println!("Operation was not okay: {}", err);
