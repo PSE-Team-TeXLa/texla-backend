@@ -1,10 +1,19 @@
 use std::fs;
+use std::sync::{Arc, Mutex};
+
+use async_trait::async_trait;
 
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
 
+#[async_trait]
 pub trait StorageManager {
-    fn start(&self);
+    fn attach_handlers(
+        &mut self,
+        dc_handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
+        mc_handler: Arc<Mutex<dyn MergeConflictHandler>>,
+    );
+    async fn start(this: Arc<Mutex<Self>>);
     fn remote_url(&self) -> Option<&String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn stop_timers(&mut self);
@@ -17,8 +26,8 @@ where
     V: VcsManager,
 {
     vcs_manager: V,
-    directory_change_handler: Option<Box<dyn DirectoryChangeHandler>>,
-    merge_conflict_handler: Option<Box<dyn MergeConflictHandler>>,
+    directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
+    merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
     main_file: String,
     // TODO: should maybe be a reference and maybe a Path
     pull_timer_running: bool,
@@ -39,22 +48,22 @@ where
             worksession_timer_running: false,
         }
     }
+}
 
+#[async_trait]
+impl StorageManager for TexlaStorageManager<GitManager> {
     fn attach_handlers(
         &mut self,
-        dc_handler: Box<dyn DirectoryChangeHandler>,
-        mc_handler: Box<dyn MergeConflictHandler>,
+        dc_handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
+        mc_handler: Arc<Mutex<dyn MergeConflictHandler>>,
     ) {
         self.directory_change_handler = Some(dc_handler);
         self.merge_conflict_handler = Some(mc_handler);
     }
-}
 
-impl StorageManager for TexlaStorageManager<GitManager> {
-    fn start(&self) {
+    async fn start(this: Arc<Mutex<Self>>) {
         // TODO after VS: start async timer-based background tasks and start DirectoryChangeHandler
-
-        todo!()
+        // we probably want to use tokio::spawn() here
     }
 
     fn remote_url(&self) -> Option<&String> {

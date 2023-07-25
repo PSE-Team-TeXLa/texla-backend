@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct AstError {
     message: String,
 }
@@ -35,9 +35,9 @@ impl From<OperationError> for AstError {
 }
 
 //TODO Decide on Chumsky Error Strategy, then make this nicer (after VS)
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ParseError {
-    message: String,
+    pub message: String,
 }
 
 impl Display for ParseError {
@@ -58,7 +58,7 @@ impl From<Vec<chumsky::error::Simple<char>>> for ParseError {
 
 #[derive(Debug, PartialEq)]
 pub struct StringificationError {
-    pub(crate) message: String,
+    pub message: String,
 }
 impl Display for StringificationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -74,9 +74,9 @@ impl From<serde_json::Error> for StringificationError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct OperationError {
-    message: String,
+    pub message: String,
 }
 
 impl Display for OperationError {

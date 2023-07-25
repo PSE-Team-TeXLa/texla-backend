@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 // TODO after VS: implement and use same errors as in spec?
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct InfrastructureError {}
 
 impl Error for InfrastructureError {}

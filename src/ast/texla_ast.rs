@@ -4,8 +4,8 @@ use std::sync::{Arc, Mutex};
 use serde::Serialize;
 
 use crate::ast::errors::AstError;
-use crate::ast::node::{Node, NodeRef, NodeRefWeak};
-use crate::ast::operation::Operation;
+use crate::ast::node::{Node, NodeRef, NodeRefWeak, NodeType};
+use crate::ast::operation::{Operation, Position};
 use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
 use crate::ast::{parser, Ast};
@@ -38,6 +38,55 @@ impl TexlaAst {
             highest_level: 0,
         }
     }
+
+    // TODO: maybe replace unwraps by expect or error returning
+    pub fn insert_node_at_position(&mut self, node_ref: NodeRef, position: Position) {
+        let parent_ref = self.get_node(position.parent);
+        let mut parent = parent_ref.lock().unwrap();
+        let parent_children = match &mut parent.node_type {
+            NodeType::Expandable { children, .. } => children,
+            NodeType::Leaf { .. } => panic!("position parent is a leaf"),
+        };
+        let index = match position.after_sibling {
+            None => 0,
+            Some(uuid) => {
+                let sibling_ref = self.get_node(uuid);
+                parent_children
+                    .iter()
+                    .position(|child_ref| Arc::ptr_eq(child_ref, &sibling_ref))
+                    .expect("after_sibling not found")
+                    + 1
+            }
+        };
+        self.portal
+            .insert(node_ref.lock().unwrap().uuid, Arc::downgrade(&node_ref));
+        parent_children.insert(index, node_ref);
+    }
+
+    /// returns the [Position] of the removed node
+    pub fn remove_node(&mut self, node_ref: &NodeRef) -> Position {
+        let node = node_ref.lock().unwrap();
+        let parent_ref_weak = &node.parent.as_ref().expect("root cannot be removed");
+        let parent_ref = parent_ref_weak.upgrade().unwrap();
+        let mut parent = parent_ref.lock().unwrap();
+        let parent_children = match &mut parent.node_type {
+            NodeType::Expandable { children, .. } => children,
+            NodeType::Leaf { .. } => panic!("parent is a leaf"),
+        };
+        let index = parent_children
+            .iter()
+            .position(|child_ref| Arc::ptr_eq(child_ref, &node_ref))
+            .expect("target is not child of parent");
+        parent_children.remove(index);
+        self.portal.remove(&node.uuid);
+        Position {
+            after_sibling: match index {
+                0 => None,
+                _ => Some(parent_children[index - 1].lock().unwrap().uuid),
+            },
+            parent: parent.uuid, // the order of properties matters here because of borrowing
+        }
+    }
 }
 
 impl Ast for TexlaAst {
@@ -49,10 +98,15 @@ impl Ast for TexlaAst {
         Ok(self.root.lock().unwrap().to_latex(self.highest_level)?)
     }
 
-    fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
-        operation.execute_on(self)
+    fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
+        todo!()
     }
 
+    fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
+        Ok(operation.execute_on(self)?)
+    }
+
+    // TODO: move from trait to impl
     fn get_node(&self, uuid: Uuid) -> NodeRef {
         self.portal
             .get(&uuid)
