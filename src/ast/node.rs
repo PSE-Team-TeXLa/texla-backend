@@ -28,9 +28,9 @@ impl Node {
             Ok(self.node_type.to_latex(level)?)
         } else {
             Ok(format!(
-                "{}% TEXLA METADATA {}\n",
-                self.node_type.to_latex(level)?,
-                self.meta_data
+                "% TEXLA METADATA {}\n{}",
+                self.meta_data,
+                self.node_type.to_latex(level)?
             ))
         }
     }
@@ -211,7 +211,7 @@ impl LeafData {
             },
             LeafData::Comment { comment } => {
                 comment.lines().fold(String::new(), |mut acc, line| {
-                    acc.push_str(format!("% {line}\n").as_str());
+                    acc.push_str(format!("{line}\n").as_str());
                     acc
                 })
             }

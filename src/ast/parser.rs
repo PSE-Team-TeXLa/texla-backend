@@ -41,27 +41,24 @@ impl LatexParser {
         }
     }
 
-    fn build_text(&self, text: String) -> NodeRef {
+    fn build_text(&self, text: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Text { text: text.clone() },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             text,
-            Default::default(),
+            metadata,
         )
     }
 
     fn build_comment(&self, comment: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Comment {
-                comment: comment.clone(),
+                comment: format!("% {}", comment.clone()),
             },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            comment.lines().fold(String::new(), |mut acc, line| {
-                acc.push_str(format!("% {line}\n").as_str());
-                acc
-            }),
+            format!("% {}", comment.clone()),
             metadata,
         )
     }
@@ -92,7 +89,12 @@ impl LatexParser {
         )
     }
 
-    fn build_image(&self, options: Option<String>, path: String) -> NodeRef {
+    fn build_image(
+        &self,
+        options: Option<String>,
+        path: String,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_leaf(
             LeafData::Image {
                 path: path.clone(),
@@ -108,11 +110,11 @@ impl LatexParser {
                     format!("\\includegraphics[{option}]{{{path}}}")
                 }
             },
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_caption(&self, caption: String) -> NodeRef {
+    fn build_caption(&self, caption: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Caption {
                 caption: caption.clone(),
@@ -120,11 +122,11 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\caption{{{caption}}}"),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_label(&self, label: String) -> NodeRef {
+    fn build_label(&self, label: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Label {
                 label: label.clone(),
@@ -132,40 +134,56 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\label{{{label}}}"),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_file(&self, path: String, children: Vec<NodeRef>) -> NodeRef {
+    fn build_file(
+        &self,
+        path: String,
+        children: Vec<NodeRef>,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::File { path: path.clone() },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\input{{{path}}}"),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_env(&self, name: String, children: Vec<NodeRef>) -> NodeRef {
+    fn build_env(
+        &self,
+        name: String,
+        children: Vec<NodeRef>,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Environment { name: name.clone() },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\begin{{{}\n...\n\\end{{{}}}", name.clone(), name),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
+    fn build_segment(
+        &self,
+        heading: String,
+        children: Vec<NodeRef>,
+        raw: String,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             raw,
-            Default::default(),
+            metadata,
         )
     }
 
@@ -174,6 +192,7 @@ impl LatexParser {
         preamble: String,
         postamble: String,
         children: Vec<NodeRef>,
+        metadata: HashMap<String, String>,
     ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Document {
@@ -184,7 +203,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             String::new(),
-            Default::default(),
+            metadata,
         )
     }
 
@@ -211,14 +230,14 @@ impl LatexParser {
             })
             .boxed();
 
-        let comment = just("%")
-            .padded()
-            .ignore_then(take_until(choice((
+        let comment = metadata
+            .clone()
+            .then_ignore(just("%").padded())
+            .then(take_until(choice((
                 newline().then(none_of("%").rewind()).to("END"),
                 just("% TEXLA").rewind(),
             ))))
-            .then(metadata.clone())
-            .try_map(|((comment, _), metadata), span| {
+            .try_map(|(metadata, (comment, _)), span| {
                 let string: String = comment.iter().collect();
                 if string.starts_with("TEXLA") {
                     Err(Simple::custom(
@@ -248,17 +267,21 @@ impl LatexParser {
             .collect()
             .boxed();
 
-        let image = just("\\includegraphics")
-            .ignore_then(options.or_not())
+        let image = metadata
+            .clone()
+            .then_ignore(just("\\includegraphics"))
+            .then(options.or_not())
             .then(
                 none_of("}")
                     .repeated()
                     .at_least(1)
-                    .collect()
+                    .collect::<String>()
                     .delimited_by(just("{"), just("}")),
             )
             .padded()
-            .map(|(options, path): (Option<String>, String)| self.build_image(options, path))
+            .map(|((metadata, options), path)| {
+                self.build_image(options, path.parse().unwrap(), metadata)
+            })
             .boxed();
 
         let double_dollar_math = take_until(just("$$").rewind())
@@ -290,14 +313,19 @@ impl LatexParser {
         .padded()
         .boxed();
 
-        let caption = just("\\caption")
-            .ignore_then(heading.clone())
-            .map(|text| self.build_caption(text))
+        let caption = metadata
+            .clone()
+            .then_ignore(just("\\caption"))
+            .then(heading.clone())
+            .map(|(metadata, text)| self.build_caption(text, metadata))
             .padded()
             .boxed();
-        let label = just("\\label")
-            .ignore_then(heading.clone())
-            .map(|text| self.build_label(text))
+
+        let label = metadata
+            .clone()
+            .then_ignore(just("\\label"))
+            .then(heading.clone())
+            .map(|(metadata, text)| self.build_label(text, metadata))
             .padded()
             .boxed();
 
@@ -319,17 +347,23 @@ impl LatexParser {
         ))
         .boxed();
 
-        let text_node = take_until(terminator)
-            .try_map(|(v, _), span| {
+        let text_node = metadata
+            .clone()
+            .then(take_until(terminator))
+            .try_map(|(metadata, (v, _)), span| {
                 if !v.is_empty() {
-                    Ok(v)
+                    Ok((metadata, v))
                 } else {
                     Err(Simple::custom(span, "Found empty text".to_string()))
                 }
             })
-            .collect::<String>()
             .then_ignore(newline().or_not())
-            .map(|x: String| self.build_text(x.trim_end().to_string()))
+            .map(|(metadata, x)| {
+                self.build_text(
+                    x.iter().collect::<String>().trim_end().to_string(),
+                    metadata,
+                )
+            })
             .boxed();
 
         let leaf = choice((
@@ -343,16 +377,18 @@ impl LatexParser {
         .boxed();
 
         let environment = recursive(|environment| {
-            just("\\begin")
-                .ignore_then(heading.clone())
+            metadata
+                .clone()
+                .then_ignore(just("\\begin"))
+                .then(heading.clone())
                 .padded()
                 .then(leaf.clone().or(environment).repeated())
                 .then(just("\\end").ignore_then(heading.clone()).padded())
-                .try_map(|((name_begin, children), name_end), span| {
+                .try_map(|(((metadata, name_begin), children), name_end), span| {
                     if name_begin != name_end {
                         Err(Simple::custom(span, "Environment not closed correctly"))
                     } else {
-                        Ok(self.build_env(name_end, children))
+                        Ok(self.build_env(name_end, children, metadata))
                     }
                 })
         })
@@ -361,11 +397,13 @@ impl LatexParser {
         let prelude = choice((leaf.clone(), environment.clone())).boxed();
 
         let prelude_in_inputs = recursive(|prelude_in_inputs| {
-            just("% TEXLA FILE BEGIN")
-                .ignore_then(heading.clone().padded())
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
                 .then(prelude.clone().or(prelude_in_inputs).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(path, children)| self.build_file(path, children))
+                .map(|((metadata, path), children)| self.build_file(path, children, metadata))
         })
         .boxed();
 
@@ -375,31 +413,41 @@ impl LatexParser {
             .repeated()
             .padded()
             .boxed();
+
         // TODO extract method
-        let subsection = just("\\subsection")
-            .ignore_then(heading.clone())
+        let subsection = metadata
+            .clone()
+            .then_ignore(just("\\subsection"))
+            .then(heading.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
-            .map(|(heading, blocks): (String, Vec<NodeRef>)| {
+            .map(|((metadata, heading), blocks)| {
                 self.build_segment(
                     heading.clone(),
                     blocks,
                     format!("\\subsection{{{heading}}}"),
+                    metadata,
                 )
             })
             .boxed();
 
         let subsections_in_inputs = recursive(|subsections_in_inputs| {
-            just("% TEXLA FILE BEGIN")
-                .ignore_then(heading.clone().padded())
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
                 .then(prelude_any.clone())
                 .then(subsections_in_inputs.or(subsection.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|((path, mut prelude), mut children)| {
-                    self.build_file(path, {
-                        prelude.append(&mut children);
-                        prelude
-                    })
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
                 })
         })
         .boxed();
@@ -410,33 +458,41 @@ impl LatexParser {
             .padded()
             .boxed();
 
-        let section = just("\\section")
-            .ignore_then(heading.clone())
+        let section = metadata
+            .clone()
+            .then_ignore(just("\\section"))
+            .then(heading.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(subsection_any.clone().repeated())
-            .map(
-                |((heading, mut blocks), mut subsections): (
-                    (String, Vec<NodeRef>),
-                    Vec<NodeRef>,
-                )| {
-                    blocks.append(&mut subsections);
-                    self.build_segment(heading.clone(), blocks, format!("\\section{{{heading}}}"))
-                },
-            )
+            .map(|(((metadata, heading), mut blocks), mut subsections)| {
+                blocks.append(&mut subsections);
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\section{{{heading}}}"),
+                    metadata,
+                )
+            })
             .boxed();
 
         let sections_in_inputs = recursive(|sections_in_inputs| {
-            just("% TEXLA FILE BEGIN")
-                .ignore_then(heading.clone().padded())
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
                 .then(prelude_any.clone())
                 .then(sections_in_inputs.or(section.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|((path, mut prelude), mut children)| {
-                    self.build_file(path, {
-                        prelude.append(&mut children);
-                        prelude
-                    })
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
                 })
         })
         .boxed();
@@ -464,14 +520,20 @@ impl LatexParser {
         let document = preamble
             .clone()
             .or_not()
+            .then(metadata.clone())
             .then_ignore(just::<_, _, Simple<char>>("\\begin{document}").padded())
             .then(root_children.clone())
             .then_ignore(just("\\end{document}"))
-            .map(|(preamble, (mut leaves, mut segments))| {
-                self.build_document(preamble.unwrap_or(String::new()), String::new(), {
-                    leaves.append(&mut segments);
-                    leaves
-                })
+            .map(|((preamble, metadata), (mut leaves, mut segments))| {
+                self.build_document(
+                    preamble.unwrap_or(String::new()),
+                    String::new(),
+                    {
+                        leaves.append(&mut segments);
+                        leaves
+                    },
+                    metadata,
+                )
             })
             .then_ignore(end().padded())
             .boxed();
