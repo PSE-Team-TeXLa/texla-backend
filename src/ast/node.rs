@@ -114,9 +114,13 @@ impl NodeType {
                     ExpandableData::Segment { heading } => {
                         let children = self.children_to_latex(level + 1)?;
                         let keyword = match level {
+                            1 => "part".to_string(),
+                            2 => "chapter".to_string(),
                             3 => "section".to_string(),
                             4 => "subsection".to_string(),
-                            // TODO implement all segment levels
+                            5 => "subsubsection".to_string(),
+                            6 => "paragraph".to_string(),
+                            7 => "subparagraph".to_string(),
                             other => {
                                 return Err(StringificationError {
                                     message: format!("Invalid Nesting Level: {}", other),
