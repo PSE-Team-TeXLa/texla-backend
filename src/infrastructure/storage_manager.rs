@@ -41,9 +41,11 @@ impl<V> TexlaStorageManager<V>
 where
     V: VcsManager,
 {
+    const LATEX_FILE_EXTENSION: &'static str = "tex";
+    const LATEX_PATH_SEPARATOR: &'static str = "/";
     const FILE_BEGIN_MARK: &'static str = "% TEXLA FILE BEGIN";
     const FILE_END_MARK: &'static str = "% TEXLA FILE END";
-    const LATEX_PATH_SEPARATOR: &'static str = "/";
+    const INPUT_COMMAND: &'static str = "\\input";
 
     pub fn new(vcs_manager: V, main_file: String) -> Self {
         // TODO use Path instead of String for main_file
@@ -61,6 +63,10 @@ where
         s.replace("\r\n", "\n")
     }
 
+    fn len(s: &str) -> usize {
+        s.chars().count()
+    }
+
     fn curly_braces_parser() -> BoxedParser<'static, char, String, Simple<char>> {
         none_of::<_, _, Simple<char>>("}")
             .repeated()
@@ -71,9 +77,8 @@ where
     }
 
     fn latex_input_parser() -> BoxedParser<'static, char, (String, Range<usize>), Simple<char>> {
-        take_until(just::<_, _, Simple<char>>("\\input"))
-            .map_with_span(|_, span| -> usize { span.end() - 6 })
-            // "\\input".to_string().len() = 6
+        take_until(just::<_, _, Simple<char>>(Self::INPUT_COMMAND))
+            .map_with_span(|_, span| -> usize { span.end() - Self::len(Self::INPUT_COMMAND) })
             .then(Self::curly_braces_parser())
             .map_with_span(|(start, text), span| -> (String, Range<usize>) {
                 (text, start..span.end())
@@ -93,7 +98,7 @@ where
 
         // append file extension (optional in LaTeX)
         if path.extension().is_none() {
-            path.set_extension("tex");
+            path.set_extension(Self::LATEX_FILE_EXTENSION);
         }
 
         // get relative and absolute path
