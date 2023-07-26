@@ -114,8 +114,8 @@ impl NodeType {
                     ExpandableData::Segment { heading } => {
                         let children = self.children_to_latex(level + 1)?;
                         let keyword = match level {
-                            3 => "section".to_string(),
-                            4 => "subsection".to_string(),
+                            1 => "section".to_string(),
+                            2 => "subsection".to_string(),
                             // TODO implement all segment levels
                             other => {
                                 return Err(StringificationError {
@@ -129,7 +129,7 @@ impl NodeType {
                         preamble,
                         postamble,
                     } => {
-                        let children = self.children_to_latex(level + 1)?;
+                        let children = self.children_to_latex(level)?;
                         Ok(format!("{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"
                     ))
                     }
@@ -140,11 +140,11 @@ impl NodeType {
                         ))
                     }
                     ExpandableData::Environment { name } => {
-                        let children = self.children_to_latex(level + 1)?;
+                        let children = self.children_to_latex(level)?;
                         Ok(format!("\\begin{{{name}}}\n{children}\\end{{{name}}}\n"))
                     }
                     ExpandableData::Dummy { text } => {
-                        let children = self.children_to_latex(level + 1)?;
+                        let children = self.children_to_latex(level)?;
                         Ok(format!("{text}\n\n{children}"))
                     }
                 }

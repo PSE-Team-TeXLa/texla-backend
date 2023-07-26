@@ -478,11 +478,12 @@ impl LatexParser {
         document
     }
 
+    // TODO: command-level matching should be externalized into latex_globals.rs
     fn find_highest_level(&self) -> impl Parser<char, i8, Error = Simple<char>> + '_ {
         take_until(just("\\section").or(just("\\subsection")))
             .map(|(_trash, keyword)| match keyword {
-                "\\section" => 2,
-                "\\subsection" => 3,
+                "\\section" => 1,
+                "\\subsection" => 2,
                 _ => 8,
             })
             .boxed()
