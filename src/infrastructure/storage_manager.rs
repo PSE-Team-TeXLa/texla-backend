@@ -61,6 +61,26 @@ where
         s.replace("\r\n", "\n")
     }
 
+    fn curly_braces_parser() -> BoxedParser<'static, char, String, Simple<char>> {
+        none_of::<_, _, Simple<char>>("}")
+            .repeated()
+            .at_least(1)
+            .delimited_by(just("{"), just("}"))
+            .collect::<String>()
+            .boxed()
+    }
+
+    fn latex_input_parser() -> BoxedParser<'static, char, (String, Range<usize>), Simple<char>> {
+        take_until(just::<_, _, Simple<char>>("\\input"))
+            .map_with_span(|_, span| -> usize { span.end() - 6 })
+            // "\\input".to_string().len() = 6
+            .then(Self::curly_braces_parser())
+            .map_with_span(|(start, text), span| -> (String, Range<usize>) {
+                (text, start..span.end())
+            })
+            .boxed()
+    }
+
     fn get_paths(&self, input_path: String) -> (PathBuf, PathBuf) {
         // replace separators in path (LaTeX und Unix use forward slashes, Windows uses backslashes)
         let mut path = PathBuf::from({
@@ -139,20 +159,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
     fn multiplex_files(&self) -> Result<String, InfrastructureError> {
         // define parser for '\input{...}'
-        let parser = take_until(just::<_, _, Simple<char>>("\\input"))
-            .map_with_span(|_, span| -> usize { span.end() - 6 })
-            // "\\input".to_string().len() = 6
-            .then(
-                none_of("}")
-                    .repeated()
-                    .at_least(1)
-                    .delimited_by(just("{"), just("}"))
-                    .collect::<String>(),
-            )
-            .map_with_span(|(start, text), span| -> (String, Range<usize>) {
-                (text, start..span.end())
-            })
-            .boxed();
+        let parser = Self::latex_input_parser();
 
         // start with content of main file as latex single string
         let mut latex_single_string =
