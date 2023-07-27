@@ -1,3 +1,4 @@
+use std::path::MAIN_SEPARATOR_STR;
 use std::sync::{Arc, RwLock};
 
 use clap::Parser;
@@ -18,11 +19,16 @@ pub async fn start() {
     // append `-- --main-file main.tex` to your run command in CLion to provide the necessary CLI
     // argument
     let args = CliArguments::parse();
-    println!("Opening file: {}", args.main_file);
+
+    // replace separators in path with system-dependent variant
+    let main_file = args.main_file.replace(['/', '\\'], MAIN_SEPARATOR_STR);
+    // TODO use Path instead of String
+
+    println!("Opening file: {}", main_file);
 
     let core = TexlaCore {
         export_manager: TexlaExportManager,
-        main_file: args.main_file, // TODO use Path instead of String
+        main_file,
     };
 
     let core = Arc::new(RwLock::new(core));

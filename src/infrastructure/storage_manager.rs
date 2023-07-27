@@ -88,18 +88,15 @@ where
 
     fn get_paths(&self, input_path: String) -> (PathBuf, PathBuf) {
         // replace separators in path (LaTeX und Unix use forward slashes, Windows uses backslashes)
-        let mut path = PathBuf::from({
+        // and set file extension (optional in LaTeX)
+        let path = PathBuf::from({
             if MAIN_SEPARATOR_STR == Self::LATEX_PATH_SEPARATOR {
                 input_path
             } else {
                 input_path.replace(Self::LATEX_PATH_SEPARATOR, MAIN_SEPARATOR_STR)
             }
-        });
-
-        // append file extension (optional in LaTeX)
-        if path.extension().is_none() {
-            path.set_extension(Self::LATEX_FILE_EXTENSION);
-        }
+        })
+        .with_extension(Self::LATEX_FILE_EXTENSION);
 
         // get relative and absolute path
         let main_file_directory = PathBuf::from(&self.main_file)
@@ -124,13 +121,14 @@ where
             // TODO also support paths that are no child of 'main_file_directory'?
         }
 
-        // replace separators in path again
+        // replace separators in path and remove file extension again
         let path_rel_latex = {
             if MAIN_SEPARATOR_STR == Self::LATEX_PATH_SEPARATOR {
-                path_rel
+                path_rel.with_extension("")
             } else {
                 PathBuf::from(
                     path_rel
+                        .with_extension("")
                         .to_str()
                         .unwrap()
                         .replace(MAIN_SEPARATOR_STR, Self::LATEX_PATH_SEPARATOR),

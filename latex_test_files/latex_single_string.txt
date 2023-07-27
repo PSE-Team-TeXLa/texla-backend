@@ -2,24 +2,24 @@
 
 \begin{document}
 
-% TEXLA FILE BEGIN {sections/section1.tex}
+% TEXLA FILE BEGIN {sections/section1}
 \section{First section}
 
 Lorem ipsum.
 
-% TEXLA FILE END {sections/section1.tex}
-% TEXLA FILE BEGIN {sections/section2.tex}
+% TEXLA FILE END {sections/section1}
+% TEXLA FILE BEGIN {sections/section2}
 \section{Second section}
 
 Dolor sit amet.
 
-% TEXLA FILE BEGIN {sections/section2/subsection1.tex}
+% TEXLA FILE BEGIN {sections/section2/subsection1}
 \subsection{First subsection of second section}
 
 Consectetur adipisici elit.
 
-% TEXLA FILE END {sections/section2/subsection1.tex}
+% TEXLA FILE END {sections/section2/subsection1}
 
-% TEXLA FILE END {sections/section2.tex}
+% TEXLA FILE END {sections/section2}
 
 \end{document}
