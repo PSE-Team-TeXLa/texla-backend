@@ -258,7 +258,7 @@ mod tests {
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
-            lf(fs::read_to_string("latex_test_files/latex_single_string.tex").unwrap())
+            lf(fs::read_to_string("latex_test_files/latex_single_string.txt").unwrap())
         )
     }
 }
