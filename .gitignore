@@ -1,8 +1,9 @@
 # build directory
 /target
 
-# test build directory
+# test build directory and files
 /latex_test_files/out
+out.json
 
 # IDE directories
 .vscode/
