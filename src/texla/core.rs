@@ -7,7 +7,7 @@ pub struct TexlaCore {
     pub export_manager: TexlaExportManager,
     // only needed for offline versoion
     // not clean (maybe pass main_file over frontend)
-    pub main_file: String,
+    pub main_file: String, // TODO use Path instead of String
 }
 
 impl DirectoryChangeHandler for TexlaCore {
