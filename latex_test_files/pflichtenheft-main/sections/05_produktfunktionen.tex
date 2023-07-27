@@ -1,0 +1,262 @@
+\section{Produktfunktionen}
+\label{sec:produktfunktionen}
+
+\subsection{Verpflichtende funktionale Anforderungen}
+\label{subsec:verpflichtende-funktionale-anforderungen}
+
+\texla{} soll folgende Funktionen unterstützen:
+
+\functionality{Starten der Anwendung}{fnc:start}
+\fulfills{crt:cli}
+
+\texla{} lässt sich von der Konsole aus starten.
+Dabei wird als Argument eine \LaTeX"=Datei angegeben.
+\texla{} arbeitet anschließend auf dieser und den durch sie eingebundenen Dateien.
+
+\functionality{Beenden der Anwendung}{fnc:exit}
+\fulfills{crt:cli}
+
+Über die GUI von \texla{} lässt sich das Programm kontrolliert beenden.
+Dabei werden alle Änderungen lokal gespeichert und in das lokale Git-Repository sowie das Remote-Repository übernommen.
+
+\functionality{Hierarchische Darstellung}{fnc:hierarchy}
+\fulfills{crt:hierarchy}
+
+Abschnitte in einem \LaTeX"=Dokument werden mit den Befehlen \verb|\part|, \verb|\chapter|, \verb|\section|,
+\verb|\subsection|, \verb|\subsubsection|, \verb|\paragraph| und \verb|\subparagraph| auf verschiedenen Ebenen
+definiert.
+Basierend darauf stellt \texla{} das ausgewählte \LaTeX"=Dokument in hierarchischer Form dar.
+Somit sind diese Abschnitte sogenannte Expandables.
+
+In einer zweispaltigen Ansicht -- im Folgenden \enquote{Standardmodus} genannt -- werden dafür alle Elemente bis zu
+einer gewünschten Ebene dargestellt.
+Durch Auswahl eines Abschnittes bzw. durch eine entsprechende Schaltfläche in der GUI ist ein Wechsel zu einer tieferen
+bzw. zu einer höheren Ebene möglich.
+
+\functionality{Unterstützung inkludierter Dateien}{fnc:input}
+\fulfills{crt:hierarchy}
+
+In einer \LaTeX"=Datei können mittels \verb|\input| weitere \LaTeX"=Dateien integriert werden.
+Deren Inhalt wird ebenso in der GUI angezeigt.
+Dabei entsteht für jede Verwendung von \verb|\input| ein Strukturelement, dem auf tieferen Ebenen die jeweiligen
+Strukturelemente der inkludierten Datei untergeordnet sind.
+Somit ist \verb|\input| ebenfalls ein Expandable.
+
+\clearpage
+
+\functionality{Strukturelemente in Blöcke aufteilen}{fnc:blocks}
+\fulfills{crt:easy-elements}
+
+Mittels \verb|\begin{...}| und \verb|\end{...}| können Umgebungen in \LaTeX"=Dokumenten genutzt werden.
+\texla{} erkennt solche Umgebungen und stellt diese wie auch die genannten Abschnitte jeweils als separaten Block dar.
+Umgebungen sind keine Expandables.
+Ineinander verschachtelte Umgebungen werden also zu einem Block zusammengefasst und im Gegensatz zu Abschnitten nicht
+auf mehrere Ebenen aufgeteilt.
+Eine Ausnahme hiervon bildet die Umgebung \verb|document|.
+
+\functionality{Bestimmte Strukturelemente rendern}{fnc:render}
+\fulfills{crt:easy-elements}
+
+Folgende Strukturelemente werden in gerenderter Form, vergleichbar mit der Ansicht im PDF-Dokument, angezeigt:
+
+\begin{itemize}
+  \item Bilder, definiert durch \verb|\includegraphics|
+  \item Formeln, definiert durch \verb|\[ ... \]|, \verb|$$ ... $$| oder durch eine der Umgebungen \verb|displaymath|
+  und \verb|equation|
+\end{itemize}
+
+Für alle anderen Strukturelemente reicht eine Darstellung in Form des \LaTeX"=Quelltextes innerhalb des jeweiligen
+Blocks aus.
+
+Sofern sich Elemente wie Bilder in Floats befinden, richtet sich die Position der Darstellung in \texla{} nach der
+Position im Quelltext, nicht nach der Position im PDF-Dokument.
+
+\functionality{Formatierung in Textblöcken}{fnc:format}
+\fulfills{crt:easy-format}
+
+Bei Textblöcken sowie bei Überschriften von Abschnitten werden die \LaTeX"=Befehle \verb|\textbf| und \verb|\textit|
+berücksichtigt.
+Entsprechende Teile des Textes werden fett bzw. kursiv hervorgehoben.
+
+\functionality{Ein- und Ausblenden von Strukturelementen}{fnc:hide}
+\fulfills{crt:clarity}
+
+Wie in \functionalitylink{fnc:hierarchy} erläutert, stellt \texla{} nur Strukturelemente bis zur gewählten Ebene dar.
+Alle Strukturelemente auf tieferen Ebenen werden ausgeblendet.
+Beim Wechsel zwischen Ebenen werden automatisch die entsprechenden Elemente ein- bzw. ausgeblendet.
+
+\clearpage
+
+\functionality{Kompaktform von Strukturelementen}{fnc:compact}
+\fulfills{crt:clarity}
+
+Auf der linken Seite der zweispaltigen Ansicht von \texla{} werden die gleichen Expandables wie auf der rechten Seite
+angezeigt.
+Links werden die Elemente in kompakter Form dargestellt, rechts vollständig.
+
+Bei Textblöcken entspricht die kompakte Darstellung den ersten Worten des Absatzes, bei Abschnitten der dazugehörigen
+Überschrift, bei Bildern einer verkleinerten Anzeige des Bildes und bei sonstigen Strukturelementen dem Namen der
+entsprechenden Umgebung.
+
+Eine Ausnahme hiervon bilden Algorithmen, definiert durch eine der Umgebungen \verb|lstlisting|, \verb|minted|,
+\verb|codebox| und \verb|algorithm|.
+Diese werden unabhängig von der konkreten Umgebung als Algorithmus erkannt.
+Die Kompaktform dieser Umgebungen entspricht dem Wort \enquote{Algorithmus} bzw. \enquote{algorithm}.
+
+\functionality{Bereitstellung einer Graphansicht}{fnc:graph}
+\fulfills{crt:hierarchy}
+
+\texla{} bietet neben dem bisher beschriebenen Standardmodus einen \enquote{Graphmodus}, in dem alle Strukturelemente
+auf allen Ebenen in Kompaktform angezeigt werden.
+
+\functionality{Verschieben von Elementen per Drag and Drop}{fnc:drag-and-drop}
+\fulfills{crt:dnd}
+
+Im Standardmodus kann jedes Element in der rechten Spalte per Drag and Drop verschoben werden.
+Der Inhalt des Strukturelements bleibt dabei unverändert.
+Eine Verschiebung von der rechten in die linke Spalte ist nicht möglich.
+Die von \LaTeX{} vorgegebene Grenze von maximal 7 Ebenen für Abschnitte kann beim Verschieben nicht überschritten
+werden.
+
+Im Graphmodus ist ebenso ein Verschieben beliebiger Strukturelemente an beliebige Stellen unter den bestehenden
+Einschränkungen möglich.
+
+\functionality{Bereitstellung eines Minieditors}{fnc:minieditor}
+\fulfills{crt:minieditor}
+
+Für jedes Strukturelement lässt sich im Standardmodus ein Minieditor öffnen.
+Darin ist eine Bearbeitung des entsprechenden \LaTeX"=Quelltextes möglich.
+Dieser Modus wird als \enquote{Bearbeitungsmodus} bezeichnet.
+
+\clearpage
+
+\functionality{Hinzufügen von Strukturelementen}{fnc:add}
+\fulfills{crt:add}
+
+Zwischen aufeinanderfolgenden Strukturelementen lässt sich im Standardmodus ein weiteres Strukturelement hinzufügen.
+In der GUI existiert dafür eine entsprechende Schaltfläche an den jeweiligen Stellen.
+Durch einen Klick darauf öffnet sich ein neuer Minieditor mit leerem Inhalt.
+Der anschließend darin eingegebene \LaTeX"=Quelltext bildet das neue Strukturelement.
+
+Alternativ lässt sich ein neues Strukturelement auch durch den jeweiligen \LaTeX"=Befehl innerhalb des Minieditors
+eines bereits vorhandenen Elements erstellen.
+Der ursprüngliche Block wird anschließend entsprechend in mehrere Blöcke aufgeteilt, ggf. auf verschiedenen Ebenen.
+
+\functionality{Speichern von Zusatzinformationen in Kommentaren}{fnc:meta-comments}
+\fulfills{crt:meta-comments}
+
+Notwendige Zusatzinformationen werden innerhalb der \LaTeX"=Datei in gesonderten Kommentaren persistent gespeichert.
+Diese Kommentare unterscheiden sich durch ein eindeutiges Präfix von regulären Kommentaren im \LaTeX"=Quelltext.
+
+\functionality{Benutzerdefinierter Export}{fnc:export}
+\fulfills{crt:export}
+
+Das ausgewählte \LaTeX"=Dokument lässt sich exportieren.
+Durch Einstellungsmöglichkeiten lassen sich einzelne Teile des Dokuments wie Kommentare im \LaTeX"=Quelltext vom Export
+ausschließen.
+Beim Export wird die ursprüngliche Ordner- und Dateistruktur beibehalten.
+
+\functionality{Integration mit Git}{fnc:git}
+\fulfills{crt:git}
+
+\texla{} übernimmt Änderungen am \LaTeX"=Dokument stets in die entsprechenden lokalen Dateien.
+Nach 5~\si{\second} ohne Änderungen erfolgt automatisch ein Commit in das lokale Git-Repository sowie ein Push in das
+entsprechende Remote-Repository.
+
+\functionality{Link zum Projekt in Overleaf}{fnc:overleaf-link}
+\fulfills{crt:overleaf-link}
+
+Die GUI bietet einen Direktlink zum entsprechenden Projekt in Overleaf, das mit dem Git-Repository verbunden ist.
+Ein Direktlink zur aktuell geöffneten Datei wird nicht angeboten.
+
+\clearpage
+
+\subsection{Optionale funktionale Anforderungen}
+\label{subsec:optionale-funktionale-anforderungen}
+
+Zudem ergeben sich weitere optionale Funktionen für \texla:
+
+\functionality{Konfigurierbare GUI}{fnc:configurable-gui}
+\fulfills{crt:configurable-gui}
+
+Die GUI von \texla{} lässt sich konfigurieren.
+Beispielsweise lassen sich Kommentare im \LaTeX"=Quelltext ausblenden.
+
+\functionality{Tastaturkürzel}{fnc:keyboard}
+\fulfills{crt:keyboard}
+
+\texla{} bietet Tastaturkürzel für einzelne Operationen, \zB{} das Wechseln zwischen Standardmodus und Graphmodus, an.
+
+\functionality{Hinzufügen von Notizen}{fnc:notes}
+\fulfills{crt:notes}
+
+Zu jedem Strukturelement lässt sich über eine entsprechende Schaltfläche in der GUI eine Notiz hinzufügen.
+
+\functionality{Benutzerdefinierte Kompaktformen von Strukturelementen}{fnc:manual-compact-form}
+\fulfills{crt:manual-compact-form}
+
+Abweichend von \functionalitylink{fnc:compact} lassen sich benutzerdefinierte Kompaktformen für Strukturelemente
+festlegen.
+Dafür existiert neben jedem Strukturelement eine entsprechende Schaltfläche in der GUI.
+
+\functionality{Syntax-Hervorhebung im Minieditor}{fnc:syntax-highlighting}
+\fulfills{crt:syntax-highlighting}
+
+Im Minieditor eines Strukturelements werden \LaTeX"=Befehle farblich hervorgehoben.
+
+\functionality{Code-Vervollständigung im Minieditor}{fnc:code-completion}
+\fulfills{crt:code-completion}
+
+Im Minieditor eines Strukturelements wird eine Code-Vervollständigung angeboten.
+Beim Tippen eines \LaTeX"=Befehls werden entsprechend passende Befehle angezeigt.
+Durch Auswählen eines Vorschlags wird der Befehl an der aktuellen Stelle eingefügt.
+
+\clearpage
+
+\functionality{Übersetzung der Anwendung}{fnc:multilingual}
+\fulfills{crt:multilingual}
+
+\texla{} bietet die Möglichkeit, weitere Sprachen für die Anwendung einzubinden.
+Die Standardsprache ist Englisch.
+
+\functionality{Kompatibilität mit Browser-Extensions zur Autokorrektur}{fnc:autocorrect}
+\fulfills{crt:autocorrect}
+
+\texla{} stellt die Kompatibilität mit einzelnen Browser-Extensions sicher, die eine Autokorrektur bezüglich
+Rechtschreibung und Grammatik bieten.
+
+\functionality{Automatische Zusammenfassung von Abschnitten durch KI}{fnc:ai-tldrs}
+\fulfills{crt:ai-tldrs}
+
+\texla{} bietet die Möglichkeit, KI-generierte Zusammenfassungen für Abschnitte als Kompaktformen zu verwenden.
+Diese Funktion lässt sich durch eine entsprechende Schaltfläche in der GUI aktivieren.
+
+\functionality{Unterstützung beim Schreiben durch KI}{fnc:ai-rewriting}
+\fulfills{crt:ai-rewriting}
+
+\texla{} bietet die Möglichkeit, Abschnitte durch KI-Unterstützung umzuschreiben.
+Dazu kann ein Kommentar angegeben werden, der als Anfrage an die KI weitergegeben wird.
+
+\functionality{Bereitstellung als reinen Online-Dienst}{fnc:online}
+\fulfills{crt:online}
+
+\texla{} wird als reiner Online-Dienst bereitgestellt, anstatt als lokale Installation verwendet zu werden.
+
+\functionality{Voreinstellungsprofile für den benutzerdefinierten Export}{fnc:export-profiles}
+\fulfills{crt:export-profiles}
+
+Wie in \functionalitylink{fnc:export} beschrieben, bietet \texla{} beim Export noch Einstellungsmöglichkeiten.
+Dafür lassen sich einzelne Profile auswählen.
+
+\functionality{Export von PDF-Dateien}{fnc:pdf-export}
+\fulfills{crt:pdf-export}
+
+\texla{} bietet die Möglichkeit, das aktuelle Dokument als PDF-Datei zu exportieren.
+
+\clearpage
+
+\functionality{Verschieben von Listenelementen per Drag and Drop}{fnc:lists}
+\fulfills{crt:lists}
+
+Elemente innerhalb einer Listenumgebung wie \verb|itemize| oder \verb|enumerate| lassen sich per Drag and Drop in der
+Reihenfolge umordnen.
