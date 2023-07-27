@@ -787,26 +787,3 @@ impl LatexParser {
             .boxed()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use std::fs;
-    use std::path::Path;
-
-    use crate::ast::parser::parse_latex;
-
-    #[test]
-    fn simple() {
-        let latex = fs::read_to_string(Path::new("./latex_test_files/simple_latex.tex")).unwrap();
-        let ast = parse_latex(latex);
-        println!("{:#?}", ast);
-    }
-
-    #[test]
-    fn get_sample_json() {
-        let latex = fs::read_to_string(Path::new("./latex_test_files/simple_latex.tex")).unwrap();
-        let ast = parse_latex(latex).unwrap();
-        let json = serde_json::to_string_pretty(&ast).unwrap();
-        fs::write(Path::new("./latex_test_files/simple_latex.json"), json).unwrap();
-    }
-}
