@@ -255,7 +255,6 @@ impl LatexParser {
             .delimited_by(just("{"), just("}"))
             .collect::<String>()
             .boxed();
-        // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
         let options = just("[")
             .ignore_then(none_of("]").repeated())

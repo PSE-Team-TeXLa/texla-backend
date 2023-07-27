@@ -5,7 +5,7 @@ use crate::infrastructure::vcs_manager::MergeConflictHandler;
 
 pub struct TexlaCore {
     pub export_manager: TexlaExportManager,
-    // only needed for offline versoion
+    // only needed for offline version
     // not clean (maybe pass main_file over frontend)
     pub main_file: String, // TODO use Path instead of String
 }
