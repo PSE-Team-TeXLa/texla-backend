@@ -1,6 +1,9 @@
 # build directory
 /target
 
+# test build directory
+/latex_test_files/out
+
 # IDE directories
 .vscode/
 .idea/
