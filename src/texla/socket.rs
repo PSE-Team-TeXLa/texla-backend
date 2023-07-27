@@ -47,17 +47,15 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         TexlaStorageManager::new(vcs_manager, core.main_file.clone())
     };
 
-    let ast = {
-        let latex_single_string = storage_manager.multiplex_files().unwrap();
-        let ast = TexlaAst::from_latex(latex_single_string).unwrap();
-        if let Err(err) = ast.to_latex(Default::default()) {
+    let ast = match parse_ast_from_disk(&storage_manager) {
+        Ok(ast) => ast,
+        Err(err) => {
             println!("Found invalid ast: {}", err);
-            socket.emit("error", TexlaError::from(err)).ok();
+            socket.emit("error", err).ok();
             return;
             // this will display the error in the frontend
             // the frontend will not receive any further messages
         }
-        ast
     };
 
     let state = TexlaState {
@@ -154,6 +152,16 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
 
     // let the tasks in storage_manager be executed
     join!(storage_manager_handle);
+}
+
+fn parse_ast_from_disk(
+    storage_manager: &TexlaStorageManager<GitManager>,
+) -> Result<TexlaAst, TexlaError> {
+    let latex_single_string = storage_manager.multiplex_files()?;
+    let ast = TexlaAst::from_latex(latex_single_string)?;
+    // verify the ast by converting it to latex again
+    ast.to_latex(Default::default())?;
+    Ok(ast)
 }
 
 fn extract_state(socket: &TexlaSocket) -> Ref<SharedTexlaState> {
