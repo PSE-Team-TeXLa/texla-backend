@@ -4,6 +4,7 @@ use std::sync::{Arc, RwLock};
 use axum::Server;
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::set_status::SetStatus;
+use tower_http::trace::TraceLayer;
 
 use crate::texla::core::TexlaCore;
 use crate::texla::socket::socket_service;
@@ -15,8 +16,8 @@ pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
     let app = axum::Router::new()
         // .route("/dummy", get(|| async { Html("This is a dummy file.") }))
         .fallback_service(static_files())
+        .layer(TraceLayer::new_for_http())
         .layer(socket_service(core));
-    // TODO: would be cool to have some kind of tracing/logging here, but I don't get it to work
 
     let res = Server::bind(&([127, 0, 0, 1], PORT).into())
         .serve(app.into_make_service())
