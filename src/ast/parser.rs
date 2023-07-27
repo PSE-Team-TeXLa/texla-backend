@@ -2,11 +2,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 
-use axum::body::HttpBody;
 use chumsky::prelude::*;
 use chumsky::text::newline;
 use chumsky::Parser;
-use tower::ServiceExt;
 
 use crate::ast;
 use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
@@ -41,27 +39,24 @@ impl LatexParser {
         }
     }
 
-    fn build_text(&self, text: String) -> NodeRef {
+    fn build_text(&self, text: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Text { text: text.clone() },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             text,
-            Default::default(),
+            metadata,
         )
     }
 
     fn build_comment(&self, comment: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Comment {
-                comment: comment.clone(),
+                comment: format!("% {}", comment.clone()),
             },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            comment.lines().fold(String::new(), |mut acc, line| {
-                acc.push_str(format!("% {line}\n").as_str());
-                acc
-            }),
+            format!("% {}", comment.clone()),
             metadata,
         )
     }
@@ -92,7 +87,12 @@ impl LatexParser {
         )
     }
 
-    fn build_image(&self, options: Option<String>, path: String) -> NodeRef {
+    fn build_image(
+        &self,
+        options: Option<String>,
+        path: String,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_leaf(
             LeafData::Image {
                 path: path.clone(),
@@ -108,11 +108,11 @@ impl LatexParser {
                     format!("\\includegraphics[{option}]{{{path}}}")
                 }
             },
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_caption(&self, caption: String) -> NodeRef {
+    fn build_caption(&self, caption: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Caption {
                 caption: caption.clone(),
@@ -120,11 +120,11 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\caption{{{caption}}}"),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_label(&self, label: String) -> NodeRef {
+    fn build_label(&self, label: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Label {
                 label: label.clone(),
@@ -132,40 +132,56 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\label{{{label}}}"),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_file(&self, path: String, children: Vec<NodeRef>) -> NodeRef {
+    fn build_file(
+        &self,
+        path: String,
+        children: Vec<NodeRef>,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::File { path: path.clone() },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\input{{{path}}}"),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_env(&self, name: String, children: Vec<NodeRef>) -> NodeRef {
+    fn build_env(
+        &self,
+        name: String,
+        children: Vec<NodeRef>,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Environment { name: name.clone() },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!("\\begin{{{}\n...\n\\end{{{}}}", name.clone(), name),
-            Default::default(),
+            metadata,
         )
     }
 
-    fn build_segment(&self, heading: String, children: Vec<NodeRef>, raw: String) -> NodeRef {
+    fn build_segment(
+        &self,
+        heading: String,
+        children: Vec<NodeRef>,
+        raw: String,
+        metadata: HashMap<String, String>,
+    ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Segment { heading },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             raw,
-            Default::default(),
+            metadata,
         )
     }
 
@@ -174,6 +190,7 @@ impl LatexParser {
         preamble: String,
         postamble: String,
         children: Vec<NodeRef>,
+        metadata: HashMap<String, String>,
     ) -> NodeRef {
         Node::new_expandable(
             ExpandableData::Document {
@@ -184,7 +201,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             String::new(),
-            Default::default(),
+            metadata,
         )
     }
 
@@ -211,14 +228,14 @@ impl LatexParser {
             })
             .boxed();
 
-        let comment = just("%")
-            .padded()
-            .ignore_then(take_until(choice((
+        let comment = metadata
+            .clone()
+            .then_ignore(just("%").padded())
+            .then(take_until(choice((
                 newline().then(none_of("%").rewind()).to("END"),
                 just("% TEXLA").rewind(),
             ))))
-            .then(metadata.clone())
-            .try_map(|((comment, _), metadata), span| {
+            .try_map(|(metadata, (comment, _)), span| {
                 let string: String = comment.iter().collect();
                 if string.starts_with("TEXLA") {
                     Err(Simple::custom(
@@ -240,25 +257,27 @@ impl LatexParser {
             .boxed();
         // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
-        // TODO write parsers
-
         let options = just("[")
             .ignore_then(none_of("]").repeated())
             .then_ignore(just("]"))
             .collect()
             .boxed();
 
-        let image = just("\\includegraphics")
-            .ignore_then(options.or_not())
+        let image = metadata
+            .clone()
+            .then_ignore(just("\\includegraphics"))
+            .then(options.or_not())
             .then(
                 none_of("}")
                     .repeated()
                     .at_least(1)
-                    .collect()
+                    .collect::<String>()
                     .delimited_by(just("{"), just("}")),
             )
             .padded()
-            .map(|(options, path): (Option<String>, String)| self.build_image(options, path))
+            .map(|((metadata, options), path)| {
+                self.build_image(options, path.parse().unwrap(), metadata)
+            })
             .boxed();
 
         let double_dollar_math = take_until(just("$$").rewind())
@@ -290,22 +309,31 @@ impl LatexParser {
         .padded()
         .boxed();
 
-        let caption = just("\\caption")
-            .ignore_then(heading.clone())
-            .map(|text| self.build_caption(text))
+        let caption = metadata
+            .clone()
+            .then_ignore(just("\\caption"))
+            .then(heading.clone())
+            .map(|(metadata, text)| self.build_caption(text, metadata))
             .padded()
             .boxed();
-        let label = just("\\label")
-            .ignore_then(heading.clone())
-            .map(|text| self.build_label(text))
+
+        let label = metadata
+            .clone()
+            .then_ignore(just("\\label"))
+            .then(heading.clone())
+            .map(|(metadata, text)| self.build_label(text, metadata))
             .padded()
             .boxed();
 
         // TODO find way to ignore \sectioning (use keyword?)
         let terminator = choice((
+            just("\\part").rewind(),
+            just("\\chapter").rewind(),
             just("\\section").rewind(),
             just("\\subsection").rewind(),
-            // TODO implement all segment levels
+            just("\\subsubsection").rewind(),
+            just("\\paragraph").rewind(),
+            just("\\subparagraph").rewind(),
             just("\\begin").rewind(),
             just("\\end").rewind(),
             just("\\end{document}").rewind(),
@@ -319,17 +347,23 @@ impl LatexParser {
         ))
         .boxed();
 
-        let text_node = take_until(terminator)
-            .try_map(|(v, _), span| {
+        let text_node = metadata
+            .clone()
+            .then(take_until(terminator))
+            .try_map(|(metadata, (v, _)), span| {
                 if !v.is_empty() {
-                    Ok(v)
+                    Ok((metadata, v))
                 } else {
                     Err(Simple::custom(span, "Found empty text".to_string()))
                 }
             })
-            .collect::<String>()
             .then_ignore(newline().or_not())
-            .map(|x: String| self.build_text(x.trim_end().to_string()))
+            .map(|(metadata, x)| {
+                self.build_text(
+                    x.iter().collect::<String>().trim_end().to_string(),
+                    metadata,
+                )
+            })
             .boxed();
 
         let leaf = choice((
@@ -343,16 +377,18 @@ impl LatexParser {
         .boxed();
 
         let environment = recursive(|environment| {
-            just("\\begin")
-                .ignore_then(heading.clone())
+            metadata
+                .clone()
+                .then_ignore(just("\\begin"))
+                .then(heading.clone())
                 .padded()
                 .then(leaf.clone().or(environment).repeated())
                 .then(just("\\end").ignore_then(heading.clone()).padded())
-                .try_map(|((name_begin, children), name_end), span| {
+                .try_map(|(((metadata, name_begin), children), name_end), span| {
                     if name_begin != name_end {
                         Err(Simple::custom(span, "Environment not closed correctly"))
                     } else {
-                        Ok(self.build_env(name_end, children))
+                        Ok(self.build_env(name_end, children, metadata))
                     }
                 })
         })
@@ -361,11 +397,13 @@ impl LatexParser {
         let prelude = choice((leaf.clone(), environment.clone())).boxed();
 
         let prelude_in_inputs = recursive(|prelude_in_inputs| {
-            just("% TEXLA FILE BEGIN")
-                .ignore_then(heading.clone().padded())
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
                 .then(prelude.clone().or(prelude_in_inputs).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(path, children)| self.build_file(path, children))
+                .map(|((metadata, path), children)| self.build_file(path, children, metadata))
         })
         .boxed();
 
@@ -375,31 +413,183 @@ impl LatexParser {
             .repeated()
             .padded()
             .boxed();
+
         // TODO extract method
-        let subsection = just("\\subsection")
-            .ignore_then(heading.clone())
+        let subparagraph = metadata
+            .clone()
+            .then_ignore(just("\\subparagraph"))
+            .then(heading.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
-            .map(|(heading, blocks): (String, Vec<NodeRef>)| {
+            .map(|((metadata, heading), blocks)| {
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\subparagraph{{{heading}}}"),
+                    metadata,
+                )
+            })
+            .boxed();
+
+        let subparagraphs_in_inputs = recursive(|subparagraphs_in_inputs| {
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
+                .then(prelude_any.clone())
+                .then(subparagraphs_in_inputs.or(subparagraph.clone()).repeated())
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
+                })
+        })
+        .boxed();
+
+        let subparagraph_any = subparagraphs_in_inputs
+            .clone()
+            .or(subparagraph.clone())
+            .padded()
+            .boxed();
+
+        // PARAGRAPH
+        let paragraph = metadata
+            .clone()
+            .then_ignore(just("\\paragraph"))
+            .then(heading.clone())
+            .then_ignore(newline())
+            .then(prelude_any.clone())
+            .then(subparagraph_any.clone().repeated())
+            .map(|(((metadata, heading), mut blocks), mut subsegments)| {
+                blocks.append(&mut subsegments);
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\paragraph{{{heading}}}"),
+                    metadata,
+                )
+            })
+            .boxed();
+
+        let paragraphs_in_inputs = recursive(|paragraphs_in_inputs| {
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
+                .then(prelude_any.clone())
+                .then(paragraphs_in_inputs.or(paragraph.clone()).repeated())
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
+                })
+        })
+        .boxed();
+
+        let paragraph_any = paragraphs_in_inputs
+            .clone()
+            .or(paragraph.clone())
+            .padded()
+            .boxed();
+
+        // SUBSUBSECTION
+        let subsubsection = metadata
+            .clone()
+            .then_ignore(just("\\subsubsection"))
+            .then(heading.clone())
+            .then_ignore(newline())
+            .then(prelude_any.clone())
+            .then(paragraph_any.clone().repeated())
+            .map(|(((metadata, heading), mut blocks), mut subsegments)| {
+                blocks.append(&mut subsegments);
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\subsubsection{{{heading}}}"),
+                    metadata,
+                )
+            })
+            .boxed();
+
+        let subsubsections_in_inputs = recursive(|subsubsections_in_inputs| {
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
+                .then(prelude_any.clone())
+                .then(
+                    subsubsections_in_inputs
+                        .or(subsubsection.clone())
+                        .repeated(),
+                )
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
+                })
+        })
+        .boxed();
+
+        let subsubsection_any = subsubsections_in_inputs
+            .clone()
+            .or(subsubsection.clone())
+            .padded()
+            .boxed();
+
+        // SUBSECTION
+        let subsection = metadata
+            .clone()
+            .then_ignore(just("\\subsection"))
+            .then(heading.clone())
+            .then_ignore(newline())
+            .then(prelude_any.clone())
+            .then(subsubsection_any.clone().repeated())
+            .map(|(((metadata, heading), mut blocks), mut subsegments)| {
+                blocks.append(&mut subsegments);
                 self.build_segment(
                     heading.clone(),
                     blocks,
                     format!("\\subsection{{{heading}}}"),
+                    metadata,
                 )
             })
             .boxed();
 
         let subsections_in_inputs = recursive(|subsections_in_inputs| {
-            just("% TEXLA FILE BEGIN")
-                .ignore_then(heading.clone().padded())
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
                 .then(prelude_any.clone())
                 .then(subsections_in_inputs.or(subsection.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|((path, mut prelude), mut children)| {
-                    self.build_file(path, {
-                        prelude.append(&mut children);
-                        prelude
-                    })
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
                 })
         })
         .boxed();
@@ -410,37 +600,45 @@ impl LatexParser {
             .padded()
             .boxed();
 
-        let section = just("\\section")
-            .ignore_then(heading.clone())
+        // SECTION
+        let section = metadata
+            .clone()
+            .then_ignore(just("\\section"))
+            .then(heading.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(subsection_any.clone().repeated())
-            .map(
-                |((heading, mut blocks), mut subsections): (
-                    (String, Vec<NodeRef>),
-                    Vec<NodeRef>,
-                )| {
-                    blocks.append(&mut subsections);
-                    self.build_segment(heading.clone(), blocks, format!("\\section{{{heading}}}"))
-                },
-            )
+            .map(|(((metadata, heading), mut blocks), mut subsegments)| {
+                blocks.append(&mut subsegments);
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\section{{{heading}}}"),
+                    metadata,
+                )
+            })
             .boxed();
 
         let sections_in_inputs = recursive(|sections_in_inputs| {
-            just("% TEXLA FILE BEGIN")
-                .ignore_then(heading.clone().padded())
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
                 .then(prelude_any.clone())
                 .then(sections_in_inputs.or(section.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|((path, mut prelude), mut children)| {
-                    self.build_file(path, {
-                        prelude.append(&mut children);
-                        prelude
-                    })
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
                 })
         })
         .boxed();
-        // TODO implement all segment levels
 
         let section_any = sections_in_inputs
             .clone()
@@ -448,12 +646,102 @@ impl LatexParser {
             .padded()
             .boxed();
 
+        let chapter = metadata
+            .clone()
+            .then_ignore(just("\\chapter"))
+            .then(heading.clone())
+            .then_ignore(newline())
+            .then(prelude_any.clone())
+            .then(section_any.clone().repeated())
+            .map(|(((metadata, heading), mut blocks), mut subsegments)| {
+                blocks.append(&mut subsegments);
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\chapter{{{heading}}}"),
+                    metadata,
+                )
+            })
+            .boxed();
+
+        let chapters_in_inputs = recursive(|chapters_in_inputs| {
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
+                .then(prelude_any.clone())
+                .then(chapters_in_inputs.or(chapter.clone()).repeated())
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
+                })
+        })
+        .boxed();
+
+        let chapter_any = chapters_in_inputs
+            .clone()
+            .or(chapter.clone())
+            .padded()
+            .boxed();
+
+        let part = metadata
+            .clone()
+            .then_ignore(just("\\part"))
+            .then(heading.clone())
+            .then_ignore(newline())
+            .then(prelude_any.clone())
+            .then(chapter_any.clone().repeated())
+            .map(|(((metadata, heading), mut blocks), mut subsegments)| {
+                blocks.append(&mut subsegments);
+                self.build_segment(
+                    heading.clone(),
+                    blocks,
+                    format!("\\part{{{heading}}}"),
+                    metadata,
+                )
+            })
+            .boxed();
+
+        let parts_in_inputs = recursive(|parts_in_inputs| {
+            metadata
+                .clone()
+                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then(heading.clone().padded())
+                .then(prelude_any.clone())
+                .then(parts_in_inputs.or(part.clone()).repeated())
+                .then_ignore(just("% TEXLA FILE END").padded())
+                .map(|(((metadata, path), mut prelude), mut children)| {
+                    self.build_file(
+                        path,
+                        {
+                            prelude.append(&mut children);
+                            prelude
+                        },
+                        metadata,
+                    )
+                })
+        })
+        .boxed();
+
+        let part_any = parts_in_inputs.clone().or(part.clone()).padded().boxed();
+
         let root_children = prelude_any
             .clone()
             .then(choice((
-                section_any.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
-                subsection_any.clone().repeated(), // last item shouldn't have at_least to allow for empty document
-                                                   // TODO implement all segment levels
+                part_any.clone().repeated().at_least(1), // at_least used so this doesn't match with 0 occurrences and quit
+                chapter_any.clone().repeated().at_least(1),
+                section_any.clone().repeated().at_least(1),
+                subsection_any.clone().repeated().at_least(1),
+                subsubsection_any.clone().repeated().at_least(1),
+                paragraph_any.clone().repeated().at_least(1),
+                subparagraph_any.clone().repeated(), // last item shouldn't have at_least to allow for empty document
             )))
             .boxed();
 
@@ -464,30 +752,39 @@ impl LatexParser {
         let document = preamble
             .clone()
             .or_not()
+            .then(metadata.clone())
             .then_ignore(just::<_, _, Simple<char>>("\\begin{document}").padded())
             .then(root_children.clone())
             .then_ignore(just("\\end{document}"))
-            .map(|(preamble, (mut leaves, mut segments))| {
-                self.build_document(preamble.unwrap_or(String::new()), String::new(), {
-                    leaves.append(&mut segments);
-                    leaves
-                })
+            .map(|((preamble, metadata), (mut leaves, mut segments))| {
+                self.build_document(
+                    preamble.unwrap_or(String::new()),
+                    String::new(),
+                    {
+                        leaves.append(&mut segments);
+                        leaves
+                    },
+                    metadata,
+                )
             })
             .then_ignore(end().padded())
             .boxed();
         document
     }
 
-    // TODO: command-level matching should be externalized into latex_globals.rs
     fn find_highest_level(&self) -> impl Parser<char, i8, Error = Simple<char>> + '_ {
         take_until(just("\\section").or(just("\\subsection")))
             .map(|(_trash, keyword)| match keyword {
+                "\\part" => -1,
+                "\\chapter" => 0,
                 "\\section" => 1,
                 "\\subsection" => 2,
-                _ => 8,
+                "\\subsubsection" => 3,
+                "\\paragraph" => 4,
+                "\\subparagraph" => 5,
+                _ => 6, // no segments at all
             })
             .boxed()
-        // TODO implement all segment levels
     }
 }
 

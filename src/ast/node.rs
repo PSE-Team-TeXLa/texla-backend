@@ -28,9 +28,9 @@ impl Node {
             Ok(self.node_type.to_latex(level)?)
         } else {
             Ok(format!(
-                "{}% TEXLA METADATA {}\n",
-                self.node_type.to_latex(level)?,
-                self.meta_data
+                "% TEXLA METADATA {}\n{}",
+                self.meta_data,
+                self.node_type.to_latex(level)?
             ))
         }
     }
@@ -114,9 +114,14 @@ impl NodeType {
                     ExpandableData::Segment { heading } => {
                         let children = self.children_to_latex(level + 1)?;
                         let keyword = match level {
+                            // TODO: outsource into latex_constants.rs
+                            -1 => "part".to_string(),
+                            0 => "chapter".to_string(),
                             1 => "section".to_string(),
                             2 => "subsection".to_string(),
-                            // TODO implement all segment levels
+                            3 => "subsubsection".to_string(),
+                            4 => "paragraph".to_string(),
+                            5 => "subparagraph".to_string(),
                             other => {
                                 return Err(StringificationError {
                                     message: format!("Invalid Nesting Level: {}", other),
@@ -211,7 +216,7 @@ impl LeafData {
             },
             LeafData::Comment { comment } => {
                 comment.lines().fold(String::new(), |mut acc, line| {
-                    acc.push_str(format!("% {line}\n").as_str());
+                    acc.push_str(format!("{line}\n").as_str());
                     acc
                 })
             }
