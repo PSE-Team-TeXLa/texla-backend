@@ -117,6 +117,8 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
             Err(err) => {
                 println!("Operation was not okay: {}", err);
                 socket.emit("error", err).ok();
+                // send old ast in order to enable frontend to roll back to it
+                socket.emit("new_ast", &state.ast).ok();
             }
         }
     });
