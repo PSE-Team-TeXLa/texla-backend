@@ -98,10 +98,6 @@ impl Ast for TexlaAst {
         Ok(self.root.lock().unwrap().to_latex(self.highest_level)?)
     }
 
-    fn to_json(&self, options: StringificationOptions) -> Result<String, AstError> {
-        todo!()
-    }
-
     fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
         Ok(operation.execute_on(self)?)
     }
