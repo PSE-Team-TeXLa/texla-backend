@@ -79,9 +79,10 @@ where
     fn latex_input_parser() -> BoxedParser<'static, char, (String, Range<usize>), Simple<char>> {
         take_until(just::<_, _, Simple<char>>(Self::INPUT_COMMAND))
             .map_with_span(|_, span| -> usize { span.end() - Self::len(Self::INPUT_COMMAND) })
+            // TODO allow white spaces (but no newlines?) around curly braces?
             .then(Self::curly_braces_parser())
-            .map_with_span(|(start, text), span| -> (String, Range<usize>) {
-                (text, start..span.end())
+            .map_with_span(|(start, path), span| -> (String, Range<usize>) {
+                (path, start..span.end())
             })
             .boxed()
     }
