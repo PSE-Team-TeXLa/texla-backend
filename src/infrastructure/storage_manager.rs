@@ -43,8 +43,8 @@ where
 {
     const LATEX_FILE_EXTENSION: &'static str = "tex";
     const LATEX_PATH_SEPARATOR: &'static str = "/";
-    const FILE_BEGIN_MARK: &'static str = "% TEXLA FILE BEGIN";
-    const FILE_END_MARK: &'static str = "% TEXLA FILE END";
+    const FILE_BEGIN_MARK: &'static str = "% TEXLA FILE BEGIN ";
+    const FILE_END_MARK: &'static str = "% TEXLA FILE END ";
     const INPUT_COMMAND: &'static str = "\\input";
 
     pub fn new(vcs_manager: V, main_file: String) -> Self {
@@ -185,15 +185,16 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             let input_text = fs::read_to_string(path_abs_os).expect("Could not read file");
 
             // replace '\input{...}' in string with file content surrounded by begin and end marks
+            let path_str = path_rel_latex.to_str().unwrap();
             latex_single_string.replace_range(
                 path_range,
                 &format!(
-                    "{} {{{}}}\n{}\n{}",
-                    // TODO insert path after file end mark as well?
+                    "{}{{{}}}\n{}\n{}{{{}}}",
                     Self::FILE_BEGIN_MARK,
-                    path_rel_latex.to_str().unwrap(),
+                    path_str,
                     input_text,
-                    Self::FILE_END_MARK
+                    Self::FILE_END_MARK,
+                    path_str
                 ),
             );
         }
