@@ -218,3 +218,16 @@ async fn handle_export(
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::infrastructure::storage_manager::TexlaStorageManager;
+    use crate::infrastructure::vcs_manager::GitManager;
+
+    #[test]
+    fn pflichtenheft() {
+        let file = "latex_test_files/pflichtenheft-main/main.tex".to_string();
+        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
+        assert!(super::parse_ast_from_disk(&sm).is_ok());
+    }
+}
