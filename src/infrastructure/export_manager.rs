@@ -1,12 +1,9 @@
 use crate::infrastructure::errors::InfrastructureError;
 
 use std::io::{Read, Write};
-use zip::result::ZipError;
 use zip::write::FileOptions;
 
 use std::fs::File;
-use std::path::Path;
-use walkdir::{DirEntry, WalkDir};
 use zip::CompressionMethod::Deflated;
 
 pub trait ExportManager {
