@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::PathBuf;
 
 use zip::write::FileOptions;
 use zip::CompressionMethod::Deflated;
@@ -22,14 +23,18 @@ impl TexlaExportManager {
 
 impl ExportManager for TexlaExportManager {
     fn zip_files(&mut self) -> Result<String, InfrastructureError> {
-        let path = "backend";
+        let main_file_directory = PathBuf::from(&self.main_file)
+            .parent()
+            .expect("Could not find parent directory")
+            .to_path_buf();
+
         let file = File::create("latex.zip").unwrap();
         let option = FileOptions::default()
             .compression_method(Deflated) // default zip method.
             .unix_permissions(0o755); //shouldn't cause any errors in windows, should work on linux and mac.
         let mut zip = zip::ZipWriter::new(file);
 
-        let walkdir = walkdir::WalkDir::new(path).into_iter();
+        let walkdir = walkdir::WalkDir::new(main_file_directory).into_iter();
         walkdir
             .filter_map(|e| e.ok()) // filtering (ignoring) invalid files errors
             .filter(|e| {
