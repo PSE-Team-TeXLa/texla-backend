@@ -17,7 +17,7 @@ impl ExportManager for TexlaExportManager {
         let path = "backend";
         let file = File::create("latex.zip").unwrap();
         let option = FileOptions::default()
-            .compression_method(Deflated)
+            .compression_method(Deflated) // default zip method.
             .unix_permissions(0o755); //shouldn't cause any errors in windows, should work on linux and mac.
         let mut zip = zip::ZipWriter::new(file);
 
