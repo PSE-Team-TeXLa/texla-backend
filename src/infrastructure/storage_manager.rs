@@ -1,10 +1,17 @@
 use std::fs;
 use std::ops::Range;
+use std::path::Path;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use chumsky::prelude::*;
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+
+use futures::{
+    channel::mpsc::{channel, Receiver},
+    SinkExt, StreamExt,
+};
 
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
@@ -199,6 +206,22 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     async fn start(this: Arc<Mutex<Self>>) {
         // TODO after VS: start async timer-based background tasks and start DirectoryChangeHandler
         // we probably want to use tokio::spawn() here
+
+        tokio::spawn(async move {
+            let path = "/Users/paulliebsch/pse/test";
+            if let Err(e) = async_watch(path).await {
+                println!("error: {:?}", e)
+            }
+        });
+
+        //when change is detected: call this
+        // this.lock()
+        //     .unwrap()
+        //     .directory_change_handler
+        //     .unwrap()
+        //     .lock()
+        //     .unwrap()
+        //     .handle_directory_change()
     }
 
     fn remote_url(&self) -> Option<&String> {
@@ -365,4 +388,37 @@ mod tests {
             )
         );
     }
+}
+fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)> {
+    let (mut tx, rx) = channel(1);
+
+    // Automatically select the best implementation for your platform.
+    // You can also access each implementation directly e.g. INotifyWatcher.
+    let watcher = RecommendedWatcher::new(
+        move |res| {
+            futures::executor::block_on(async {
+                tx.send(res).await.unwrap();
+            })
+        },
+        Config::default(),
+    )?;
+
+    Ok((watcher, rx))
+}
+
+async fn async_watch<P: AsRef<Path>>(path: P) -> notify::Result<()> {
+    let (mut watcher, mut rx) = async_watcher()?;
+
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
+
+    while let Some(res) = rx.next().await {
+        match res {
+            Ok(event) => println!("changed: {:?}", event),
+            Err(e) => println!("watch error: {:?}", e),
+        }
+    }
+
+    Ok(())
 }

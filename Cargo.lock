@@ -151,6 +151,7 @@ dependencies = [
  "axum",
  "chumsky",
  "clap",
+ "futures",
  "notify",
  "serde",
  "serde_json",
