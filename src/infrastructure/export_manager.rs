@@ -33,7 +33,7 @@ impl ExportManager for TexlaExportManager {
 
         let option = FileOptions::default()
             .compression_method(Deflated) // default zip method.
-            .unix_permissions(0o755); //shouldn't cause any errors in windows, should work on linux and mac.
+            .unix_permissions(0o755); // shouldn't cause any errors in windows, should work on linux and mac.
 
         let mut zip = zip::ZipWriter::new(file);
 
@@ -57,6 +57,7 @@ impl ExportManager for TexlaExportManager {
         //        zip.write_all(&buffer).unwrap();
         //    });
 
+        //TODO make it work with ? instead of panic with .unwrap()
         for entry in walkdir {
             let entry = entry.unwrap();
             let path = entry.path();
@@ -68,11 +69,11 @@ impl ExportManager for TexlaExportManager {
                     .unwrap();
 
                 if !name.starts_with('.') && !name.ends_with('~') {
-                    let mut f = File::open(path).unwrap();
+                    let mut file = File::open(path).unwrap();
                     zip.start_file(name, option).unwrap();
 
-                    let mut buffer = Vec::new();
-                    f.read_to_end(&mut buffer).unwrap();
+                    let mut buffer = Vec::new(); // could be problematic if files are too big.
+                    file.read_to_end(&mut buffer).unwrap();
                     zip.write_all(&buffer).unwrap();
                 }
             }
@@ -82,6 +83,8 @@ impl ExportManager for TexlaExportManager {
     }
 }
 
+//TODO Add test zip_files() -> unzip -> compare with latex_text_files
+//TODO Remove useless url test.
 #[cfg(test)]
 mod tests {
     use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
