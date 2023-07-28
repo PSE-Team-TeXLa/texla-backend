@@ -3,7 +3,9 @@ use std::process::{Command, ExitStatus, Output};
 
 use chrono::Local;
 
-use crate::infrastructure::errors::InfrastructureError;
+use crate::infrastructure::errors::{
+    InfrastructureError, MergeConflictError, PushRejectionError, VcsError,
+};
 
 struct StringOutput {
     status: ExitStatus,
@@ -31,9 +33,9 @@ impl StringOutput {
 }
 
 pub trait VcsManager {
-    fn pull(&self) -> Result<(), InfrastructureError>;
-    fn commit(&self, message: Option<String>) -> Result<(), InfrastructureError>;
-    fn push(&self) -> Result<(), InfrastructureError>;
+    fn pull(&self) -> Result<(), VcsError>;
+    fn commit(&self, message: Option<String>) -> Result<(), VcsError>;
+    fn push(&self) -> Result<(), VcsError>;
 }
 
 pub struct GitManager {
@@ -123,15 +125,29 @@ impl GitManager {
 }
 
 impl VcsManager for GitManager {
-    // TODO error handling for every git command
+    fn pull(&self) -> Result<(), VcsError> {
+        // TODO adapt return type to accept MergeConflictError and VcsError without into()?
+        let pull_output = self.git(Self::GIT_PULL.to_vec());
 
-    fn pull(&self) -> Result<(), InfrastructureError> {
-        self.git(Self::GIT_PULL.to_vec());
+        if !pull_output.status.success() {
+            let stderr = pull_output.stderr;
+            return if stderr.starts_with("error")
+                || (stderr.contains('\n')
+                    && stderr.split_once('\n').unwrap().1.starts_with("CONFLICT"))
+            {
+                Err(MergeConflictError.into())
+            } else {
+                Err(VcsError {
+                    message: "unable to push local changes".to_string(),
+                })
+                .into()
+            };
+        }
 
         Ok(())
     }
 
-    fn commit(&self, custom_message: Option<String>) -> Result<(), InfrastructureError> {
+    fn commit(&self, custom_message: Option<String>) -> Result<(), VcsError> {
         let message = {
             if let Some(..) = custom_message {
                 custom_message.unwrap()
@@ -144,17 +160,50 @@ impl VcsManager for GitManager {
             }
         };
 
-        self.git(Self::GIT_ADD.to_vec());
+        let add_output = self.git(Self::GIT_ADD.to_vec());
+
+        if !add_output.status.success() {
+            return Err(VcsError {
+                message: "unable to add local files to staging area".to_string(),
+            });
+        }
 
         let mut command = Self::GIT_COMMIT.to_vec();
         command.append(&mut vec![&message]);
-        self.git(command);
+        let commit_output = self.git(command);
+
+        if !commit_output.status.success() {
+            return Err(VcsError {
+                message: "unable to commit local changes to repository".to_string(),
+            });
+        }
 
         Ok(())
     }
 
-    fn push(&self) -> Result<(), InfrastructureError> {
-        self.git(Self::GIT_PUSH.to_vec());
+    fn push(&self) -> Result<(), VcsError> {
+        // TODO adapt return type to accept PushRejectionError and VcsError without into()?
+        let push_output = self.git(Self::GIT_PUSH.to_vec());
+
+        if !push_output.status.success() {
+            let stderr = push_output.stderr;
+            return if stderr.contains('\n')
+                && stderr
+                    .split_once('\n')
+                    .unwrap()
+                    .1
+                    .starts_with(" ! [rejected]")
+            {
+                Err(PushRejectionError.into())
+            } else {
+                Err(VcsError {
+                    message: "unable to push local changes, \
+                    possibly because remote repository can't be reached"
+                        .to_string(),
+                }
+                .into())
+            };
+        }
 
         Ok(())
     }

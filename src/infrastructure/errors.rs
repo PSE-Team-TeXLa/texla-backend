@@ -73,25 +73,43 @@ impl Display for VcsError {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct PushRejectionError {
-    pub message: String,
+impl From<PushRejectionError> for VcsError {
+    fn from(value: PushRejectionError) -> Self {
+        Self {
+            message: value.to_string(),
+        }
+    }
 }
 
-impl Display for PushRejectionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Could not push changes: {}", self.message)
+impl From<MergeConflictError> for VcsError {
+    fn from(value: MergeConflictError) -> Self {
+        Self {
+            message: value.to_string(),
+        }
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct MergeConflictError {
-    pub message: String,
+pub struct PushRejectionError;
+
+impl Display for PushRejectionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Could not push changes: remote changes need to be pulled first"
+        )
+    }
 }
+
+#[derive(Debug, PartialEq)]
+pub struct MergeConflictError {}
 
 impl Display for MergeConflictError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Could not merge changes: {}", self.message)
+        write!(
+            f,
+            "Could not merge changes: conflicts need to be solved manually"
+        )
     }
 }
 

@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 use serde::Serialize;
 
 use crate::ast::errors::AstError;
-use crate::infrastructure::errors::InfrastructureError;
+use crate::infrastructure::errors::{InfrastructureError, VcsError};
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct TexlaError {
@@ -26,6 +26,14 @@ impl From<AstError> for TexlaError {
 
 impl From<InfrastructureError> for TexlaError {
     fn from(value: InfrastructureError) -> Self {
+        Self {
+            message: value.to_string(),
+        }
+    }
+}
+
+impl From<VcsError> for TexlaError {
+    fn from(value: VcsError) -> Self {
         Self {
             message: value.to_string(),
         }
