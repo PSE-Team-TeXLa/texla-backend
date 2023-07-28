@@ -22,7 +22,7 @@ impl From<ParseError> for AstError {
 
 impl From<StringificationError> for AstError {
     fn from(value: StringificationError) -> Self {
-        AstError {
+        Self {
             message: value.to_string(),
         }
     }
@@ -30,7 +30,7 @@ impl From<StringificationError> for AstError {
 
 impl From<OperationError> for AstError {
     fn from(value: OperationError) -> Self {
-        AstError {
+        Self {
             message: value.to_string(),
         }
     }
