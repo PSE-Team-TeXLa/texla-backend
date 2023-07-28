@@ -118,7 +118,7 @@ impl Display for PushRejectionError {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct MergeConflictError {}
+pub struct MergeConflictError;
 
 impl Display for MergeConflictError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
