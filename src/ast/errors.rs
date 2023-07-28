@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 
+use chumsky::error::Simple;
+
 #[derive(Debug, PartialEq)]
 pub struct AstError {
     message: String,
@@ -45,8 +47,9 @@ impl Display for ParseError {
         write!(f, "Could not parse Ast: {}", self.message)
     }
 }
-impl From<Vec<chumsky::error::Simple<char>>> for ParseError {
-    fn from(value: Vec<chumsky::error::Simple<char>>) -> Self {
+
+impl From<Vec<Simple<char>>> for ParseError {
+    fn from(value: Vec<Simple<char>>) -> Self {
         Self {
             message: value
                 .iter()
