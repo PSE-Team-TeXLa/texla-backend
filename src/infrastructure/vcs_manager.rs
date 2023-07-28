@@ -65,22 +65,22 @@ impl GitManager {
         }
 
         // get remote repository url if present
-        let origins = Self::git_inside_dir(vec!["remote"], &main_file_directory).stdout;
-        let remote_url = if origins.is_empty() {
+        let remotes = Self::git_inside_dir(vec!["remote"], &main_file_directory).stdout;
+        let remote_url = if remotes.is_empty() {
             None
         } else {
-            let first_origin = {
-                if origins.contains('\n') {
-                    origins.split_once('\n').unwrap().0
-                    // TODO is it okay to take the first origin when there are multiple ones?
+            let first_remote = {
+                if remotes.contains('\n') {
+                    remotes.split_once('\n').unwrap().0
+                    // TODO is it okay to take the first remote when there are multiple ones?
                 } else {
-                    &origins
+                    &remotes
                 }
             };
 
             Some(
                 Self::git_inside_dir(
-                    vec!["remote", "get-url", first_origin],
+                    vec!["remote", "get-url", first_remote],
                     &main_file_directory,
                 )
                 .stdout,
