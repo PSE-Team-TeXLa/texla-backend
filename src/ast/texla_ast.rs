@@ -87,6 +87,11 @@ impl TexlaAst {
             parent: parent.uuid, // the order of properties matters here because of borrowing
         }
     }
+
+    pub fn deep_clone_by_reparsing(&self) -> Result<Self, AstError> {
+        let latex_single_string = self.to_latex(Default::default())?;
+        TexlaAst::from_latex(latex_single_string)
+    }
 }
 
 impl Ast for TexlaAst {
