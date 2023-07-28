@@ -22,13 +22,14 @@ impl TexlaExportManager {
 }
 
 impl ExportManager for TexlaExportManager {
+    // TODO: pass main_file here
     fn zip_files(&mut self) -> Result<String, InfrastructureError> {
         let main_file_directory = PathBuf::from(&self.main_file)
             .parent()
             .expect("Could not find parent directory")
             .to_path_buf();
 
-        let file = File::create(main_file_directory.join("export.zip")).unwrap();
+        let file = File::create(main_file_directory.join("export.zip"))?;
 
         let option = FileOptions::default()
             .compression_method(Deflated) // default zip method.
@@ -38,24 +39,23 @@ impl ExportManager for TexlaExportManager {
 
         let walkdir = walkdir::WalkDir::new(main_file_directory.clone()).into_iter();
 
-        //TODO make it work with ? instead of panic with .unwrap()
         for entry in walkdir {
-            let entry = entry.unwrap();
+            let entry = entry.expect("walkdir gave error");
             let path = entry.path();
             if path.is_file() {
                 let name = path
                     .strip_prefix(&main_file_directory)
-                    .unwrap()
+                    .expect("walkdir gave file outside main_file_directory")
                     .to_str()
-                    .unwrap();
+                    .expect("found non-utf8 file name");
 
                 if !name.starts_with('.') && !name.ends_with('~') {
-                    let mut file = File::open(path).unwrap();
-                    zip.start_file(name, option).unwrap();
+                    let mut file = File::open(path)?;
+                    zip.start_file(name, option)?;
 
                     let mut buffer = Vec::new(); // could be problematic if files are too big.
-                    file.read_to_end(&mut buffer).unwrap();
-                    zip.write_all(&buffer).unwrap();
+                    file.read_to_end(&mut buffer)?;
+                    zip.write_all(&buffer)?;
                 }
             }
         }
