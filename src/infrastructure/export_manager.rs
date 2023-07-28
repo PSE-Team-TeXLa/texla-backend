@@ -54,6 +54,10 @@ impl ExportManager for TexlaExportManager {
                     continue;
                 }
 
+                if name.ends_with(".zip") {
+                    continue;
+                }
+
                 if !name.starts_with('.') && !name.ends_with('~') {
                     let mut file = File::open(path)?;
                     zip.start_file(name, option)?;
