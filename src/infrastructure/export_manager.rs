@@ -49,6 +49,11 @@ impl ExportManager for TexlaExportManager {
                     .to_str()
                     .expect("found non-utf8 file name");
 
+                //skip hidden files
+                if name.split('/').any(|part| part.starts_with('.')) {
+                    continue;
+                }
+
                 if !name.starts_with('.') && !name.ends_with('~') {
                     let mut file = File::open(path)?;
                     zip.start_file(name, option)?;
@@ -64,18 +69,55 @@ impl ExportManager for TexlaExportManager {
     }
 }
 
-//TODO Add test zip_files() -> unzip -> compare with latex_text_files
+//TODO: Add test: 1. Define self-made zip in [test] -> use zip_files() -> compare.
 //TODO Remove useless url test.
 #[cfg(test)]
 mod tests {
     use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
+    use std::fs;
+    use std::io::Read;
+    use zip::ZipArchive;
 
+    //all stringify options should be off so that latex_test-files.zip in test_resources is valid.
+    //large_latex.tex configuration is needed.
     #[test]
     fn zip_files() {
-        let main_file = "latex_test_files/latex_with_inputs.tex".to_string();
-        let mut export_manager = TexlaExportManager::new(main_file);
+        let main_file_directory = "latex_test_files";
+        let mut manager = TexlaExportManager::new("latex_test_files/large_latex.tex".to_string());
+        let path_in_frontend_placeholder = manager.zip_files().unwrap();
 
-        let url = export_manager.zip_files();
-        let should_url = "http://127.0.0.1:3002/src/lib/assets/logo/latex.zip";
+        let zip_path = "latex_test_files/export.zip";
+
+        let mut expected_zip =
+            ZipArchive::new(fs::File::open("test_resources/latex_test_files.zip").unwrap())
+                .unwrap();
+        let mut actual_zip = ZipArchive::new(fs::File::open(zip_path).unwrap()).unwrap();
+
+        for i in 0..expected_zip.len() {
+            let mut expected_file = expected_zip.by_index(i).unwrap();
+            let file_name = expected_file.name();
+
+            if file_name.starts_with('.')
+                || expected_file.is_dir()
+                || file_name.ends_with(".jpg")
+                || file_name.ends_with(".zip")
+            {
+                continue; //Skip hidden files
+            }
+
+            println!("Expected file: {}", file_name);
+
+            let mut actual_file = actual_zip.by_name(expected_file.name()).unwrap();
+
+            println!("Actual file: {}", actual_file.name());
+
+            let mut expected_content = String::new();
+            let mut actual_content = String::new();
+
+            expected_file.read_to_string(&mut expected_content).unwrap();
+            actual_file.read_to_string(&mut actual_content).unwrap();
+
+            assert_eq!(expected_content, actual_content);
+        }
     }
 }
