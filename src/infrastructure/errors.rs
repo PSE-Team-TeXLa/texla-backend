@@ -139,4 +139,3 @@ impl Display for ExportZipError {
         write!(f, "Could not export ZIP file: {}", self.message)
     }
 }
-
