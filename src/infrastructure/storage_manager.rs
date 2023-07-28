@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use chumsky::prelude::*;
 
-use crate::infrastructure::errors::InfrastructureError;
+use crate::infrastructure::errors::{InfrastructureError, VcsError};
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
@@ -23,7 +23,7 @@ pub trait StorageManager {
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn stop_timers(&mut self);
     fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError>;
-    fn end_session(&mut self) -> Result<(), InfrastructureError>;
+    fn end_session(&mut self) -> Result<(), VcsError>;
 }
 
 pub struct TexlaStorageManager<V>
@@ -284,7 +284,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         Ok(())
     }
 
-    fn end_session(&mut self) -> Result<(), InfrastructureError> {
+    fn end_session(&mut self) -> Result<(), VcsError> {
         // TODO after VS: stop async timer-based background tasks and stop DirectoryChangeHandler
 
         // don't call save() here since you can't quit (i.e. end the session) with unsaved changes
