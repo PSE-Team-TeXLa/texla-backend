@@ -44,8 +44,17 @@ pub struct GitManager {
 
 impl GitManager {
     const GIT: &'static str = "git";
+
     const DEFAULT_COMMIT_MESSAGE_PREFIX: &'static str = "TeXLa ";
     const DEFAULT_COMMIT_MESSAGE_TIME_FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
+
+    const GIT_IS_INSIDE_WORK_TREE: [&'static str; 2] = ["rev-parse", "--is-inside-work-tree"];
+    const GIT_LIST_REMOTES: [&'static str; 1] = ["remote"];
+    const GIT_GET_REMOTE_URL: [&'static str; 2] = ["remote", "get-url"];
+    const GIT_PULL: [&'static str; 3] = ["pull", "--rebase", "--autostash"];
+    const GIT_ADD: [&'static str; 2] = ["add", "--all"];
+    const GIT_COMMIT: [&'static str; 2] = ["commit", "--message"];
+    const GIT_PUSH: [&'static str; 1] = ["push"];
 
     pub fn new(main_file: String) -> Self {
         let main_file_directory = PathBuf::from(main_file)
@@ -54,11 +63,9 @@ impl GitManager {
             .to_path_buf();
 
         // check if main file is inside a git repository
-        let inside_work_tree = Self::git_inside_dir(
-            vec!["rev-parse", "--is-inside-work-tree"],
-            &main_file_directory,
-        )
-        .stdout;
+        let inside_work_tree =
+            Self::git_inside_dir(Self::GIT_IS_INSIDE_WORK_TREE.to_vec(), &main_file_directory)
+                .stdout;
 
         if inside_work_tree != "true" {
             return Self {
@@ -69,7 +76,8 @@ impl GitManager {
         }
 
         // get remote repository url if present
-        let remotes = Self::git_inside_dir(vec!["remote"], &main_file_directory).stdout;
+        let remotes =
+            Self::git_inside_dir(Self::GIT_LIST_REMOTES.to_vec(), &main_file_directory).stdout;
         let remote_url = if remotes.is_empty() {
             None
         } else {
@@ -82,13 +90,9 @@ impl GitManager {
                 }
             };
 
-            Some(
-                Self::git_inside_dir(
-                    vec!["remote", "get-url", first_remote],
-                    &main_file_directory,
-                )
-                .stdout,
-            )
+            let mut command = Self::GIT_GET_REMOTE_URL.to_vec();
+            command.append(&mut vec![first_remote]);
+            Some(Self::git_inside_dir(command, &main_file_directory).stdout)
         };
 
         Self {
@@ -122,7 +126,7 @@ impl VcsManager for GitManager {
     // TODO error handling for every git command
 
     fn pull(&self) -> Result<(), InfrastructureError> {
-        self.git(vec!["pull", "--rebase", "--autostash"]);
+        self.git(Self::GIT_PULL.to_vec());
 
         Ok(())
     }
@@ -140,14 +144,17 @@ impl VcsManager for GitManager {
             }
         };
 
-        self.git(vec!["add", "--all"]);
-        self.git(vec!["commit", "--message", &message]);
+        self.git(Self::GIT_ADD.to_vec());
+
+        let mut command = Self::GIT_COMMIT.to_vec();
+        command.append(&mut vec![&message]);
+        self.git(command);
 
         Ok(())
     }
 
     fn push(&self) -> Result<(), InfrastructureError> {
-        self.git(vec!["push"]);
+        self.git(Self::GIT_PUSH.to_vec());
 
         Ok(())
     }
