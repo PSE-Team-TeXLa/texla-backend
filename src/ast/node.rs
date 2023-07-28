@@ -215,10 +215,11 @@ impl LeafData {
                 }
             },
             LeafData::Comment { comment } => {
+                // TODO: is this just to replace new lines?
                 comment.lines().fold(String::new(), |mut acc, line| {
                     acc.push_str(format!("{line}\n").as_str());
                     acc
-                })
+                }) + "\n"
             }
         }
     }
