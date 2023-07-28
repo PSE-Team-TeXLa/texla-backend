@@ -28,8 +28,7 @@ impl ExportManager for TexlaExportManager {
             .expect("Could not find parent directory")
             .to_path_buf();
 
-        //"http://127.0.0.1:3002/src/lib/assets/logo/latex.zip"
-        let file = File::create("/home/piotr/CLionProjects/backend/latex.zip").unwrap(); // change zip location to frontend structure. TODO Linus fragen
+        let file = File::create(main_file_directory.join("export.zip")).unwrap();
 
         let option = FileOptions::default()
             .compression_method(Deflated) // default zip method.
@@ -38,24 +37,6 @@ impl ExportManager for TexlaExportManager {
         let mut zip = zip::ZipWriter::new(file);
 
         let walkdir = walkdir::WalkDir::new(main_file_directory.clone()).into_iter();
-
-        //walkdir
-        //    .filter_map(|e| e.ok()) // filtering (ignoring) invalid files errors
-        //    .filter(|e| {
-        //        let name = e.file_name().to_string_lossy();
-        //        !name.starts_with('.') && !name.ends_with('~') // filtering out hidden files or backup files. Good practice apparently.
-        //    })
-        //    .for_each(|entry| {
-        //        let path = entry.path();
-        //        //let name = path.strip_prefix(path).unwrap(); //results in empty string, should strip base directory prefix
-        //
-        //        let mut f = File::open(path).unwrap();
-        //        zip.start_file(path.to_str().unwrap(), option).unwrap();
-        //
-        //        let mut buffer = Vec::new(); // could be problematic if files are too big.
-        //        f.read_to_end(&mut buffer).unwrap();
-        //        zip.write_all(&buffer).unwrap();
-        //    });
 
         //TODO make it work with ? instead of panic with .unwrap()
         for entry in walkdir {
@@ -79,7 +60,7 @@ impl ExportManager for TexlaExportManager {
             }
         }
 
-        Ok("http://127.0.0.1:3002/src/lib/assets/logo/latex.zip".to_string()) // TODO linus, wo soll das zip gespeichert werden?
+        Ok("/user-assets/export.zip".to_string())
     }
 }
 
