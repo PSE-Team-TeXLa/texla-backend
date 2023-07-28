@@ -171,7 +171,7 @@ fn perform_and_check_operation(
     ast: &mut TexlaAst,
     operation: Box<dyn Operation<TexlaAst>>,
 ) -> Result<(), TexlaError> {
-    let backup_ast = ast.deep_clone_by_reparsing()?;
+    let backup_latex = ast.to_latex(Default::default())?;
 
     let perform = || -> Result<TexlaAst, TexlaError> {
         ast.execute(operation)?;
@@ -186,7 +186,7 @@ fn perform_and_check_operation(
             Ok(())
         }
         Err(err) => {
-            *ast = backup_ast;
+            *ast = TexlaAst::from_latex(backup_latex)?;
             Err(err)
         }
     }
