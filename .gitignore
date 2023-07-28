@@ -3,6 +3,7 @@
 
 # test build directory and files
 /latex_test_files/out
+/latex_test_files/export.zip
 out.json
 
 # IDE directories
