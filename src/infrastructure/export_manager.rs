@@ -28,7 +28,8 @@ impl ExportManager for TexlaExportManager {
             .expect("Could not find parent directory")
             .to_path_buf();
 
-        let file = File::create("latex.zip").unwrap();
+        //"http://127.0.0.1:3002/src/lib/assets/logo/latex.zip"
+        let file = File::create("latex.zip").unwrap(); // change zip location to frontend structure. TODO Linus fragen
         let option = FileOptions::default()
             .compression_method(Deflated) // default zip method.
             .unix_permissions(0o755); //shouldn't cause any errors in windows, should work on linux and mac.
@@ -43,10 +44,10 @@ impl ExportManager for TexlaExportManager {
             })
             .for_each(|entry| {
                 let path = entry.path();
-                let name = path.strip_prefix(path).unwrap(); //results in empty string, should strip base directory prefix
+                //let name = path.strip_prefix(path).unwrap(); //results in empty string, should strip base directory prefix
 
                 let mut f = File::open(path).unwrap();
-                zip.start_file(name.to_str().unwrap(), option).unwrap();
+                zip.start_file(path.to_str().unwrap(), option).unwrap();
 
                 let mut buffer = Vec::new(); // could be problematic if files are too big.
                 f.read_to_end(&mut buffer).unwrap();
@@ -54,6 +55,6 @@ impl ExportManager for TexlaExportManager {
             });
 
         // TODO
-        Ok("http://127.0.0.1:3002/src/lib/assets/logo/logo.svg".to_string())
+        Ok("http://127.0.0.1:3002/src/lib/assets/logo/graph.svg".to_string()) // TODO linus, wo soll das zip gespeichert werden?
     }
 }
