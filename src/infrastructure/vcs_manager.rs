@@ -1,4 +1,32 @@
+use std::path::{Path, PathBuf};
+use std::process::{Command, ExitStatus, Output};
+
 use crate::infrastructure::errors::InfrastructureError;
+
+struct StringOutput {
+    status: ExitStatus,
+    stdout: String,
+    stderr: String,
+}
+
+impl From<Output> for StringOutput {
+    fn from(value: Output) -> Self {
+        Self {
+            status: value.status,
+            stdout: Self::byte_vec_to_string(value.stdout),
+            stderr: Self::byte_vec_to_string(value.stderr),
+        }
+    }
+}
+
+impl StringOutput {
+    fn byte_vec_to_string(vec: Vec<u8>) -> String {
+        String::from_utf8(vec)
+            .unwrap()
+            .trim_end_matches('\n')
+            .to_string()
+    }
+}
 
 pub trait VcsManager {
     fn pull(&self) -> Result<(), InfrastructureError>;
@@ -7,21 +35,77 @@ pub trait VcsManager {
 }
 
 pub struct GitManager {
-    repository_path: String,
+    active: bool,
+    main_file_directory: PathBuf,
     remote_url: Option<String>,
 }
 
 impl GitManager {
+    const GIT: &'static str = "git";
+
     pub fn new(main_file: String) -> Self {
-        // TODO: find repository_path from main_file
-        // Linus: we probably want to go up the file tree until we find a .git folder
-        // (or get the git repository_path root from a git command directly)
-        // if there is no repository, all git operations should do nothing
+        let main_file_directory = PathBuf::from(main_file)
+            .parent()
+            .expect("Could not find parent directory")
+            .to_path_buf();
+
+        // check if main file is inside a git repository
+        let inside_work_tree = Self::git_inside_dir(
+            vec!["rev-parse", "--is-inside-work-tree"],
+            &main_file_directory,
+        )
+        .stdout;
+
+        if inside_work_tree != "true" {
+            return Self {
+                active: false,
+                main_file_directory,
+                remote_url: None,
+            };
+        }
+
+        // get remote repository url if present
+        let origins = Self::git_inside_dir(vec!["remote"], &main_file_directory).stdout;
+        let remote_url = if origins.is_empty() {
+            None
+        } else {
+            let first_origin = {
+                if origins.contains('\n') {
+                    origins.split_once('\n').unwrap().0
+                    // TODO is it okay to take the first origin when there are multiple ones?
+                } else {
+                    &origins
+                }
+            };
+
+            Some(
+                Self::git_inside_dir(
+                    vec!["remote", "get-url", first_origin],
+                    &main_file_directory,
+                )
+                .stdout,
+            )
+        };
 
         Self {
-            repository_path: format!("TEMPORARY, deduce from main_file: {}", main_file),
-            remote_url: None, // TODO!
+            active: true,
+            main_file_directory,
+            remote_url,
         }
+    }
+
+    fn git_inside_dir(args: Vec<&str>, dir: &Path) -> StringOutput {
+        StringOutput::from(
+            Command::new(Self::GIT)
+                .current_dir(dir)
+                .args(args)
+                .output()
+                .expect("Could not execute command"),
+        )
+    }
+
+    fn git(&self, args: Vec<&str>) -> StringOutput {
+        Self::git_inside_dir(args, &self.main_file_directory)
     }
 
     // TODO after VS: is this an acceptable getter?
