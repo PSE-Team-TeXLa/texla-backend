@@ -105,9 +105,8 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
 
         let state_ref = extract_state(&socket);
         let mut state = state_ref.lock().unwrap();
-        match perform_and_check_operation(&state.ast, operation) {
-            Ok(ast) => {
-                state.ast = ast;
+        match perform_and_check_operation(&mut state.ast, operation) {
+            Ok(()) => {
                 socket.emit("new_ast", &state.ast).ok();
                 println!("Operation was okay");
                 // println!("new_ast {:#?}", &state.ast);
@@ -169,16 +168,28 @@ fn extract_state(socket: &TexlaSocket) -> Ref<SharedTexlaState> {
 }
 
 fn perform_and_check_operation(
-    ast: &TexlaAst,
+    ast: &mut TexlaAst,
     operation: Box<dyn Operation<TexlaAst>>,
-) -> Result<TexlaAst, TexlaError> {
-    let mut cloned_ast = ast.clone();
+) -> Result<(), TexlaError> {
+    let backup_latex = ast.to_latex(Default::default())?;
 
-    cloned_ast.execute(operation)?;
-    let latex_single_string = cloned_ast.to_latex(Default::default())?;
-    let reparsed_ast = TexlaAst::from_latex(latex_single_string)?;
+    let perform = || -> Result<TexlaAst, TexlaError> {
+        ast.execute(operation)?;
+        let latex_single_string = ast.to_latex(Default::default())?;
+        let reparsed_ast = TexlaAst::from_latex(latex_single_string)?;
+        Ok(reparsed_ast)
+    };
 
-    Ok(reparsed_ast)
+    match perform() {
+        Ok(new_ast) => {
+            *ast = new_ast;
+            Ok(())
+        }
+        Err(err) => {
+            *ast = TexlaAst::from_latex(backup_latex)?;
+            Err(err)
+        }
+    }
 }
 
 fn stringify_and_save(
@@ -216,5 +227,18 @@ async fn handle_export(
         Err(err) => {
             socket.emit("error", TexlaError::from(err)).ok();
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::infrastructure::storage_manager::TexlaStorageManager;
+    use crate::infrastructure::vcs_manager::GitManager;
+
+    #[test]
+    fn pflichtenheft() {
+        let file = "latex_test_files/pflichtenheft-main/main.tex".to_string();
+        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
+        assert!(super::parse_ast_from_disk(&sm).is_ok());
     }
 }

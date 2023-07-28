@@ -1,0 +1,63 @@
+\documentclass[parskip=full]{scrartcl}
+
+
+\usepackage[T1]{fontenc}
+\usepackage[ngerman,KeepShorthandsActive]{babel}
+\hyphenation{TeXLa}
+\usepackage[utf8]{inputenc}
+\usepackage{datetime} % must be after babel
+\renewcommand{\dateseparator}{-} % ISO8601 date format
+\usepackage{hyperref}
+\usepackage{csquotes}
+
+\usepackage{geometry}
+\usepackage[tt=false]{libertine}
+\usepackage[libertine]{newtxmath}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[shortlabels]{enumitem}
+\usepackage{siunitx}
+\sisetup{per-mode=symbol}
+\usepackage{graphicx}
+
+\usepackage[section]{placeins}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{longtable}
+
+\usepackage[nameinlink]{cleveref}
+\crefname{figure}{Abb}{Abb}
+\setcounter{tocdepth}{2}
+
+\usepackage{pflichtenheft}
+\reversemarginpar
+
+\widowpenalty10000
+\clubpenalty10000
+
+% ----------------------------------------------------------------------------------------------------------------------
+
+\newcommand{\topic}{Entwicklung des graphischen Editors \texla{} zur Restrukturierung von \LaTeX"=Dokumenten}
+\newcommand{\artifact}{Pflichtenheft}
+
+\newcommand{\project}{Praxis der Softwareentwicklung}
+\newcommand{\projectShort}{PSE}
+\newcommand{\semester}{Sommersemester 2023}
+\newcommand{\university}{Karlsruher Institut für Technologie}
+\newcommand{\institute}{IPD Böhm}
+
+\newcommand{\authors}{Paul Liebsch, Piotr Malkowski, Leonhard Mannke, Linus Schöb und Max Vogel}
+\newcommand{\authorsWrapped}{Paul Liebsch, Piotr Malkowski, Leonhard Mannke, \\ Linus Schöb und Max Vogel}
+\newcommand{\supervisors}{Bela Böhnke und Dennis Kobert}
+
+\hypersetup{
+  pdftitle={\projectShort: \artifact},
+  bookmarks=true
+}
+
+% ----------------------------------------------------------------------------------------------------------------------
+
+\newcommand{\zB}{z.\,B.}
+\renewcommand{\dh}{d.\,h.}
+\newcommand{\texla}{TeXLa}

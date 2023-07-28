@@ -1,0 +1,33 @@
+\section{Systemmodell}
+\label{sec:systemmodell}
+
+\paragraph{Lokalität und Git}
+Zur Benutzung muss die Anwendung lokal installiert werden.
+Sie wird dann auf einer Datei in einem Ordner des lokalen Dateisystems ausgeführt,
+der gleichzeitig ein Git-Repository sein kann.
+Das heißt, solange die Anwendung nicht läuft, sind alle persistenten Daten in den lokalen Dateien auf dem Endgerät
+gespeichert.
+Sie werden regelmäßig per Commit in das lokale Git-Repository und per Push auf ein ggf. vorhandenes Remote-Repository
+übertragen.
+
+\paragraph{Overleaf}
+Gegebenenfalls werden Links zu Overleaf angeboten --
+diese dienen jedoch nur der Weiterleitung des Users und nicht zur Kommunikation zwischen den beiden Diensten.
+
+\paragraph{Backend}
+Für das Backend inklusive \textit{CLI} wird die Programmiersprache Rust verwendet.
+Für den automatischen Import werden ein \textit{Directory Watcher} und Git verwendet.
+Für das Parsen von und Arbeiten auf \LaTeX"=Dokumenten wird ein \textit{abstrakter Syntaxbaum} (\textit{AST})
+verwendet.
+Dieser AST stellt zu jeder Zeit den aktuell gültigen Stand der Dinge dar.
+
+\paragraph{Frontend}
+Das Frontend ist eine Web-Applikation, die im Browser ausgeführt und angezeigt wird.
+Für das Frontend werden TypeScript und das Web-Framework \textit{Svelte} verwendet.
+Das Rendering des \LaTeX"=Quelltextes im AST geschieht im Frontend.
+
+\paragraph{Kommunikation}
+Für die Kommunikation zwischen Backend und Frontend werden eine \textit{REST-API} und das JSON-Dateiformat
+verwendet.
+Insbesondere verschickt das Frontend an das Backend Befehle zur Manipulation des AST und
+das Backend bietet eine Schnittstelle zum Lesen des aktuellen AST.

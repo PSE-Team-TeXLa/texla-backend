@@ -249,13 +249,12 @@ impl LatexParser {
             .padded()
             .boxed();
 
-        let heading = none_of("}")
+        let curly_braces = none_of("}")
             .repeated()
             .at_least(1)
             .delimited_by(just("{"), just("}"))
             .collect::<String>()
             .boxed();
-        // FIXME none_of("}") is not sufficient since a heading may contain pairs of curly braces
 
         let options = just("[")
             .ignore_then(none_of("]").repeated())
@@ -280,31 +279,31 @@ impl LatexParser {
             })
             .boxed();
 
-        let double_dollar_math = take_until(just("$$").rewind())
+        let math_double_dollars = take_until(just("$$").rewind())
             .delimited_by(just("$$"), just("$$"))
             .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::DoubleDollars))
             .boxed();
 
-        let square_br_math = take_until(just("\\]").rewind())
+        let math_square_brackets = take_until(just("\\]").rewind())
             .delimited_by(just("\\["), just("\\]"))
             .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::SquareBrackets))
             .boxed();
 
-        let equation_math = take_until(just("\\end{equation}").rewind())
+        let math_equation = take_until(just("\\end{equation}").rewind())
             .delimited_by(just("\\begin{equation}"), just("\\end{equation}"))
             .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::Equation))
             .boxed();
 
-        let displaymath = take_until(just("\\end{displaymath}").rewind())
+        let math_displaymath = take_until(just("\\end{displaymath}").rewind())
             .delimited_by(just("\\begin{displaymath}"), just("\\end{displaymath}"))
             .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::Displaymath))
             .boxed();
 
         let math = choice((
-            double_dollar_math,
-            square_br_math,
-            equation_math,
-            displaymath,
+            math_double_dollars,
+            math_square_brackets,
+            math_equation,
+            math_displaymath,
         ))
         .padded()
         .boxed();
@@ -312,7 +311,7 @@ impl LatexParser {
         let caption = metadata
             .clone()
             .then_ignore(just("\\caption"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .map(|(metadata, text)| self.build_caption(text, metadata))
             .padded()
             .boxed();
@@ -320,7 +319,7 @@ impl LatexParser {
         let label = metadata
             .clone()
             .then_ignore(just("\\label"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .map(|(metadata, text)| self.build_label(text, metadata))
             .padded()
             .boxed();
@@ -380,10 +379,10 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("\\begin"))
-                .then(heading.clone())
+                .then(curly_braces.clone())
                 .padded()
                 .then(leaf.clone().or(environment).repeated())
-                .then(just("\\end").ignore_then(heading.clone()).padded())
+                .then(just("\\end").ignore_then(curly_braces.clone()).padded())
                 .try_map(|(((metadata, name_begin), children), name_end), span| {
                     if name_begin != name_end {
                         Err(Simple::custom(span, "Environment not closed correctly"))
@@ -400,7 +399,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude.clone().or(prelude_in_inputs).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
                 .map(|((metadata, path), children)| self.build_file(path, children, metadata))
@@ -418,7 +417,7 @@ impl LatexParser {
         let subparagraph = metadata
             .clone()
             .then_ignore(just("\\subparagraph"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .map(|((metadata, heading), blocks)| {
@@ -435,7 +434,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude_any.clone())
                 .then(subparagraphs_in_inputs.or(subparagraph.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
@@ -462,7 +461,7 @@ impl LatexParser {
         let paragraph = metadata
             .clone()
             .then_ignore(just("\\paragraph"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(subparagraph_any.clone().repeated())
@@ -481,7 +480,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude_any.clone())
                 .then(paragraphs_in_inputs.or(paragraph.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
@@ -508,7 +507,7 @@ impl LatexParser {
         let subsubsection = metadata
             .clone()
             .then_ignore(just("\\subsubsection"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(paragraph_any.clone().repeated())
@@ -527,7 +526,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude_any.clone())
                 .then(
                     subsubsections_in_inputs
@@ -558,7 +557,7 @@ impl LatexParser {
         let subsection = metadata
             .clone()
             .then_ignore(just("\\subsection"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(subsubsection_any.clone().repeated())
@@ -577,7 +576,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude_any.clone())
                 .then(subsections_in_inputs.or(subsection.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
@@ -604,7 +603,7 @@ impl LatexParser {
         let section = metadata
             .clone()
             .then_ignore(just("\\section"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(subsection_any.clone().repeated())
@@ -623,7 +622,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude_any.clone())
                 .then(sections_in_inputs.or(section.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
@@ -649,7 +648,7 @@ impl LatexParser {
         let chapter = metadata
             .clone()
             .then_ignore(just("\\chapter"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(section_any.clone().repeated())
@@ -668,7 +667,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude_any.clone())
                 .then(chapters_in_inputs.or(chapter.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
@@ -694,7 +693,7 @@ impl LatexParser {
         let part = metadata
             .clone()
             .then_ignore(just("\\part"))
-            .then(heading.clone())
+            .then(curly_braces.clone())
             .then_ignore(newline())
             .then(prelude_any.clone())
             .then(chapter_any.clone().repeated())
@@ -713,7 +712,7 @@ impl LatexParser {
             metadata
                 .clone()
                 .then_ignore(just("% TEXLA FILE BEGIN"))
-                .then(heading.clone().padded())
+                .then(curly_braces.clone().padded())
                 .then(prelude_any.clone())
                 .then(parts_in_inputs.or(part.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
