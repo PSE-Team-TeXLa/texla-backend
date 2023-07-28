@@ -1,16 +1,24 @@
-use crate::infrastructure::errors::InfrastructureError;
-
-use std::io::{Read, Write};
-use zip::write::FileOptions;
-
 use std::fs::File;
+use std::io::{Read, Write};
+
+use zip::write::FileOptions;
 use zip::CompressionMethod::Deflated;
+
+use crate::infrastructure::errors::InfrastructureError;
 
 pub trait ExportManager {
     fn zip_files(&mut self) -> Result<String, InfrastructureError>;
 }
 
-pub struct TexlaExportManager;
+pub struct TexlaExportManager {
+    main_file: String,
+}
+
+impl TexlaExportManager {
+    pub fn new(main_file: String) -> Self {
+        Self { main_file }
+    }
+}
 
 impl ExportManager for TexlaExportManager {
     fn zip_files(&mut self) -> Result<String, InfrastructureError> {

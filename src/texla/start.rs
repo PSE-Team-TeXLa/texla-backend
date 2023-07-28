@@ -27,7 +27,7 @@ pub async fn start() {
     println!("Opening file: {}", main_file);
 
     let core = TexlaCore {
-        export_manager: TexlaExportManager,
+        export_manager: TexlaExportManager::new(main_file.clone()),
         main_file,
     };
 
