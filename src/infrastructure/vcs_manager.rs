@@ -1,6 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Output};
 
+use chrono::Local;
+
 use crate::infrastructure::errors::InfrastructureError;
 
 struct StringOutput {
@@ -42,6 +44,8 @@ pub struct GitManager {
 
 impl GitManager {
     const GIT: &'static str = "git";
+    const DEFAULT_COMMIT_MESSAGE_PREFIX: &'static str = "TeXLa ";
+    const DEFAULT_COMMIT_MESSAGE_TIME_FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
 
     pub fn new(main_file: String) -> Self {
         let main_file_directory = PathBuf::from(main_file)
@@ -115,17 +119,37 @@ impl GitManager {
 }
 
 impl VcsManager for GitManager {
+    // TODO error handling for every git command
+
     fn pull(&self) -> Result<(), InfrastructureError> {
-        todo!()
+        self.git(vec!["pull", "--rebase", "--autostash"]);
+
+        Ok(())
     }
 
-    fn commit(&self, message: Option<String>) -> Result<(), InfrastructureError> {
-        // TODO after VS: use default commit message if no message is given
-        Ok(()) // TODO!
+    fn commit(&self, custom_message: Option<String>) -> Result<(), InfrastructureError> {
+        let message = {
+            if let Some(..) = custom_message {
+                custom_message.unwrap()
+            } else {
+                format!(
+                    "{}{}",
+                    Self::DEFAULT_COMMIT_MESSAGE_PREFIX,
+                    Local::now().format(Self::DEFAULT_COMMIT_MESSAGE_TIME_FORMAT)
+                )
+            }
+        };
+
+        self.git(vec!["add", "--all"]);
+        self.git(vec!["commit", "--message", &message]);
+
+        Ok(())
     }
 
     fn push(&self) -> Result<(), InfrastructureError> {
-        Ok(()) // TODO!
+        self.git(vec!["push"]);
+
+        Ok(())
     }
 }
 
