@@ -165,7 +165,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\begin{{{}\n...\n\\end{{{}}}", name.clone(), name),
+            format!("\\begin{{{}}}\n", name),
             metadata,
         )
     }
