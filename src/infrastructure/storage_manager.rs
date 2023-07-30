@@ -252,8 +252,6 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn save(&self, mut latex_single_string: String) -> Result<(), InfrastructureError> {
-        // TODO after VS: handle multiple files
-
         // define parser for % TEXLA FILE BEGIN ...'
         let parser = Self::texla_file_parser();
 
