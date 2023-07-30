@@ -126,6 +126,10 @@ impl GitManager {
 
 impl VcsManager for GitManager {
     fn pull(&self) -> Result<(), VcsError> {
+        if !self.active {
+            return Ok(());
+        }
+
         // TODO adapt return type to accept MergeConflictError and VcsError without into()?
         let pull_output = self.git(Self::GIT_PULL.to_vec());
 
@@ -140,7 +144,6 @@ impl VcsManager for GitManager {
                 Err(VcsError {
                     message: "unable to push local changes".to_string(),
                 })
-                .into()
             };
         }
 
@@ -148,6 +151,10 @@ impl VcsManager for GitManager {
     }
 
     fn commit(&self, custom_message: Option<String>) -> Result<(), VcsError> {
+        if !self.active {
+            return Ok(());
+        }
+
         let message = {
             if let Some(..) = custom_message {
                 custom_message.unwrap()
@@ -182,6 +189,10 @@ impl VcsManager for GitManager {
     }
 
     fn push(&self) -> Result<(), VcsError> {
+        if !self.active {
+            return Ok(());
+        }
+
         // TODO adapt return type to accept PushRejectionError and VcsError without into()?
         let push_output = self.git(Self::GIT_PUSH.to_vec());
 
@@ -200,8 +211,7 @@ impl VcsManager for GitManager {
                     message: "unable to push local changes, \
                     possibly because remote repository can't be reached"
                         .to_string(),
-                }
-                .into())
+                })
             };
         }
 
