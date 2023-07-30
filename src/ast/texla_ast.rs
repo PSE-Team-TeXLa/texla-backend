@@ -134,6 +134,18 @@ mod tests {
             lf(latex.clone())
         );
     }
+
+    #[test]
+    fn empty_document_identical() {
+        let latex = fs::read_to_string("latex_test_files/empty_document.tex").unwrap();
+        let ast = parse_latex(latex.clone()).expect("Valid Latex");
+        assert!(ast.to_latex(Default::default()).is_ok());
+        assert_eq!(
+            lf(ast.to_latex(Default::default()).unwrap()),
+            lf(latex.clone())
+        );
+    }
+
     #[test]
     fn only_subsection_identical() {
         let latex = fs::read_to_string("latex_test_files/only_subsection.tex").unwrap();
