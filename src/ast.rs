@@ -7,6 +7,7 @@ use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::Uuid;
 
 pub mod errors;
+mod latex_constants;
 mod meta_data;
 pub mod node;
 pub mod operation;

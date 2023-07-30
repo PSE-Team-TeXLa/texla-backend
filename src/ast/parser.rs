@@ -9,6 +9,7 @@ use chumsky::Parser;
 use ast::errors::ParseError;
 
 use crate::ast;
+use crate::ast::latex_constants::{LEAF_LEVEL, LEVELS};
 use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid};
@@ -23,7 +24,7 @@ pub fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
     // TODO: for performance, the parser should not be created every time, but reused
     let parser = LatexParser::new();
     let root = parser.parser().parse(string.clone())?;
-    let highest_level = parser.find_highest_level().parse(string)?;
+    let highest_level = parser.highest_level(&string);
     Ok(TexlaAst {
         portal: parser.portal.into_inner(),
         uuid_provider: parser.uuid_provider.into_inner(),
@@ -326,15 +327,8 @@ impl LatexParser {
             .padded()
             .boxed();
 
-        // TODO find way to ignore \sectioning (use keyword?)
         let terminator = choice((
-            just("\\part").rewind(),
-            just("\\chapter").rewind(),
-            just("\\section").rewind(),
-            just("\\subsection").rewind(),
-            just("\\subsubsection").rewind(),
-            just("\\paragraph").rewind(),
-            just("\\subparagraph").rewind(),
+            Self::segment_command_parser().rewind().to("segment"),
             just("\\begin").rewind(),
             just("\\end").rewind(),
             just("\\end{document}").rewind(),
@@ -459,6 +453,7 @@ impl LatexParser {
             .padded()
             .boxed();
 
+        // TODO: generalize this
         // PARAGRAPH
         let paragraph = metadata
             .clone()
@@ -773,18 +768,20 @@ impl LatexParser {
         document
     }
 
-    fn find_highest_level(&self) -> impl Parser<char, i8, Error = Simple<char>> + '_ {
-        take_until(just("\\section").or(just("\\subsection")))
-            .map(|(_trash, keyword)| match keyword {
-                "\\part" => -1,
-                "\\chapter" => 0,
-                "\\section" => 1,
-                "\\subsection" => 2,
-                "\\subsubsection" => 3,
-                "\\paragraph" => 4,
-                "\\subparagraph" => 5,
-                _ => 6, // no segments at all
-            })
-            .boxed()
+    fn highest_level(&self, string: &str) -> i8 {
+        take_until(Self::segment_command_parser())
+            .map(|(_, level)| level)
+            .parse(string)
+            .unwrap_or(LEAF_LEVEL)
+    }
+
+    fn segment_command_parser() -> impl Parser<char, i8, Error = Simple<char>> + 'static {
+        // TODO find way to ignore \sectioning (use keyword?)
+        choice(LEVELS.map(|(level, keyword)| {
+            just::<char, &str, Simple<char>>("\\")
+                .ignore_then(just(keyword))
+                .to(level)
+        }))
+        .boxed()
     }
 }
