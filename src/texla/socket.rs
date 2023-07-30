@@ -105,10 +105,11 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
 
         let state_ref = extract_state(&socket);
         let mut state = state_ref.lock().unwrap();
-        match perform_and_check_operation(&mut state.ast, operation) {
+        match perform_and_check_operation(&mut state, operation) {
             Ok(()) => {
                 socket.emit("new_ast", &state.ast).ok();
                 println!("Operation was okay");
+                println!("Saved changes");
                 // println!("new_ast {:#?}", &state.ast);
             }
             Err(err) => {
@@ -168,25 +169,26 @@ fn extract_state(socket: &TexlaSocket) -> Ref<SharedTexlaState> {
 }
 
 fn perform_and_check_operation(
-    ast: &mut TexlaAst,
+    state: &mut TexlaState,
     operation: Box<dyn Operation<TexlaAst>>,
 ) -> Result<(), TexlaError> {
-    let backup_latex = ast.to_latex(Default::default())?;
+    let backup_latex = state.ast.to_latex(Default::default())?;
 
     let perform = || -> Result<TexlaAst, TexlaError> {
-        ast.execute(operation)?;
-        let latex_single_string = ast.to_latex(Default::default())?;
+        state.ast.execute(operation)?;
+        let latex_single_string = state.ast.to_latex(Default::default())?;
         let reparsed_ast = TexlaAst::from_latex(latex_single_string)?;
+        stringify_and_save(state, Default::default())?;
         Ok(reparsed_ast)
     };
 
     match perform() {
         Ok(new_ast) => {
-            *ast = new_ast;
+            state.ast = new_ast;
             Ok(())
         }
         Err(err) => {
-            *ast = TexlaAst::from_latex(backup_latex)?;
+            state.ast = TexlaAst::from_latex(backup_latex)?;
             Err(err)
         }
     }
@@ -220,6 +222,7 @@ async fn handle_export(
         return;
     }
 
+    // TODO: save original files again
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
             socket.emit("export_ready", url).ok();
