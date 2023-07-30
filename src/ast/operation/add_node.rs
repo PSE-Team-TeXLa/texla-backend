@@ -2,13 +2,13 @@ use std::sync::{Arc, Mutex};
 
 use serde::Deserialize;
 
-use crate::ast::Ast;
 use crate::ast::errors::OperationError;
 use crate::ast::meta_data::MetaData;
 use crate::ast::node::{ExpandableData, Node, NodeType};
 use crate::ast::operation::{Operation, Position};
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::UuidProvider;
+use crate::ast::Ast;
 
 #[derive(Deserialize, Debug)]
 pub struct AddNode {
@@ -25,7 +25,8 @@ impl Operation<TexlaAst> for AddNode {
             uuid,
             node_type: NodeType::Expandable {
                 data: ExpandableData::Dummy {
-                    text: self.raw_latex.clone(),
+                    before_children: self.raw_latex.clone(),
+                    after_children: "".to_string(),
                 },
                 children: vec![],
             },

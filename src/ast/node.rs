@@ -141,16 +141,19 @@ impl NodeType {
                     ExpandableData::File { path } => {
                         let children = self.children_to_latex(level)?; //Dont increase the nesting level since file is not in hierarchy
                         Ok(format!(
-                            "% TEXLA FILE BEGIN {{{path}}}\n{children}% TEXLA FILE END\n"
+                            "% TEXLA FILE BEGIN {{{path}}}\n{children}% TEXLA FILE END {{{path}}}\n"
                         ))
                     }
                     ExpandableData::Environment { name } => {
                         let children = self.children_to_latex(level)?;
                         Ok(format!("\\begin{{{name}}}\n{children}\\end{{{name}}}\n"))
                     }
-                    ExpandableData::Dummy { text } => {
+                    ExpandableData::Dummy {
+                        before_children,
+                        after_children,
+                    } => {
                         let children = self.children_to_latex(level)?;
-                        Ok(format!("{text}\n\n{children}"))
+                        Ok(format!("{before_children}\n{children}{after_children}\n"))
                     }
                 }
             }
@@ -161,11 +164,23 @@ impl NodeType {
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum ExpandableData {
-    Document { preamble: String, postamble: String },
-    Segment { heading: String },
-    File { path: String },
-    Environment { name: String },
-    Dummy { text: String }, // TODO remove variant later?
+    Document {
+        preamble: String,
+        postamble: String,
+    },
+    Segment {
+        heading: String,
+    },
+    File {
+        path: String,
+    },
+    Environment {
+        name: String,
+    },
+    Dummy {
+        before_children: String,
+        after_children: String,
+    },
 }
 
 #[derive(Debug, Serialize)]

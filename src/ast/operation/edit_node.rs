@@ -26,11 +26,16 @@ impl Operation<TexlaAst> for EditNode {
             let node_meta_data_map = &node.meta_data.data;
             let node_parent = &node.parent;
 
+            let mut parts = self.raw_latex.split("...");
+            let before_children = parts.next().unwrap_or("").to_string();
+            let after_children = parts.next().unwrap_or("").to_string();
+
             Arc::new(Mutex::new(Node {
                 uuid: self.target,
                 node_type: NodeType::Expandable {
                     data: ExpandableData::Dummy {
-                        text: self.raw_latex.clone(),
+                        before_children,
+                        after_children,
                     },
                     children: match &node.node_type {
                         NodeType::Expandable { children, .. } => children.clone(), // copies children from old node

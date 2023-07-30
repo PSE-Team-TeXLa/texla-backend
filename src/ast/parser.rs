@@ -149,7 +149,10 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\input{{{path}}}"),
+            format!(
+                "% TEXLA FILE BEGIN{{{}}}\n...\n% TEXLA FILE END{{{}}}",
+                &path, &path
+            ),
             metadata,
         )
     }
@@ -165,7 +168,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\begin{{{}}}\n", name),
+            format!("\\begin{{{}}}\n...\n\\end{{{}}}", name.clone(), name),
             metadata,
         )
     }
@@ -182,7 +185,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            raw,
+            format!("{raw}\n..."),
             metadata,
         )
     }
@@ -404,7 +407,14 @@ impl LatexParser {
                 .then(curly_braces.clone().padded())
                 .then(prelude.clone().or(prelude_in_inputs).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|((metadata, path), children)| self.build_file(path, children, metadata))
+                .then(curly_braces.clone().padded())
+                .try_map(|(((metadata, path), children), path_end), span| {
+                    if path == path_end {
+                        Ok(self.build_file(path, children, metadata))
+                    } else {
+                        Err(Simple::custom(span, "File not closed properly"))
+                    }
+                })
         })
         .boxed();
 
@@ -440,16 +450,28 @@ impl LatexParser {
                 .then(prelude_any.clone())
                 .then(subparagraphs_in_inputs.or(subparagraph.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(((metadata, path), mut prelude), mut children)| {
-                    self.build_file(
-                        path,
-                        {
-                            prelude.append(&mut children);
-                            prelude
-                        },
-                        metadata,
-                    )
-                })
+                .then(curly_braces.clone().padded())
+                .try_map(
+                    |((((metadata, path), mut prelude), mut children), path_end), span| {
+                        if path == path_end {
+                            Ok(self.build_file(
+                                path,
+                                {
+                                    prelude.append(&mut children);
+                                    prelude
+                                },
+                                metadata,
+                            ))
+                        } else {
+                            Err(Simple::custom(
+                                span,
+                                format!(
+                                    "File opened: {path} but not closing tag was for {path_end}"
+                                ),
+                            ))
+                        }
+                    },
+                )
         })
         .boxed();
 
@@ -486,16 +508,28 @@ impl LatexParser {
                 .then(prelude_any.clone())
                 .then(paragraphs_in_inputs.or(paragraph.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(((metadata, path), mut prelude), mut children)| {
-                    self.build_file(
-                        path,
-                        {
-                            prelude.append(&mut children);
-                            prelude
-                        },
-                        metadata,
-                    )
-                })
+                .then(curly_braces.clone().padded())
+                .try_map(
+                    |((((metadata, path), mut prelude), mut children), path_end), span| {
+                        if path == path_end {
+                            Ok(self.build_file(
+                                path,
+                                {
+                                    prelude.append(&mut children);
+                                    prelude
+                                },
+                                metadata,
+                            ))
+                        } else {
+                            Err(Simple::custom(
+                                span,
+                                format!(
+                                    "File opened: {path} but not closing tag was for {path_end}"
+                                ),
+                            ))
+                        }
+                    },
+                )
         })
         .boxed();
 
@@ -536,16 +570,28 @@ impl LatexParser {
                         .repeated(),
                 )
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(((metadata, path), mut prelude), mut children)| {
-                    self.build_file(
-                        path,
-                        {
-                            prelude.append(&mut children);
-                            prelude
-                        },
-                        metadata,
-                    )
-                })
+                .then(curly_braces.clone().padded())
+                .try_map(
+                    |((((metadata, path), mut prelude), mut children), path_end), span| {
+                        if path == path_end {
+                            Ok(self.build_file(
+                                path,
+                                {
+                                    prelude.append(&mut children);
+                                    prelude
+                                },
+                                metadata,
+                            ))
+                        } else {
+                            Err(Simple::custom(
+                                span,
+                                format!(
+                                    "File opened: {path} but not closing tag was for {path_end}"
+                                ),
+                            ))
+                        }
+                    },
+                )
         })
         .boxed();
 
@@ -582,16 +628,28 @@ impl LatexParser {
                 .then(prelude_any.clone())
                 .then(subsections_in_inputs.or(subsection.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(((metadata, path), mut prelude), mut children)| {
-                    self.build_file(
-                        path,
-                        {
-                            prelude.append(&mut children);
-                            prelude
-                        },
-                        metadata,
-                    )
-                })
+                .then(curly_braces.clone().padded())
+                .try_map(
+                    |((((metadata, path), mut prelude), mut children), path_end), span| {
+                        if path == path_end {
+                            Ok(self.build_file(
+                                path,
+                                {
+                                    prelude.append(&mut children);
+                                    prelude
+                                },
+                                metadata,
+                            ))
+                        } else {
+                            Err(Simple::custom(
+                                span,
+                                format!(
+                                    "File opened: {path} but not closing tag was for {path_end}"
+                                ),
+                            ))
+                        }
+                    },
+                )
         })
         .boxed();
 
@@ -628,16 +686,28 @@ impl LatexParser {
                 .then(prelude_any.clone())
                 .then(sections_in_inputs.or(section.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(((metadata, path), mut prelude), mut children)| {
-                    self.build_file(
-                        path,
-                        {
-                            prelude.append(&mut children);
-                            prelude
-                        },
-                        metadata,
-                    )
-                })
+                .then(curly_braces.clone().padded())
+                .try_map(
+                    |((((metadata, path), mut prelude), mut children), path_end), span| {
+                        if path == path_end {
+                            Ok(self.build_file(
+                                path,
+                                {
+                                    prelude.append(&mut children);
+                                    prelude
+                                },
+                                metadata,
+                            ))
+                        } else {
+                            Err(Simple::custom(
+                                span,
+                                format!(
+                                    "File opened: {path} but not closing tag was for {path_end}"
+                                ),
+                            ))
+                        }
+                    },
+                )
         })
         .boxed();
 
@@ -673,16 +743,28 @@ impl LatexParser {
                 .then(prelude_any.clone())
                 .then(chapters_in_inputs.or(chapter.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(((metadata, path), mut prelude), mut children)| {
-                    self.build_file(
-                        path,
-                        {
-                            prelude.append(&mut children);
-                            prelude
-                        },
-                        metadata,
-                    )
-                })
+                .then(curly_braces.clone().padded())
+                .try_map(
+                    |((((metadata, path), mut prelude), mut children), path_end), span| {
+                        if path == path_end {
+                            Ok(self.build_file(
+                                path,
+                                {
+                                    prelude.append(&mut children);
+                                    prelude
+                                },
+                                metadata,
+                            ))
+                        } else {
+                            Err(Simple::custom(
+                                span,
+                                format!(
+                                    "File opened: {path} but not closing tag was for {path_end}"
+                                ),
+                            ))
+                        }
+                    },
+                )
         })
         .boxed();
 
@@ -718,16 +800,28 @@ impl LatexParser {
                 .then(prelude_any.clone())
                 .then(parts_in_inputs.or(part.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .map(|(((metadata, path), mut prelude), mut children)| {
-                    self.build_file(
-                        path,
-                        {
-                            prelude.append(&mut children);
-                            prelude
-                        },
-                        metadata,
-                    )
-                })
+                .then(curly_braces.clone().padded())
+                .try_map(
+                    |((((metadata, path), mut prelude), mut children), path_end), span| {
+                        if path == path_end {
+                            Ok(self.build_file(
+                                path,
+                                {
+                                    prelude.append(&mut children);
+                                    prelude
+                                },
+                                metadata,
+                            ))
+                        } else {
+                            Err(Simple::custom(
+                                span,
+                                format!(
+                                    "File opened: {path} but not closing tag was for {path_end}"
+                                ),
+                            ))
+                        }
+                    },
+                )
         })
         .boxed();
 
