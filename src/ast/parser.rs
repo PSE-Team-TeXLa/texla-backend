@@ -547,7 +547,7 @@ impl LatexParser {
                 .then(prelude.repeated())
                 .then(things_in_inputs.or(thing.clone()).repeated())
                 .then_ignore(just("% TEXLA FILE END").padded())
-                .then(curly_braces.clone().padded())
+                .then(Self::argument_surrounded_by(CURLY_BRACES).padded())
                 .try_map(
                     |((((metadata, path), mut prelude), mut children), path_end), span| {
                         if path == path_end {
