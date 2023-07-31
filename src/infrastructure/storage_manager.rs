@@ -3,9 +3,11 @@ use std::ops::Range;
 use std::path::Path;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use async_trait::async_trait;
 use chumsky::prelude::*;
+use debounced::debounced;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 
 use futures::{
@@ -208,7 +210,8 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         // we probably want to use tokio::spawn() here
 
         tokio::spawn(async move {
-            let path = "/Users/paulliebsch/pse/test";
+            let path = "latex_test_files";
+            println!("Starting watcher for {:?}", path);
             if let Err(e) = async_watch(path).await {
                 println!("error: {:?}", e)
             }
@@ -413,7 +416,9 @@ async fn async_watch<P: AsRef<Path>>(path: P) -> notify::Result<()> {
     // below will be monitored for changes.
     watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
 
-    while let Some(res) = rx.next().await {
+    let mut debounced = debounced(rx, Duration::from_millis(50));
+
+    while let Some(res) = debounced.next().await {
         match res {
             Ok(event) => println!("changed: {:?}", event),
             Err(e) => println!("watch error: {:?}", e),
