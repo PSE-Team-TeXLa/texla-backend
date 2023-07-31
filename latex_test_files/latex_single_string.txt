@@ -6,6 +6,7 @@
 \section{First section}
 
 Lorem ipsum.
+\enquote{\LaTeX{}} ist äußerst toll.
 
 % TEXLA FILE END {sections/section1}
 % TEXLA FILE BEGIN {sections/section2}
