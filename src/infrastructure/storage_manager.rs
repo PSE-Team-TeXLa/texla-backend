@@ -8,12 +8,8 @@ use std::time::Duration;
 use async_trait::async_trait;
 use chumsky::prelude::*;
 use debounced::debounced;
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-
-use futures::{
-    channel::mpsc::{channel, Receiver},
-    SinkExt, StreamExt,
-};
+use futures::{channel::mpsc::channel, SinkExt, StreamExt};
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
@@ -343,7 +339,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             }
 
             let (path, input_char_range, text_char_range) = parse_res.unwrap();
-            let (path_abs_os, path_rel_latex) = self.get_paths(path.clone());
+            let (path_abs_os, path_rel_latex) = self.get_paths(path);
 
             // convert ranges to handle non-ASCII characters correctly
             let input_byte_range =
@@ -351,7 +347,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             let text_byte_range =
                 Self::char_range_to_byte_range(&latex_single_string, text_char_range);
 
-            fs::write(path_abs_os, &latex_single_string[text_byte_range.clone()])
+            fs::write(path_abs_os, &latex_single_string[text_byte_range])
                 .expect("Could not write file");
 
             // replace '% TEXLA FILE BEGIN ... % TEXLA FILE END' in string with '\input{...}'
