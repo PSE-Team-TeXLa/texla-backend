@@ -323,7 +323,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 }
 
 pub trait DirectoryChangeHandler: Send + Sync {
-    fn handle_directory_change(&self);
+    fn handle_directory_change(&mut self);
 }
 
 #[cfg(test)]

@@ -11,7 +11,7 @@ use crate::infrastructure::storage_manager::{
 };
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
 use crate::texla::errors::TexlaError;
-use crate::texla::socket::TexlaSocket;
+use crate::texla::socket::{parse_ast_from_disk, TexlaSocket};
 
 pub type TexlaState = State<TexlaAst, TexlaStorageManager<GitManager>>;
 // TODO: maybe Mutex is not needed (if it is, use RwLock instead)
@@ -30,8 +30,19 @@ where
 impl State<TexlaAst, TexlaStorageManager<GitManager>> {}
 
 impl DirectoryChangeHandler for TexlaState {
-    fn handle_directory_change(&self) {
-        todo!("read files, update ast, validate ast, send ast to client");
+    fn handle_directory_change(&mut self) {
+        let storage_manager = self.storage_manager.lock().unwrap();
+
+        match parse_ast_from_disk(&storage_manager) {
+            Ok(ast) => {
+                self.ast = ast;
+                self.socket.emit("new_ast", self.ast.clone()).ok();
+            }
+            Err(err) => {
+                // TODO: prepend information that files were changed on disk/remote?
+                self.socket.emit("error", err).ok();
+            }
+        };
     }
 }
 
