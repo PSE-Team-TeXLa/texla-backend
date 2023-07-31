@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::string::String;
 use std::sync::{Arc, Mutex, Weak};
 
+use serde::de::Unexpected::Str;
 use serde::Serialize;
 
 use crate::ast::errors::StringificationError;
-use crate::ast::latex_constants::LEVELS;
+use crate::ast::latex_constants::*;
 use crate::ast::meta_data::MetaData;
 use crate::ast::uuid_provider::{Uuid, UuidProvider};
 
@@ -113,9 +114,13 @@ impl NodeType {
             // TODO: this should be in NodeType::Expandable just as with the leaves
             NodeType::Expandable { data, .. } => {
                 match data {
-                    ExpandableData::Segment { heading } => {
+                    ExpandableData::Segment { heading, counted } => {
                         // under a segment the expected next level is increased by one
                         let children = self.children_to_latex(level + 1)?;
+                        let count = match counted {
+                            false => String::from(UNCOUNTED_SEGMENT_MARKER),
+                            true => String::new(),
+                        };
                         let keyword = LEVELS
                             .iter()
                             .find(|(lvl, _)| *lvl == level)
@@ -123,7 +128,7 @@ impl NodeType {
                             .ok_or(StringificationError {
                                 message: format!("Invalid nesting level: {}", level),
                             })?;
-                        Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
+                        Ok(format!("\\{keyword}{count}{{{heading}}}\n{children}"))
                     }
                     ExpandableData::Document {
                         preamble,
@@ -165,6 +170,7 @@ pub enum ExpandableData {
     },
     Segment {
         heading: String,
+        counted: bool,
     },
     File {
         path: String,

@@ -9,7 +9,7 @@ use chumsky::Parser;
 use ast::errors::ParseError;
 
 use crate::ast;
-use crate::ast::latex_constants::{LEAF_LEVEL, LEVELS};
+use crate::ast::latex_constants::*;
 use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
 use crate::ast::texla_ast::TexlaAst;
 use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid};
@@ -189,10 +189,11 @@ impl LatexParser {
         heading: String,
         children: Vec<NodeRef>,
         raw: String,
+        counted: bool,
         metadata: HashMap<String, String>,
     ) -> NodeRef {
         Node::new_expandable(
-            ExpandableData::Segment { heading },
+            ExpandableData::Segment { heading, counted },
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
@@ -514,17 +515,19 @@ impl LatexParser {
         // TODO: prevent \sectioning etc. from parsing (using keyword?)
         Self::metadata()
             .then_ignore(just("\\").then(just(keyword)))
+            .then(just(UNCOUNTED_SEGMENT_MARKER).or_not())
             .then(Self::argument_surrounded_by(CURLY_BRACES))
             .then_ignore(newline())
             .then(prelude.repeated())
             .then(next_level.repeated())
             .map(
-                move |(((metadata, heading), mut blocks), mut subsegments)| {
+                move |((((metadata, star), heading), mut blocks), mut subsegments)| {
                     blocks.append(&mut subsegments);
                     self.build_segment(
                         heading.clone(),
                         blocks,
                         format!("\\{keyword}{{{heading}}}"), // TODO: newline?
+                        star.is_none(),
                         metadata,
                     )
                 },
