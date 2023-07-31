@@ -80,6 +80,16 @@ where
         s.chars().count()
     }
 
+    fn char_range_to_byte_range(s: &str, r: Range<usize>) -> Range<usize> {
+        let start = s
+            .char_indices()
+            .nth(r.start)
+            .map(|(index, _)| index)
+            .unwrap();
+        let end = s.char_indices().nth(r.end).map(|(index, _)| index).unwrap();
+        start..end
+    }
+
     fn curly_braces_parser() -> BoxedParser<'static, char, String, Simple<char>> {
         none_of::<_, _, Simple<char>>("}")
             .repeated()
@@ -296,8 +306,12 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             }
 
             // get paths
-            let (path, path_range) = parse_res.unwrap();
+            let (path, path_char_range) = parse_res.unwrap();
             let (path_abs_os, path_rel_latex) = self.get_paths(path);
+
+            // convert range to handle non-ASCII characters correctly
+            let path_byte_range =
+                Self::char_range_to_byte_range(&latex_single_string, path_char_range);
 
             // read content from inputted file
             let input_text = fs::read_to_string(path_abs_os).expect("Could not read file");
@@ -305,7 +319,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             // replace '\input{...}' in string with file content surrounded by begin and end marks
             let path_str = path_rel_latex.to_str().unwrap();
             latex_single_string.replace_range(
-                path_range,
+                path_byte_range,
                 &format!(
                     "{}{{{}}}\n{}\n{}{{{}}}",
                     Self::FILE_BEGIN_MARK,
@@ -338,14 +352,20 @@ impl StorageManager for TexlaStorageManager<GitManager> {
                 break;
             }
 
-            let (path, input_range, text_range) = parse_res.unwrap();
+            let (path, input_char_range, text_char_range) = parse_res.unwrap();
             let (path_abs_os, path_rel_latex) = self.get_paths(path.clone());
 
-            fs::write(path_abs_os, &latex_single_string[text_range.clone()])
+            // convert ranges to handle non-ASCII characters correctly
+            let input_byte_range =
+                Self::char_range_to_byte_range(&latex_single_string, input_char_range);
+            let text_byte_range =
+                Self::char_range_to_byte_range(&latex_single_string, text_char_range);
+
+            fs::write(path_abs_os, &latex_single_string[text_byte_range.clone()])
                 .expect("Could not write file");
 
             latex_single_string.replace_range(
-                input_range,
+                input_byte_range,
                 &format!(
                     "{}{{{}}}",
                     Self::INPUT_COMMAND,
