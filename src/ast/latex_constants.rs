@@ -10,3 +10,5 @@ pub const LEVELS: [(i8, &'static str); 7] = [
     (5, "subparagraph"),
 ];
 pub const LEAF_LEVEL: i8 = 6;
+
+pub const UNCOUNTED_SEGMENT_MARKER: &'static str = "*";
