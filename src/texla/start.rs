@@ -11,6 +11,13 @@ use crate::texla::webserver::start_axum;
 struct CliArguments {
     #[arg(short, long)]
     main_file: String,
+
+    // TODO how do we pass the following values to TexlaStorageManager?
+    #[arg(short, long, default_value = "500")] // in milliseconds
+    pull_interval: u64,
+
+    #[arg(short, long, default_value = "5000")] // in milliseconds
+    worksession_interval: u64,
 }
 
 pub async fn start() {
