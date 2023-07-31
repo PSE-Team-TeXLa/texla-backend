@@ -291,21 +291,16 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn multiplex_files(&self) -> Result<String, InfrastructureError> {
-        // define parser for '\input{...}'
         let parser = Self::latex_input_parser();
-
-        // start with content of main file as latex single string
         let mut latex_single_string =
             fs::read_to_string(&self.main_file).expect("Could not read file");
 
         loop {
-            // search for '\input{...}'
             let parse_res = parser.parse(latex_single_string.clone());
             if parse_res.is_err() {
                 break;
             }
 
-            // get paths
             let (path, path_char_range) = parse_res.unwrap();
             let (path_abs_os, path_rel_latex) = self.get_paths(path);
 
@@ -313,7 +308,6 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             let path_byte_range =
                 Self::char_range_to_byte_range(&latex_single_string, path_char_range);
 
-            // read content from inputted file
             let input_text = fs::read_to_string(path_abs_os).expect("Could not read file");
 
             // replace '\input{...}' in string with file content surrounded by begin and end marks
@@ -331,7 +325,6 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             );
         }
 
-        // return final latex single string with uniform line separators (LF only)
         Ok(Self::lf(latex_single_string))
     }
 
@@ -341,9 +334,6 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn save(&self, mut latex_single_string: String) -> Result<(), InfrastructureError> {
-        // TODO after VS: handle multiple files
-
-        // define parser for % TEXLA FILE BEGIN ...'
         let parser = Self::texla_file_parser();
 
         loop {
@@ -364,6 +354,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             fs::write(path_abs_os, &latex_single_string[text_byte_range.clone()])
                 .expect("Could not write file");
 
+            // replace '% TEXLA FILE BEGIN ... % TEXLA FILE END' in string with '\input{...}'
             latex_single_string.replace_range(
                 input_byte_range,
                 &format!(
