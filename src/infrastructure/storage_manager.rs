@@ -20,6 +20,8 @@ use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsMa
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
 
+const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(50);
+
 #[async_trait]
 pub trait StorageManager {
     fn attach_handlers(
@@ -192,6 +194,53 @@ where
 
         (path_abs_os, path_rel_latex)
     }
+
+    // TODO: use this everywhere. Maybe make it even more global
+    fn main_file_directory(&self) -> PathBuf {
+        PathBuf::from(&self.main_file)
+            .parent()
+            .expect("Could not find parent directory")
+            .to_path_buf()
+    }
+
+    fn is_writing(&self) -> bool {
+        // TODO
+        false
+    }
+
+    async fn watch<P: AsRef<Path>>(
+        path: P,
+        storage_manager: Arc<Mutex<Self>>,
+        handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
+    ) -> notify::Result<()> {
+        let (mut tx, rx) = channel(1);
+
+        let mut watcher = RecommendedWatcher::new(
+            move |res| {
+                futures::executor::block_on(async {
+                    tx.send(res).await.unwrap();
+                })
+            },
+            Config::default(),
+        )?;
+
+        watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
+        let mut debounced_receiver = debounced(rx, DIRECTORY_WATCHER_DEBOUNCE_DELAY);
+
+        while let Some(res) = debounced_receiver.next().await {
+            match res {
+                Ok(_event) => {
+                    if !storage_manager.lock().unwrap().is_writing() {
+                        println!("Detected foreign change");
+                        handler.lock().unwrap().handle_directory_change();
+                    }
+                }
+                Err(e) => eprintln!("watch error (not propagating): {:?}", e),
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -210,21 +259,21 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         // we probably want to use tokio::spawn() here
 
         tokio::spawn(async move {
-            let path = "latex_test_files";
-            println!("Starting watcher for {:?}", path);
-            if let Err(e) = async_watch(path).await {
+            let (path, handler) = {
+                let sm = this.lock().unwrap();
+                let path = sm.main_file_directory();
+                println!("Starting directory watcher for {:?}", path);
+                let handler = sm
+                    .directory_change_handler
+                    .as_ref()
+                    .expect("Starting directory watcher without directory change handler")
+                    .clone();
+                (path, handler)
+            };
+            if let Err(e) = Self::watch(path, this, handler).await {
                 println!("error: {:?}", e)
             }
         });
-
-        //when change is detected: call this
-        // this.lock()
-        //     .unwrap()
-        //     .directory_change_handler
-        //     .unwrap()
-        //     .lock()
-        //     .unwrap()
-        //     .handle_directory_change()
     }
 
     fn remote_url(&self) -> Option<&String> {
@@ -391,39 +440,4 @@ mod tests {
             )
         );
     }
-}
-fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)> {
-    let (mut tx, rx) = channel(1);
-
-    // Automatically select the best implementation for your platform.
-    // You can also access each implementation directly e.g. INotifyWatcher.
-    let watcher = RecommendedWatcher::new(
-        move |res| {
-            futures::executor::block_on(async {
-                tx.send(res).await.unwrap();
-            })
-        },
-        Config::default(),
-    )?;
-
-    Ok((watcher, rx))
-}
-
-async fn async_watch<P: AsRef<Path>>(path: P) -> notify::Result<()> {
-    let (mut watcher, mut rx) = async_watcher()?;
-
-    // Add a path to be watched. All files and directories at that path and
-    // below will be monitored for changes.
-    watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
-
-    let mut debounced = debounced(rx, Duration::from_millis(50));
-
-    while let Some(res) = debounced.next().await {
-        match res {
-            Ok(event) => println!("changed: {:?}", event),
-            Err(e) => println!("watch error: {:?}", e),
-        }
-    }
-
-    Ok(())
 }
