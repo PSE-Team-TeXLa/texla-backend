@@ -37,6 +37,7 @@ pub fn socket_service(
 }
 
 // TODO: a bit of reorganization, maybe split into multiple functions
+// (in more files, some into state)
 async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     println!("Socket connected with id: {}", socket.sid);
 
@@ -154,7 +155,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     join!(storage_manager_handle);
 }
 
-fn parse_ast_from_disk(
+pub fn parse_ast_from_disk(
     storage_manager: &TexlaStorageManager<GitManager>,
 ) -> Result<TexlaAst, TexlaError> {
     let latex_single_string = storage_manager.multiplex_files()?;

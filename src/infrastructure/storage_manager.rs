@@ -1,15 +1,26 @@
 use std::fs;
 use std::ops::Range;
+use std::path::Path;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use async_trait::async_trait;
 use chumsky::prelude::*;
+use debounced::debounced;
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+
+use futures::{
+    channel::mpsc::{channel, Receiver},
+    SinkExt, StreamExt,
+};
 
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
+
+const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(50);
 
 #[async_trait]
 pub trait StorageManager {
@@ -183,6 +194,53 @@ where
 
         (path_abs_os, path_rel_latex)
     }
+
+    // TODO: use this everywhere. Maybe make it even more global
+    fn main_file_directory(&self) -> PathBuf {
+        PathBuf::from(&self.main_file)
+            .parent()
+            .expect("Could not find parent directory")
+            .to_path_buf()
+    }
+
+    fn is_writing(&self) -> bool {
+        // TODO
+        false
+    }
+
+    async fn watch<P: AsRef<Path>>(
+        path: P,
+        storage_manager: Arc<Mutex<Self>>,
+        handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
+    ) -> notify::Result<()> {
+        let (mut tx, rx) = channel(1);
+
+        let mut watcher = RecommendedWatcher::new(
+            move |res| {
+                futures::executor::block_on(async {
+                    tx.send(res).await.unwrap();
+                })
+            },
+            Config::default(),
+        )?;
+
+        watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
+        let mut debounced_receiver = debounced(rx, DIRECTORY_WATCHER_DEBOUNCE_DELAY);
+
+        while let Some(res) = debounced_receiver.next().await {
+            match res {
+                Ok(_event) => {
+                    if !storage_manager.lock().unwrap().is_writing() {
+                        println!("Detected foreign change");
+                        handler.lock().unwrap().handle_directory_change();
+                    }
+                }
+                Err(e) => eprintln!("watch error (not propagating): {:?}", e),
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -199,6 +257,23 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     async fn start(this: Arc<Mutex<Self>>) {
         // TODO after VS: start async timer-based background tasks and start DirectoryChangeHandler
         // we probably want to use tokio::spawn() here
+
+        tokio::spawn(async move {
+            let (path, handler) = {
+                let sm = this.lock().unwrap();
+                let path = sm.main_file_directory();
+                println!("Starting directory watcher for {:?}", path);
+                let handler = sm
+                    .directory_change_handler
+                    .as_ref()
+                    .expect("Starting directory watcher without directory change handler")
+                    .clone();
+                (path, handler)
+            };
+            if let Err(e) = Self::watch(path, this, handler).await {
+                println!("error: {:?}", e)
+            }
+        });
     }
 
     fn remote_url(&self) -> Option<&String> {
@@ -297,7 +372,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 }
 
 pub trait DirectoryChangeHandler: Send + Sync {
-    fn handle_directory_change(&self);
+    fn handle_directory_change(&mut self);
 }
 
 #[cfg(test)]
