@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex, Weak};
 use serde::Serialize;
 
 use crate::ast::errors::StringificationError;
+use crate::ast::latex_constants::LEVELS;
 use crate::ast::meta_data::MetaData;
 use crate::ast::uuid_provider::{Uuid, UuidProvider};
 
@@ -109,25 +110,19 @@ impl NodeType {
     pub fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
         match self {
             NodeType::Leaf { data } => Ok(data.to_latex()),
+            // TODO: this should be in NodeType::Expandable just as with the leaves
             NodeType::Expandable { data, .. } => {
                 match data {
                     ExpandableData::Segment { heading } => {
+                        // under a segment the expected next level is increased by one
                         let children = self.children_to_latex(level + 1)?;
-                        let keyword = match level {
-                            // TODO: outsource into latex_constants.rs
-                            -1 => "part".to_string(),
-                            0 => "chapter".to_string(),
-                            1 => "section".to_string(),
-                            2 => "subsection".to_string(),
-                            3 => "subsubsection".to_string(),
-                            4 => "paragraph".to_string(),
-                            5 => "subparagraph".to_string(),
-                            other => {
-                                return Err(StringificationError {
-                                    message: format!("Invalid Nesting Level: {}", other),
-                                })
-                            }
-                        };
+                        let keyword = LEVELS
+                            .iter()
+                            .find(|(lvl, _)| *lvl == level)
+                            .map(|(_, keyword)| keyword)
+                            .ok_or(StringificationError {
+                                message: format!("Invalid nesting level: {}", level),
+                            })?;
                         Ok(format!("\\{keyword}{{{heading}}}\n{children}"))
                     }
                     ExpandableData::Document {
