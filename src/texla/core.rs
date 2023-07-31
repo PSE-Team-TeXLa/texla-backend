@@ -9,15 +9,3 @@ pub struct TexlaCore {
     // not clean (maybe pass main_file over frontend)
     pub main_file: String, // TODO use Path instead of String
 }
-
-impl DirectoryChangeHandler for TexlaCore {
-    fn handle_directory_change(&self) {
-        todo!()
-    }
-}
-
-impl MergeConflictHandler for TexlaCore {
-    fn handle_merge_conflict(&self, error: InfrastructureError) {
-        todo!()
-    }
-}
