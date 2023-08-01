@@ -10,6 +10,8 @@ use chumsky::prelude::*;
 use debounced::debounced;
 use futures::{channel::mpsc::channel, SinkExt, StreamExt};
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use tokio::task::JoinHandle;
+use tokio::time::sleep;
 
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
@@ -42,8 +44,8 @@ where
     merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
     main_file: String,
     // TODO use Path instead of String
-    pull_timer_running: bool,
-    worksession_timer_running: bool,
+    pull_timer: Option<JoinHandle<()>>,
+    worksession_timer: Option<JoinHandle<()>>,
 }
 
 impl<V> TexlaStorageManager<V>
@@ -63,8 +65,8 @@ where
             directory_change_handler: None,
             merge_conflict_handler: None,
             main_file,
-            pull_timer_running: false,
-            worksession_timer_running: false,
+            pull_timer: None,
+            worksession_timer: None,
         }
     }
 
@@ -263,12 +265,63 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     async fn start(this: Arc<Mutex<Self>>) {
+        // TODO get duration intervals from CLI arguments
+        let pull_duration = Duration::from_millis(500);
+        let worksession_duration = Duration::from_millis(5000);
+
+        let mut guard_outer = this.lock().unwrap();
+        // TODO unwrap every time instead?
+
+        // TODO error handling (report errors via callback function in socket?)
+        let that = this.clone();
+        guard_outer.pull_timer = Some(tokio::spawn(async move {
+            loop {
+                let pull_result = that.lock().unwrap().vcs_manager.pull();
+                if pull_result.is_err() {
+                    // TODO in case of merge conflict, inform user
+                    // TODO in case of other error (how to differentiate?), repeat pull only? (*)
+                }
+
+                sleep(pull_duration).await;
+            }
+        }));
+
+        let that = this.clone();
+        guard_outer.worksession_timer = Some(tokio::spawn(async move {
+            sleep(worksession_duration).await;
+
+            let guard_inner = that.lock().unwrap();
+            // TODO unwrap every time instead?
+
+            let commit_result = guard_inner.vcs_manager.commit(None);
+            if commit_result.is_err() {
+                // TODO in case of error, repeat commit? (*)
+            }
+
+            let pull_result = guard_inner.vcs_manager.pull();
+            if pull_result.is_err() {
+                // TODO in case of merge conflict, inform user
+                // TODO in case of other error (how to differentiate?), repeat pull only? (*)
+            }
+
+            let push_result = guard_inner.vcs_manager.push();
+            if push_result.is_err() {
+                // TODO in case of push rejection, pull and push again (*)
+                // TODO in case of other error (how to differentiate?), repeat push only? (*)
+            }
+        }));
+
+        // TODO (*): inform user after several unsuccessful tries
+        //  (maximum number of repetitions stored in a constant or as CLI argument)
+
+        // TODO start DirectoryChangeHandler
         // TODO after VS: start async timer-based background tasks and start DirectoryChangeHandler
         // we probably want to use tokio::spawn() here
 
+        let sm = this.clone();
         tokio::spawn(async move {
             let (path, handler) = {
-                let sm = this.lock().unwrap();
+                let sm = sm.lock().unwrap();
                 let path = sm.main_file_directory();
                 println!("Starting directory watcher for {:?}", path);
                 let handler = sm
@@ -278,7 +331,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
                     .clone();
                 (path, handler)
             };
-            if let Err(e) = Self::watch(path, this, handler).await {
+            if let Err(e) = Self::watch(path, sm, handler).await {
                 println!("error: {:?}", e)
             }
         });
@@ -327,11 +380,19 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn stop_timers(&mut self) {
-        self.pull_timer_running = false;
-        self.worksession_timer_running = false;
+        if let Some(handle) = &self.pull_timer {
+            handle.abort();
+            self.pull_timer = None;
+        }
+
+        if let Some(handle) = &self.worksession_timer {
+            handle.abort();
+            self.worksession_timer = None;
+        }
     }
 
     fn save(&self, mut latex_single_string: String) -> Result<(), InfrastructureError> {
+        // define parser for % TEXLA FILE BEGIN ...'
         let parser = Self::texla_file_parser();
 
         loop {
