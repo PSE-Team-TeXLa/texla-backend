@@ -22,7 +22,6 @@ impl TexlaExportManager {
 }
 
 impl ExportManager for TexlaExportManager {
-    // TODO: pass main_file here
     fn zip_files(&mut self) -> Result<String, InfrastructureError> {
         let main_file_directory = PathBuf::from(&self.main_file)
             .parent()
@@ -73,61 +72,79 @@ impl ExportManager for TexlaExportManager {
     }
 }
 
-//TODO: Add test: 1. Define self-made zip in [test] -> use zip_files() -> compare.
-//TODO Remove useless url test.
+// export.zip in test_resources/latex/pflichtenheft is irrelevant
 #[cfg(test)]
 mod tests {
     use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
+    use std::collections::HashSet;
     use std::fs;
-    use std::io::Read;
+    use std::path::Path;
     use zip::ZipArchive;
 
-    //all stringify options should be off so that latex_test-files.zip in test_resources is valid.
-    //large.tex configuration is needed.
     #[test]
-    fn zip_files() {
-        let main_file_directory = "test_resources/latex";
-        let mut manager = TexlaExportManager::new("test_resources/latex/large.tex".to_string());
-        let path_in_frontend_placeholder = manager.zip_files().unwrap();
+    fn test_zip_files() {
+        // prepare directory needed for testing
+        let path_to_new_test_directory = "test_resources/latex/pflichtenheft_zip";
+        let path_to_exported_directory = "test_resources/latex/pflichtenheft";
 
-        let zip_path = "test_resources/latex/export.zip";
-
-        let mut expected_zip =
-            ZipArchive::new(fs::File::open("test_resources/zip/latex_test_files.zip").unwrap())
-                .unwrap();
-        let mut actual_zip = ZipArchive::new(fs::File::open(zip_path).unwrap()).unwrap();
-
-        //assert_eq!(expected_zip.len(), actual_zip.len());
-
-        for i in 0..expected_zip.len() {
-            let mut expected_file = expected_zip.by_index(i).unwrap();
-            let file_name = expected_file.name();
-
-            //            if file_name.starts_with('.')
-            //                || expected_file.is_dir()
-            //                || file_name.ends_with(".jpg")
-            //                || file_name.ends_with(".zip")
-            //            {
-            //                continue; //Skip hidden files
-            //            }
-
-            // println!("Expected file: {}", file_name);
-
-            let mut actual_file = actual_zip.by_name(expected_file.name()).unwrap();
-
-            let actual_file_name = actual_file.name();
-
-            // println!("Actual file: {}", actual_file.name());
-
-            //            let mut expected_content = String::new();
-            //            let mut actual_content = String::new();
-            //
-            //            expected_file.read_to_string(&mut expected_content).unwrap();
-            //            actual_file.read_to_string(&mut actual_content).unwrap();
-            //
-            //            assert_eq!(expected_content, actual_content);
-
-            assert_eq!(file_name, actual_file_name);
+        if Path::new(path_to_new_test_directory).is_dir() {
+            fs::remove_dir_all(path_to_new_test_directory).unwrap();
         }
+
+        fs::create_dir(path_to_new_test_directory).unwrap();
+
+        let created_zip_path = "test_resources/latex/pflichtenheft/export.zip";
+        let copied_zip_path = "test_resources/latex/pflichtenheft_zip/export_copy.zip";
+        let main_file = "test_resources/latex/pflichtenheft/main.tex";
+
+        // create zip of test_resources/latex/pflichtenheft
+        let mut manager = TexlaExportManager::new(main_file.to_string());
+        let _path_to_frontend_placeholder = manager.zip_files().unwrap();
+
+        // copy zip created by zip_files() function to pflichtenheft_zip directory
+        fs::copy(created_zip_path, copied_zip_path).unwrap();
+
+        // unpack and delete zip
+        let mut copied_zip = ZipArchive::new(fs::File::open(copied_zip_path).unwrap()).unwrap();
+        copied_zip.extract(path_to_new_test_directory).unwrap();
+        fs::remove_file(copied_zip_path).unwrap();
+
+        let original_dir = fs::read_dir(path_to_exported_directory).unwrap();
+        let unzipped_dir = fs::read_dir(path_to_new_test_directory).unwrap();
+
+        // compare file names by saving them to HashSet
+        let original_files: HashSet<_> = original_dir
+            .filter_map(Result::ok)
+            .map(|file_or_directory| {
+                file_or_directory
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+            })
+            .filter(|name| name != "export.zip")
+            // ignore default save path for export.zip which is only used to redirect result zip to
+            // frontend and should not be compared
+            .collect();
+
+        let unzipped_files: HashSet<_> = unzipped_dir
+            .filter_map(Result::ok)
+            .map(|file_or_directory| {
+                file_or_directory
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+            })
+            .collect();
+
+        assert_eq!(original_files, unzipped_files);
+
+        // delete pflichtenheft_zip directory
+        fs::remove_dir_all(path_to_new_test_directory).unwrap();
     }
 }
