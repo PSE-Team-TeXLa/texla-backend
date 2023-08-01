@@ -85,8 +85,8 @@ mod tests {
     fn test_zip_files() {
         // preparing a directory needed for testing.
 
-        let path_to_new_test_directory = "test_resources/latex_files_unzipped";
-        let path_to_exported_directory = "test_resources/latex";
+        let path_to_new_test_directory = "test_resources/latex/pflichtenheft_zip";
+        let path_to_exported_directory = "test_resources/latex/pflichtenheft";
 
         if Path::new(path_to_new_test_directory).is_dir() {
             fs::remove_dir_all(path_to_new_test_directory).unwrap();
@@ -94,15 +94,15 @@ mod tests {
 
         fs::create_dir(path_to_new_test_directory).unwrap();
 
-        let created_zip_path = "test_resources/latex/export.zip";
-        let copied_zip_path = "test_resources/latex_files_unzipped/export_copy.zip";
-        let main_file_directory = "test_resources/latex/pflichtenheft/main.tex";
+        let created_zip_path = "test_resources/latex/pflichtenheft/export.zip";
+        let copied_zip_path = "test_resources/latex/pflichtenheft_zip/export_copy.zip";
+        let main_file = "test_resources/latex/pflichtenheft/main.tex";
 
         // creating the zip of test_resources/latex_files
-        let mut manager = TexlaExportManager::new(main_file_directory.to_string());
+        let mut manager = TexlaExportManager::new(main_file.to_string());
         let _path_to_frontend_placeholder = manager.zip_files().unwrap();
 
-        // copy the zip created by the zip_files_function to latex_files_unzipped directory
+        // copy the zip created by the zip_files_function to pflichtenheft_zip directory
         fs::copy(created_zip_path, copied_zip_path).unwrap();
 
         // unpacking and deleting the zip.
@@ -143,7 +143,7 @@ mod tests {
 
         assert_eq!(original_files, unzipped_files);
 
-        // deleting the latex_files_unzipped directory
+        // deleting the pflichtenheft_zip directory
         fs::remove_dir_all(path_to_new_test_directory).unwrap();
     }
 }
