@@ -517,7 +517,7 @@ impl LatexParser {
             .then_ignore(just("\\").then(just(keyword)))
             .then(just(UNCOUNTED_SEGMENT_MARKER).or_not())
             .then(Self::argument_surrounded_by(CURLY_BRACES))
-            .then_ignore(newline())
+            .then_ignore(newline().or_not())
             .then(prelude.repeated().padded())
             .then(next_level.repeated())
             .map(
