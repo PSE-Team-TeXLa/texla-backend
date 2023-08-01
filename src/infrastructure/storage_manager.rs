@@ -409,6 +409,18 @@ mod tests {
     }
 
     #[test]
+    fn multiplex_files_huge() {
+        let main_file = "latex_test_files/latex_with_inputs_huge.tex".to_string();
+        let vcs_manager = GitManager::new(main_file.clone());
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+
+        assert_eq!(
+            lf(storage_manager.multiplex_files().unwrap()),
+            lf(fs::read_to_string("latex_test_files/latex_single_string_huge.txt").unwrap())
+        )
+    }
+
+    #[test]
     fn save() {
         // rebuild test directory
         fs::remove_dir_all("latex_test_files/out").ok();
