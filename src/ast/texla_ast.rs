@@ -160,6 +160,7 @@ mod tests {
             lf(latex.clone())
         );
     }
+
     #[test]
     fn large_latex_identical() {
         let latex = fs::read_to_string("test_resources/latex/large.tex").unwrap();
@@ -170,6 +171,7 @@ mod tests {
             lf(latex.clone())
         );
     }
+
     #[test]
     fn lots_identical() {
         let latex = fs::read_to_string("test_resources/latex/lots_of_features.tex").unwrap();
@@ -180,6 +182,7 @@ mod tests {
             lf(latex.clone())
         );
     }
+
     #[test]
     fn parse_and_to_json() {
         let latex = fs::read_to_string("test_resources/latex/lots_of_features.tex").unwrap();
@@ -188,6 +191,7 @@ mod tests {
         fs::create_dir("test_resources/json").ok();
         fs::write("test_resources/json/out.json", out).expect("File write error");
     }
+
     #[test]
     fn simple_latex_mod_formatting() {
         let formatted_latex = fs::read_to_string("test_resources/latex/simple.tex").unwrap();

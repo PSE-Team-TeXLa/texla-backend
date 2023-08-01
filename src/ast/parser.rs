@@ -352,7 +352,7 @@ impl LatexParser {
             Self::segment_command_parser().rewind().to("segment"),
             just("\\begin").rewind(),
             just("\\end").rewind(),
-            just("\\end{document}").rewind(),
+            just("\\end{document}").rewind(), // TODO remove this line?
             just("%").rewind(),
             image.clone().to("image").rewind(),
             math.clone().to("math").rewind(),

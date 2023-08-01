@@ -244,6 +244,7 @@ mod test {
     #[test]
     fn pflichtenheft() {
         let file = "test_resources/latex/pflichtenheft/main.tex".to_string();
+        // TODO replace separator?
         let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
         assert!(super::parse_ast_from_disk(&sm).is_ok());
     }

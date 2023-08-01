@@ -41,7 +41,7 @@ where
     directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
     merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
     main_file: String,
-    // TODO use Path instead of String
+    // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
     pull_timer_running: bool,
     worksession_timer_running: bool,
 }
@@ -57,7 +57,7 @@ where
     const INPUT_COMMAND: &'static str = "\\input";
 
     pub fn new(vcs_manager: V, main_file: String) -> Self {
-        // TODO use Path instead of String for main_file
+        // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
         Self {
             vcs_manager,
             directory_change_handler: None,
@@ -387,7 +387,6 @@ pub trait DirectoryChangeHandler: Send + Sync {
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::path::MAIN_SEPARATOR_STR;
 
     use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
@@ -399,6 +398,7 @@ mod tests {
     #[test]
     fn multiplex_files() {
         let main_file = "test_resources/latex/with_inputs.tex".to_string();
+        // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
 
@@ -411,6 +411,7 @@ mod tests {
     #[test]
     fn multiplex_files_huge() {
         let main_file = "test_resources/latex/with_inputs_huge.tex".to_string();
+        // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
 
@@ -437,7 +438,8 @@ mod tests {
         .expect("Could not write file");
         fs::write("test_resources/latex/out/with_inputs.tex", "").expect("Could not write file");
 
-        let main_file = "test_resources/latex/out/with_inputs.tex".replace('/', MAIN_SEPARATOR_STR);
+        let main_file = "test_resources/latex/out/with_inputs.tex".to_string();
+        // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
         let latex_single_string =
