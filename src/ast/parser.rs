@@ -358,7 +358,8 @@ impl LatexParser {
             math.clone().to("math").rewind(),
             caption.clone().to("caption").rewind(),
             label.clone().to("label").rewind(),
-            newline().then(newline()).padded().to("\n\n"),
+            newline().then(newline()).to("\n\n"),
+            // TODO recognize and consume also more than 2 newlines
         ))
         .boxed();
 
