@@ -2,8 +2,9 @@ use std::fs;
 use std::ops::Range;
 use std::path::Path;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
+use std::ptr::write;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant, SystemTime};
 
 use async_trait::async_trait;
 use chumsky::prelude::*;
@@ -18,7 +19,7 @@ use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsMa
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
 
-const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(50);
+const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(100);
 
 #[async_trait]
 pub trait StorageManager {
@@ -31,13 +32,13 @@ pub trait StorageManager {
     fn remote_url(&self) -> Option<&String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn stop_timers(&mut self);
-    fn save(&self, latex_single_string: String) -> Result<(), InfrastructureError>;
+    fn save(&mut self, latex_single_string: String) -> Result<(), InfrastructureError>;
     fn end_session(&mut self) -> Result<(), VcsError>;
 }
 
 pub struct TexlaStorageManager<V>
 where
-    V: VcsManager,
+    V: VcsManager + Send + Sync,
 {
     vcs_manager: V,
     directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
@@ -46,11 +47,12 @@ where
     // TODO use Path instead of String
     pull_timer: Option<JoinHandle<()>>,
     worksession_timer: Option<JoinHandle<()>>,
+    last_write_time: Option<Instant>,
 }
 
 impl<V> TexlaStorageManager<V>
 where
-    V: VcsManager,
+    V: VcsManager + Send + Sync,
 {
     const LATEX_FILE_EXTENSION: &'static str = "tex";
     const LATEX_PATH_SEPARATOR: &'static str = "/";
@@ -67,6 +69,7 @@ where
             main_file,
             pull_timer: None,
             worksession_timer: None,
+            last_write_time: None,
         }
     }
 
@@ -213,9 +216,12 @@ where
             .to_path_buf()
     }
 
-    fn is_writing(&self) -> bool {
-        // TODO
-        false
+    fn start_timers(this: Arc<Mutex<Self>>) {
+        // TODO (or after refactor)
+    }
+
+    fn log_writing(&mut self) {
+        self.last_write_time = Some(Instant::now());
     }
 
     async fn watch<P: AsRef<Path>>(
@@ -235,12 +241,30 @@ where
         )?;
 
         watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
+        // FIXME: the debouncer discards earlier events and their paths
         let mut debounced_receiver = debounced(rx, DIRECTORY_WATCHER_DEBOUNCE_DELAY);
 
         while let Some(res) = debounced_receiver.next().await {
+            println!("got debounced event (unfiltered)");
             match res {
-                Ok(_event) => {
-                    if !storage_manager.lock().unwrap().is_writing() {
+                Ok(event) => {
+                    let write_time = storage_manager.lock().unwrap().last_write_time;
+                    let change_time = Instant::now() - DIRECTORY_WATCHER_DEBOUNCE_DELAY * 2;
+                    if let Some(write_time) = write_time {
+                        println!("diff: {:?}", change_time - write_time);
+                    }
+                    // TODO: we do not get all changed paths here (see above)
+                    let only_git_files = event
+                        .paths
+                        .iter()
+                        .all(|p| p.to_str().unwrap().contains(".git"));
+
+                    event.paths.iter().for_each(|p| println!("path: {:?}", p));
+
+                    if !only_git_files
+                        && (write_time.is_none()
+                            || write_time.expect("this is checked").lt(&change_time))
+                    {
                         println!("Detected foreign change");
                         handler.lock().unwrap().handle_directory_change();
                     }
@@ -320,6 +344,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
         let sm = this.clone();
         tokio::spawn(async move {
+            // TODO: do this outside the task
             let (path, handler) = {
                 let sm = sm.lock().unwrap();
                 let path = sm.main_file_directory();
@@ -391,7 +416,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         }
     }
 
-    fn save(&self, mut latex_single_string: String) -> Result<(), InfrastructureError> {
+    fn save(&mut self, mut latex_single_string: String) -> Result<(), InfrastructureError> {
         // define parser for % TEXLA FILE BEGIN ...'
         let parser = Self::texla_file_parser();
 
@@ -412,6 +437,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
             fs::write(path_abs_os, &latex_single_string[text_byte_range])
                 .expect("Could not write file");
+            self.log_writing();
 
             // replace '% TEXLA FILE BEGIN ... % TEXLA FILE END' in string with '\input{...}'
             latex_single_string.replace_range(
@@ -425,6 +451,8 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         }
 
         fs::write(&self.main_file, latex_single_string).expect("Could not write file");
+        self.log_writing();
+        // TODO IMPORTANT: start timers
 
         Ok(())
     }
