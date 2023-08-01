@@ -72,7 +72,7 @@ impl ExportManager for TexlaExportManager {
     }
 }
 
-// the export.zip existence in "test_resources/latex" is relevant.
+// the export.zip existence in "test_resources/latex" is irrelevant.
 #[cfg(test)]
 mod tests {
     use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
