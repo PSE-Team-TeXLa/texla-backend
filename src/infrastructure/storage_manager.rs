@@ -72,7 +72,7 @@ where
         s.replace("\r\n", "\n")
     }
 
-    fn len(s: &str) -> usize {
+    fn char_len(s: &str) -> usize {
         s.chars().count()
     }
 
@@ -97,11 +97,13 @@ where
 
     fn latex_input_parser() -> BoxedParser<'static, char, (String, Range<usize>), Simple<char>> {
         take_until(just::<_, _, Simple<char>>(Self::INPUT_COMMAND))
-            .map_with_span(|_, span| -> usize { span.end() - Self::len(Self::INPUT_COMMAND) })
+            .map_with_span(|_, span| -> usize {
+                span.end() - Self::char_len(Self::INPUT_COMMAND) // = input_start
+            })
             // TODO allow white spaces (but no newlines?) around curly braces?
             .then(Self::curly_braces_parser())
             .map_with_span(|(start, path), span| -> (String, Range<usize>) {
-                (path, start..span.end())
+                (path, start..span.end()) // span.end() = input_end
             })
             .boxed()
     }
@@ -110,7 +112,7 @@ where
         recursive(|input| {
             take_until(just(Self::FILE_BEGIN_MARK))
                 .map_with_span(|(_, _), span: Range<usize>| -> usize {
-                    span.end() - Self::len(Self::FILE_BEGIN_MARK) // = input_start
+                    span.end() - Self::char_len(Self::FILE_BEGIN_MARK) // = input_start
                 })
                 .then(Self::curly_braces_parser())
                 .map_with_span(
