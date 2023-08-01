@@ -173,11 +173,11 @@ where
         if path.is_relative() {
             path_rel = path.clone();
             path_abs_os = main_file_directory
-                .join(path)
                 .canonicalize()
-                .expect("Could not create absolute path");
+                .expect("Could not create absolute path")
+                .join(path);
         } else {
-            path_abs_os = path.canonicalize().expect("Invalid path given");
+            path_abs_os = path.clone();
             path_rel = path
                 .strip_prefix(main_file_directory)
                 .expect("Could not create relative path")
@@ -427,16 +427,6 @@ mod tests {
         fs::remove_dir_all("test_resources/latex/out").ok();
         fs::create_dir_all("test_resources/latex/out/sections/section2")
             .expect("Could not create directory");
-        fs::write("test_resources/latex/out/sections/section1.tex", "")
-            .expect("Could not write file");
-        fs::write("test_resources/latex/out/sections/section2.tex", "")
-            .expect("Could not write file");
-        fs::write(
-            "test_resources/latex/out/sections/section2/subsection1.tex",
-            "",
-        )
-        .expect("Could not write file");
-        fs::write("test_resources/latex/out/with_inputs.tex", "").expect("Could not write file");
 
         let main_file = "test_resources/latex/out/with_inputs.tex".to_string();
         // TODO replace separator?
