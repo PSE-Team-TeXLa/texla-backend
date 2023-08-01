@@ -272,6 +272,7 @@ mod tests {
     use std::collections::HashMap;
 
     use crate::ast::node::{LeafData, Node};
+    use crate::ast::options::StringificationOptions;
     use crate::ast::uuid_provider::TexlaUuidProvider;
 
     #[test]
@@ -287,6 +288,11 @@ mod tests {
             "raw".to_string(),
             Default::default(),
         );
-        assert_eq!(node.lock().unwrap().to_latex(1), Ok("Test\n\n".to_string()));
+        assert_eq!(
+            node.lock()
+                .unwrap()
+                .to_latex(1, &StringificationOptions::default()),
+            Ok("Test\n\n".to_string())
+        );
     }
 }
