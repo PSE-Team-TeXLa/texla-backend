@@ -95,7 +95,11 @@ impl Ast for TexlaAst {
     }
 
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError> {
-        Ok(self.root.lock().unwrap().to_latex(self.highest_level)?)
+        Ok(self
+            .root
+            .lock()
+            .unwrap()
+            .to_latex(self.highest_level, &options)?)
     }
 
     fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {

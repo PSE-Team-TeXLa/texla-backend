@@ -147,4 +147,6 @@ mod tests {
         // delete pflichtenheft_zip directory
         fs::remove_dir_all(path_to_new_test_directory).unwrap();
     }
+
+    // TODO: write test that tests StringificationOptions
 }
