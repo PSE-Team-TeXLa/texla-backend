@@ -16,7 +16,7 @@ use crate::texla::core::TexlaCore;
 use crate::texla::socket::socket_service;
 
 const PORT: u16 = 13814;
-const FRONTEND_PATH: &str = "frontend";
+const FRONTEND_SUBDIR: &str = "frontend";
 
 pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
     let app = axum::Router::new()
@@ -36,14 +36,20 @@ pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
 }
 
 fn static_files() -> ServeDir<SetStatus<ServeFile>> {
-    let frontend_path = PathBuf::from(FRONTEND_PATH)
+    // TODO: write build script, that includes the dir
+    // (https://stackoverflow.com/questions/57535794/how-do-i-include-a-folder-in-the-building-process)
+    let frontend_path = std::env::current_exe()
+        .expect("os error")
+        .parent()
+        .expect("exe cannot be root")
+        .join(FRONTEND_SUBDIR)
         .canonicalize()
         .expect("Could not find frontend path");
     println!("Serving static files from: {}", frontend_path.display());
 
     // TODO: is index.html really the root of our svelte app?
-    ServeDir::new(frontend_path).not_found_service(ServeFile::new(
-        PathBuf::from(FRONTEND_PATH)
+    ServeDir::new(frontend_path.as_path()).not_found_service(ServeFile::new(
+        frontend_path
             .join(PathBuf::from("index.html"))
             .canonicalize()
             .expect("Could not find frontend index.html"),
