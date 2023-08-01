@@ -96,7 +96,7 @@ mod tests {
 
         let created_zip_path = "test_resources/latex/export.zip";
         let copied_zip_path = "test_resources/latex_files_unzipped/export_copy.zip";
-        let main_file_directory = "test_resources/latex/large.tex";
+        let main_file_directory = "test_resources/latex/pflichtenheft/main.tex";
 
         // creating the zip of test_resources/latex_files
         let mut manager = TexlaExportManager::new(main_file_directory.to_string());
