@@ -518,7 +518,7 @@ impl LatexParser {
             .then(just(UNCOUNTED_SEGMENT_MARKER).or_not())
             .then(Self::argument_surrounded_by(CURLY_BRACES))
             .then_ignore(newline())
-            .then(prelude.repeated())
+            .then(prelude.repeated().padded())
             .then(next_level.repeated())
             .map(
                 move |((((metadata, star), heading), mut blocks), mut subsegments)| {
