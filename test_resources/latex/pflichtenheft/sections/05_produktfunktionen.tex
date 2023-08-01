@@ -24,8 +24,8 @@ Dabei werden alle Änderungen lokal gespeichert und in das lokale Git-Repository
 \functionality{Hierarchische Darstellung}{fnc:hierarchy}
 \fulfills{crt:hierarchy}
 
-Abschnitte in einem \LaTeX"=Dokument werden mit den Befehlen \verb|\part|, \verb|\chapter|, \verb|\section|,
-\verb|\subsection|, \verb|\subsubsection|, \verb|\paragraph| und \verb|\subparagraph| auf verschiedenen Ebenen
+Abschnitte in einem \LaTeX"=Dokument werden mit den Befehlen \verb|/part|, \verb|/chapter|, \verb|/section|,
+\verb|/subsection|, \verb|/subsubsection|, \verb|/paragraph| und \verb|/subparagraph| auf verschiedenen Ebenen
 definiert.
 Basierend darauf stellt \texla{} das ausgewählte \LaTeX"=Dokument in hierarchischer Form dar.
 Somit sind diese Abschnitte sogenannte Expandables.
@@ -38,18 +38,18 @@ bzw. zu einer höheren Ebene möglich.
 \functionality{Unterstützung inkludierter Dateien}{fnc:input}
 \fulfills{crt:hierarchy}
 
-In einer \LaTeX"=Datei können mittels \verb|input| weitere \LaTeX"=Dateien integriert werden.
+In einer \LaTeX"=Datei können mittels \verb|/input| weitere \LaTeX"=Dateien integriert werden.
 Deren Inhalt wird ebenso in der GUI angezeigt.
-Dabei entsteht für jede Verwendung von \verb|input| ein Strukturelement, dem auf tieferen Ebenen die jeweiligen
+Dabei entsteht für jede Verwendung von \verb|/input| ein Strukturelement, dem auf tieferen Ebenen die jeweiligen
 Strukturelemente der inkludierten Datei untergeordnet sind.
-Somit ist \verb|input| ebenfalls ein Expandable.
+Somit ist \verb|/input| ebenfalls ein Expandable.
 
 \clearpage
 
 \functionality{Strukturelemente in Blöcke aufteilen}{fnc:blocks}
 \fulfills{crt:easy-elements}
 
-Mittels \verb|\begin{...}| und \verb|\end{...}| können Umgebungen in \LaTeX"=Dokumenten genutzt werden.
+Mittels \verb|/begin{...}| und \verb|/end{...}| können Umgebungen in \LaTeX"=Dokumenten genutzt werden.
 \texla{} erkennt solche Umgebungen und stellt diese wie auch die genannten Abschnitte jeweils als separaten Block dar.
 Umgebungen sind keine Expandables.
 Ineinander verschachtelte Umgebungen werden also zu einem Block zusammengefasst und im Gegensatz zu Abschnitten nicht
@@ -62,8 +62,8 @@ Eine Ausnahme hiervon bildet die Umgebung \verb|document|.
 Folgende Strukturelemente werden in gerenderter Form, vergleichbar mit der Ansicht im PDF-Dokument, angezeigt:
 
 \begin{itemize}
-  \item Bilder, definiert durch \verb|\includegraphics|
-  \item Formeln, definiert durch \verb|\[ ... \]|, \verb|$$ ... $$| oder durch eine der Umgebungen \verb|displaymath|
+  \item Bilder, definiert durch \verb|/includegraphics|
+  \item Formeln, definiert durch \verb|/[ ... /]|, \verb|$ $ ... $ $| oder durch eine der Umgebungen \verb|displaymath|
   und \verb|equation|
 \end{itemize}
 
@@ -76,7 +76,7 @@ Position im Quelltext, nicht nach der Position im PDF-Dokument.
 \functionality{Formatierung in Textblöcken}{fnc:format}
 \fulfills{crt:easy-format}
 
-Bei Textblöcken sowie bei Überschriften von Abschnitten werden die \LaTeX"=Befehle \verb|\textbf| und \verb|\textit|
+Bei Textblöcken sowie bei Überschriften von Abschnitten werden die \LaTeX"=Befehle \verb|/textbf| und \verb|/textit|
 berücksichtigt.
 Entsprechende Teile des Textes werden fett bzw. kursiv hervorgehoben.
 

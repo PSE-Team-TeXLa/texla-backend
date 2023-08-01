@@ -28,50 +28,50 @@
 
   \textbf{Beispiel:}
   \begin{verbatim}
-\section{Heading1}
-\subsection{Subheading1}
+/section{Heading1}
+/subsection{Subheading1}
   \end{verbatim}
 
   \textbf{Gegenbeispiel:}
   \begin{verbatim}
-\section{Heading1}
-\subsubsection{Subsubheading1}
+/section{Heading1}
+/subsubsection{Subsubheading1}
   \end{verbatim}
 
   \clearpage
 
-  \item \verb|input| kann auf jeder Ebene geöffnet werden.
-  Für jeden Abschnitt und \verb|input| ist entweder der komplette Abschnitt innerhalb des \verb|input| oder der
-  komplette \verb|input| innerhalb des Abschnitts.
+  \item \verb|/input| kann auf jeder Ebene geöffnet werden.
+  Für jeden Abschnitt und \verb|/input| ist entweder der komplette Abschnitt innerhalb des \verb|/input| oder der
+  komplette \verb|/input| innerhalb des Abschnitts.
 
   \textbf{Beispiel:}
   \begin{verbatim}
-\section{Heading1}
+/section{Heading1}
 /input{file1}
-\section{Heading3}
+/section{Heading3}
 
 file1.tex:
-\section{Heading2}
+/section{Heading2}
   \end{verbatim}
 
   \textbf{Gegenbeispiel 1:}
   \begin{verbatim}
-\section{Heading1}
+/section{Heading1}
 /input{file1}
 Some text
 
 file1.tex:
-\section{Heading2}
+/section{Heading2}
   \end{verbatim}
 
   \textbf{Gegenbeispiel 2:}
   \begin{verbatim}
-\section{Heading1}
+/section{Heading1}
 /input{file1}
-\section{Heading3}
+/section{Heading3}
 
 file1.tex:
 Some text
-\section{Heading2}
+/section{Heading2}
   \end{verbatim}
 \end{itemize}

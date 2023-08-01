@@ -38,16 +38,16 @@ Die folgenden Testfälle testen die verpflichtenden funktionalen Anforderungen:
 \test{Unterstützung inkludierter Dateien}{tst:input-01}
 \tests{fnc:input}
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|input| steht lokal zur Verfügung.
+  \item Vorbedingung: \LaTeX"=Datei mit \verb|/input| steht lokal zur Verfügung.
   \texla{} ist gestartet.
-  \item Aktion: Navigation zum Strukturelement des \verb|input|-Makros.
+  \item Aktion: Navigation zum Strukturelement des \verb|/input|-Makros.
   \item Nachbedingung: Die Datei wurde erkannt und wird angezeigt.
 \end{itemize}
 
 \test{Strukturelemente in Blöcke aufteilen}{tst:blocks-01}
 \tests{fnc:blocks}
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei enthält \verb|\begin{...} ... \end{...}|.
+  \item Vorbedingung: \LaTeX"=Datei enthält \verb|/begin{...} ... /end{...}|.
   \texla{} ist gestartet.
   \item Aktion: Navigation zur definierten Umgebung.
   \item Nachbedingung: Das Umgebungs-Strukturelement wurde erkannt und korrekt angezeigt.
@@ -56,7 +56,7 @@ Die folgenden Testfälle testen die verpflichtenden funktionalen Anforderungen:
 \test{Rendering von Bildern}{tst:render-01}
 \tests{fnc:render}
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|\includegraphics| steht lokal zur Verfügung.
+  \item Vorbedingung: \LaTeX"=Datei mit \verb|/includegraphics| steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum definierten Bild.
   \item Nachbedingung: Das Bild-Strukturelement wurde erkannt und korrekt gerendert.
@@ -65,7 +65,7 @@ Die folgenden Testfälle testen die verpflichtenden funktionalen Anforderungen:
 \test{Rendering von mathematischen Formeln}{tst:render-02}
 \tests{fnc:render}
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|\begin{displaymath} ... \end{displaymath}| steht lokal zur Verfügung.
+  \item Vorbedingung: \LaTeX"=Datei mit \verb|/begin{displaymath} ... /end{displaymath}| steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zur definierten Formel.
   \item Nachbedingung: Die mathematische Formel wurde erkannt und korrekt gerendert.
@@ -76,7 +76,7 @@ Die folgenden Testfälle testen die verpflichtenden funktionalen Anforderungen:
 \test{Formatierung in Textblöcken}{tst:format-01}
 \tests{fnc:format}
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|\textbf| und \verb|\textit| steht lokal zur Verfügung.
+  \item Vorbedingung: \LaTeX"=Datei mit \verb|/textbf| und \verb|/textit| steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum enthaltenden Strukturelement.
   \item Nachbedingung: Fetter und kursiver Text wurde gerendert.
@@ -86,7 +86,7 @@ Die folgenden Testfälle testen die verpflichtenden funktionalen Anforderungen:
 \tests{fnc:hide}
 \tests{fnc:compact}
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|\section| und \verb|\subsection|) steht
+  \item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|/section| und \verb|/subsection|) steht
   lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
@@ -126,7 +126,7 @@ Die folgenden Testfälle testen die verpflichtenden funktionalen Anforderungen:
 \test{Illegale Verschiebung von Elementen per Drag and Drop}{tst:dragdrop-02}
 \tests{fnc:drag-and-drop}
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|\section| und \verb|\subsection|) steht
+  \item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|/section| und \verb|/subsection|) steht
   lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
