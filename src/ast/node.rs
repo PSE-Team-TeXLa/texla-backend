@@ -8,6 +8,7 @@ use serde::Serialize;
 use crate::ast::errors::StringificationError;
 use crate::ast::latex_constants::*;
 use crate::ast::meta_data::MetaData;
+use crate::ast::options::StringificationOptions;
 use crate::ast::uuid_provider::{Uuid, UuidProvider};
 
 pub type NodeRef = Arc<Mutex<Node>>;
@@ -25,15 +26,19 @@ pub struct Node {
 }
 
 impl Node {
-    pub(crate) fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
-        if self.meta_data.data.is_empty() {
-            Ok(self.node_type.to_latex(level)?)
-        } else {
+    pub(crate) fn to_latex(
+        &self,
+        level: i8,
+        options: &StringificationOptions,
+    ) -> Result<String, StringificationError> {
+        if options.include_metadata && !self.meta_data.data.is_empty() {
             Ok(format!(
                 "% TEXLA METADATA {}\n{}",
                 self.meta_data,
-                self.node_type.to_latex(level)?
+                self.node_type.to_latex(level, options)?
             ))
+        } else {
+            Ok(self.node_type.to_latex(level, options)?)
         }
     }
 
@@ -98,25 +103,33 @@ pub enum NodeType {
 }
 
 impl NodeType {
-    pub fn children_to_latex(&self, level: i8) -> Result<String, StringificationError> {
+    pub fn children_to_latex(
+        &self,
+        level: i8,
+        options: &StringificationOptions,
+    ) -> Result<String, StringificationError> {
         match self {
             NodeType::Expandable { children, .. } => children
                 .iter()
-                .map(|child| child.lock().unwrap().to_latex(level))
+                .map(|child| child.lock().unwrap().to_latex(level, options))
                 .collect(),
             NodeType::Leaf { .. } => Ok(String::new()),
         }
     }
 
-    pub fn to_latex(&self, level: i8) -> Result<String, StringificationError> {
+    pub fn to_latex(
+        &self,
+        level: i8,
+        options: &StringificationOptions,
+    ) -> Result<String, StringificationError> {
         match self {
-            NodeType::Leaf { data } => Ok(data.to_latex()),
+            NodeType::Leaf { data } => Ok(data.to_latex(options)),
             // TODO: this should be in NodeType::Expandable just as with the leaves
             NodeType::Expandable { data, .. } => {
                 match data {
                     ExpandableData::Segment { heading, counted } => {
                         // under a segment the expected next level is increased by one
-                        let children = self.children_to_latex(level + 1)?;
+                        let children = self.children_to_latex(level + 1, options)?;
                         let count = match counted {
                             false => String::from(UNCOUNTED_SEGMENT_MARKER),
                             true => String::new(),
@@ -134,25 +147,26 @@ impl NodeType {
                         preamble,
                         postamble,
                     } => {
-                        let children = self.children_to_latex(level)?;
+                        let children = self.children_to_latex(level, options)?;
                         Ok(format!("{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"
                     ))
                     }
                     ExpandableData::File { path } => {
-                        let children = self.children_to_latex(level)?; //Dont increase the nesting level since file is not in hierarchy
+                        let children = self.children_to_latex(level, options)?; //Dont increase the
+                                                                                // nesting level since file is not in hierarchy
                         Ok(format!(
                             "% TEXLA FILE BEGIN {{{path}}}\n{children}% TEXLA FILE END {{{path}}}\n"
                         ))
                     }
                     ExpandableData::Environment { name } => {
-                        let children = self.children_to_latex(level)?;
+                        let children = self.children_to_latex(level, options)?;
                         Ok(format!("\\begin{{{name}}}\n{children}\\end{{{name}}}\n"))
                     }
                     ExpandableData::Dummy {
                         before_children,
                         after_children,
                     } => {
-                        let children = self.children_to_latex(level)?;
+                        let children = self.children_to_latex(level, options)?;
                         Ok(format!("{before_children}\n{children}{after_children}\n"))
                     }
                 }
@@ -211,7 +225,7 @@ pub enum LeafData {
 
 impl LeafData {
     // This does not consume the node
-    fn to_latex(&self) -> String {
+    fn to_latex(&self, options: &StringificationOptions) -> String {
         match self {
             LeafData::Text { text } => format!("{text}\n\n"),
             LeafData::Image { path, options } => match options {
@@ -231,11 +245,15 @@ impl LeafData {
                 }
             },
             LeafData::Comment { comment } => {
-                // TODO: is this just to replace new lines?
-                comment.lines().fold(String::new(), |mut acc, line| {
-                    acc.push_str(format!("{line}\n").as_str());
-                    acc
-                }) + "\n"
+                if options.include_comments {
+                    // TODO: is this just to replace new lines?
+                    comment.lines().fold(String::new(), |mut acc, line| {
+                        acc.push_str(format!("{line}\n").as_str());
+                        acc
+                    }) + "\n"
+                } else {
+                    String::new()
+                }
             }
         }
     }
