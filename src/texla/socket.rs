@@ -239,12 +239,11 @@ mod test {
     use crate::infrastructure::storage_manager::TexlaStorageManager;
     use crate::infrastructure::vcs_manager::GitManager;
 
-    // TODO: comment in when endless loop is fixed
-    // (this not only fails the test, but stops the entire testsuite from terminating)
-    // #[test]
+    #[test]
     fn pflichtenheft() {
         let file = "latex_test_files/pflichtenheft-main/main.tex".to_string();
         let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
         assert!(super::parse_ast_from_disk(&sm).is_ok());
+        // FIXME parser fails on parsing latex single string
     }
 }
