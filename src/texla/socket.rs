@@ -161,7 +161,9 @@ pub fn parse_ast_from_disk(
     let latex_single_string = storage_manager.multiplex_files()?;
     let ast = TexlaAst::from_latex(latex_single_string)?;
     // verify the ast by converting it to latex again
-    ast.to_latex(Default::default())?;
+    // TODO: the reparsing should be temporary.
+    // It should never happen, that our output cannot be parsed
+    TexlaAst::from_latex(ast.to_latex(Default::default())?)?;
     Ok(ast)
 }
 
