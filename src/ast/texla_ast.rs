@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn simple_latex_identical() {
-        let latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
+        let latex = fs::read_to_string("test_resources/latex/simple.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn empty_document_identical() {
-        let latex = fs::read_to_string("latex_test_files/empty_document.tex").unwrap();
+        let latex = fs::read_to_string("test_resources/latex/empty_document.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn only_subsection_identical() {
-        let latex = fs::read_to_string("latex_test_files/only_subsection.tex").unwrap();
+        let latex = fs::read_to_string("test_resources/latex/only_subsection.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -158,7 +158,7 @@ mod tests {
     }
     #[test]
     fn large_latex_identical() {
-        let latex = fs::read_to_string("latex_test_files/large_latex.tex").unwrap();
+        let latex = fs::read_to_string("test_resources/latex/large.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -168,7 +168,7 @@ mod tests {
     }
     #[test]
     fn lots_identical() {
-        let latex = fs::read_to_string("latex_test_files/lots_of_features.tex").unwrap();
+        let latex = fs::read_to_string("test_resources/latex/lots_of_features.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -178,16 +178,17 @@ mod tests {
     }
     #[test]
     fn parse_and_to_json() {
-        let latex = fs::read_to_string("latex_test_files/lots_of_features.tex").unwrap();
+        let latex = fs::read_to_string("test_resources/latex/lots_of_features.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         let out = serde_json::to_string_pretty(&ast).unwrap();
-        fs::write("out.json", out).expect("File write error");
+        fs::create_dir("test_resources/json").ok();
+        fs::write("test_resources/json/out.json", out).expect("File write error");
     }
     #[test]
     fn simple_latex_mod_formatting() {
-        let formatted_latex = fs::read_to_string("latex_test_files/simple_latex.tex").unwrap();
+        let formatted_latex = fs::read_to_string("test_resources/latex/simple.tex").unwrap();
         let unformatted_latex =
-            fs::read_to_string("latex_test_files/simple_latex_unformatted.tex").unwrap();
+            fs::read_to_string("test_resources/latex/simple_unformatted.tex").unwrap();
         let ast = parse_latex(unformatted_latex.clone()).expect("Valid Latex");
         let out = ast
             .to_latex(StringificationOptions {

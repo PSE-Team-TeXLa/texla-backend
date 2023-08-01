@@ -83,17 +83,17 @@ mod tests {
     use zip::ZipArchive;
 
     //all stringify options should be off so that latex_test-files.zip in test_resources is valid.
-    //large_latex.tex configuration is needed.
+    //large.tex configuration is needed.
     #[test]
     fn zip_files() {
-        let main_file_directory = "latex_test_files";
-        let mut manager = TexlaExportManager::new("latex_test_files/large_latex.tex".to_string());
+        let main_file_directory = "test_resources/latex";
+        let mut manager = TexlaExportManager::new("test_resources/latex/large.tex".to_string());
         let path_in_frontend_placeholder = manager.zip_files().unwrap();
 
-        let zip_path = "latex_test_files/export.zip";
+        let zip_path = "test_resources/latex/export.zip";
 
         let mut expected_zip =
-            ZipArchive::new(fs::File::open("test_resources/latex_test_files.zip").unwrap())
+            ZipArchive::new(fs::File::open("test_resources/zip/latex_test_files.zip").unwrap())
                 .unwrap();
         let mut actual_zip = ZipArchive::new(fs::File::open(zip_path).unwrap()).unwrap();
 

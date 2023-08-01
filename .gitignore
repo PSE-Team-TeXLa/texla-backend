@@ -2,9 +2,9 @@
 /target
 
 # test build directory and files
-/latex_test_files/out
-/latex_test_files/export.zip
-out.json
+/test_resources/json/out.json
+/test_resources/latex/out
+/test_resources/latex/pflichtenheft/export.zip
 
 # IDE directories
 .vscode/

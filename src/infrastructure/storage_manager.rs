@@ -398,65 +398,72 @@ mod tests {
 
     #[test]
     fn multiplex_files() {
-        let main_file = "latex_test_files/latex_with_inputs.tex".to_string();
+        let main_file = "test_resources/latex/with_inputs.tex".to_string();
         let vcs_manager = GitManager::new(main_file.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
-            lf(fs::read_to_string("latex_test_files/latex_single_string.txt").unwrap())
+            lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap())
         )
     }
 
     #[test]
     fn multiplex_files_huge() {
-        let main_file = "latex_test_files/latex_with_inputs_huge.tex".to_string();
+        let main_file = "test_resources/latex/with_inputs_huge.tex".to_string();
         let vcs_manager = GitManager::new(main_file.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
-            lf(fs::read_to_string("latex_test_files/latex_single_string_huge.txt").unwrap())
+            lf(fs::read_to_string("test_resources/latex/latex_single_string_huge.txt").unwrap())
         )
     }
 
     #[test]
     fn save() {
         // rebuild test directory
-        fs::remove_dir_all("latex_test_files/out").ok();
-        fs::create_dir_all("latex_test_files/out/sections/section2")
+        fs::remove_dir_all("test_resources/latex/out").ok();
+        fs::create_dir_all("test_resources/latex/out/sections/section2")
             .expect("Could not create directory");
-        fs::write("latex_test_files/out/sections/section1.tex", "").expect("Could not write file");
-        fs::write("latex_test_files/out/sections/section2.tex", "").expect("Could not write file");
-        fs::write("latex_test_files/out/sections/section2/subsection1.tex", "")
+        fs::write("test_resources/latex/out/sections/section1.tex", "")
             .expect("Could not write file");
-        fs::write("latex_test_files/out/latex_with_inputs.tex", "").expect("Could not write file");
+        fs::write("test_resources/latex/out/sections/section2.tex", "")
+            .expect("Could not write file");
+        fs::write(
+            "test_resources/latex/out/sections/section2/subsection1.tex",
+            "",
+        )
+        .expect("Could not write file");
+        fs::write("test_resources/latex/out/with_inputs.tex", "").expect("Could not write file");
 
-        let main_file =
-            "latex_test_files/out/latex_with_inputs.tex".replace('/', MAIN_SEPARATOR_STR);
+        let main_file = "test_resources/latex/out/with_inputs.tex".replace('/', MAIN_SEPARATOR_STR);
         let vcs_manager = GitManager::new(main_file.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
         let latex_single_string =
-            lf(fs::read_to_string("latex_test_files/latex_single_string.txt").unwrap());
+            lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap());
 
         storage_manager.save(latex_single_string).unwrap();
 
         assert_eq!(
-            lf(fs::read_to_string("latex_test_files/latex_with_inputs.tex").unwrap()),
-            lf(fs::read_to_string("latex_test_files/out/latex_with_inputs.tex").unwrap())
+            lf(fs::read_to_string("test_resources/latex/with_inputs.tex").unwrap()),
+            lf(fs::read_to_string("test_resources/latex/out/with_inputs.tex").unwrap())
         );
         assert_eq!(
-            lf(fs::read_to_string("latex_test_files/sections/section1.tex").unwrap()),
-            lf(fs::read_to_string("latex_test_files/out/sections/section1.tex").unwrap())
+            lf(fs::read_to_string("test_resources/latex/sections/section1.tex").unwrap()),
+            lf(fs::read_to_string("test_resources/latex/out/sections/section1.tex").unwrap())
         );
         assert_eq!(
-            lf(fs::read_to_string("latex_test_files/sections/section2.tex").unwrap()),
-            lf(fs::read_to_string("latex_test_files/out/sections/section2.tex").unwrap())
+            lf(fs::read_to_string("test_resources/latex/sections/section2.tex").unwrap()),
+            lf(fs::read_to_string("test_resources/latex/out/sections/section2.tex").unwrap())
         );
         assert_eq!(
-            lf(fs::read_to_string("latex_test_files/sections/section2/subsection1.tex").unwrap()),
             lf(
-                fs::read_to_string("latex_test_files/out/sections/section2/subsection1.tex")
+                fs::read_to_string("test_resources/latex/sections/section2/subsection1.tex")
+                    .unwrap()
+            ),
+            lf(
+                fs::read_to_string("test_resources/latex/out/sections/section2/subsection1.tex")
                     .unwrap()
             )
         );
