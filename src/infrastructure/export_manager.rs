@@ -72,7 +72,7 @@ impl ExportManager for TexlaExportManager {
     }
 }
 
-// the export.zip existence in "test_resources/latex" is irrelevant.
+// export.zip in test_resources/latex/pflichtenheft is irrelevant
 #[cfg(test)]
 mod tests {
     use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
@@ -83,8 +83,7 @@ mod tests {
 
     #[test]
     fn test_zip_files() {
-        // preparing a directory needed for testing.
-
+        // prepare directory needed for testing
         let path_to_new_test_directory = "test_resources/latex/pflichtenheft_zip";
         let path_to_exported_directory = "test_resources/latex/pflichtenheft";
 
@@ -98,14 +97,14 @@ mod tests {
         let copied_zip_path = "test_resources/latex/pflichtenheft_zip/export_copy.zip";
         let main_file = "test_resources/latex/pflichtenheft/main.tex";
 
-        // creating the zip of test_resources/latex_files
+        // create zip of test_resources/latex/pflichtenheft
         let mut manager = TexlaExportManager::new(main_file.to_string());
         let _path_to_frontend_placeholder = manager.zip_files().unwrap();
 
-        // copy the zip created by the zip_files_function to pflichtenheft_zip directory
+        // copy zip created by zip_files() function to pflichtenheft_zip directory
         fs::copy(created_zip_path, copied_zip_path).unwrap();
 
-        // unpacking and deleting the zip.
+        // unpack and delete zip
         let mut copied_zip = ZipArchive::new(fs::File::open(copied_zip_path).unwrap()).unwrap();
         copied_zip.extract(path_to_new_test_directory).unwrap();
         fs::remove_file(copied_zip_path).unwrap();
@@ -125,7 +124,9 @@ mod tests {
                     .unwrap()
                     .to_string()
             })
-            .filter(|name| name != "export.zip") // ignoring the default save path for export.zip. This path is used only to redirect the result zip to frontend and should not be compared.
+            .filter(|name| name != "export.zip")
+            // ignore default save path for export.zip which is only used to redirect result zip to
+            // frontend and should not be compared
             .collect();
 
         let unzipped_files: HashSet<_> = unzipped_dir
@@ -143,7 +144,7 @@ mod tests {
 
         assert_eq!(original_files, unzipped_files);
 
-        // deleting the pflichtenheft_zip directory
+        // delete pflichtenheft_zip directory
         fs::remove_dir_all(path_to_new_test_directory).unwrap();
     }
 }
