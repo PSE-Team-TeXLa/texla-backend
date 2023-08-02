@@ -294,6 +294,8 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             fs::read_to_string(&self.main_file).expect("Could not read file");
 
         loop {
+            // TODO use regex instead of chumsky to search inputs
+            // TODO replace inputs recursively
             let parse_res = parser.parse(latex_single_string.clone());
             if parse_res.is_err() {
                 break;
