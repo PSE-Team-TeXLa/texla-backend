@@ -161,7 +161,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!(
-                "% TEXLA FILE BEGIN{{{}}}\n...\n% TEXLA FILE END{{{}}}",
+                "% TEXLA FILE BEGIN {{{}}}\n...\n% TEXLA FILE END {{{}}}",
                 &path, &path
             ),
             metadata,
