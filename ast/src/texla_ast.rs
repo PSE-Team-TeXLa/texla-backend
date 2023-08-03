@@ -3,12 +3,12 @@ use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 
-use crate::ast::errors::AstError;
-use crate::ast::node::{Node, NodeRef, NodeRefWeak, NodeType};
-use crate::ast::operation::{Operation, Position};
-use crate::ast::options::StringificationOptions;
-use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
-use crate::ast::{parser, Ast};
+use crate::errors::AstError;
+use crate::node::{Node, NodeRef, NodeRefWeak, NodeType};
+use crate::operation::{Operation, Position};
+use crate::options::StringificationOptions;
+use crate::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
+use crate::{parser, Ast};
 
 #[derive(Debug, Serialize, Clone)]
 pub struct TexlaAst {
@@ -120,9 +120,9 @@ impl Ast for TexlaAst {
 mod tests {
     use std::fs;
 
-    use crate::ast::options::StringificationOptions;
-    use crate::ast::parser::parse_latex;
-    use crate::ast::Ast;
+    use crate::options::StringificationOptions;
+    use crate::parser::parse_latex;
+    use crate::Ast;
 
     fn lf(s: String) -> String {
         s.replace("\r\n", "\n")
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn simple_latex_identical() {
-        let latex = fs::read_to_string("test_resources/latex/simple.tex").unwrap();
+        let latex = fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -141,7 +141,7 @@ mod tests {
 
     #[test]
     fn empty_document_identical() {
-        let latex = fs::read_to_string("test_resources/latex/empty_document.tex").unwrap();
+        let latex = fs::read_to_string("../test_resources/latex/empty_document.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -152,7 +152,7 @@ mod tests {
 
     #[test]
     fn only_subsection_identical() {
-        let latex = fs::read_to_string("test_resources/latex/only_subsection.tex").unwrap();
+        let latex = fs::read_to_string("../test_resources/latex/only_subsection.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn large_latex_identical() {
-        let latex = fs::read_to_string("test_resources/latex/large.tex").unwrap();
+        let latex = fs::read_to_string("../test_resources/latex/large.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn lots_identical() {
-        let latex = fs::read_to_string("test_resources/latex/lots_of_features.tex").unwrap();
+        let latex = fs::read_to_string("../test_resources/latex/lots_of_features.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
@@ -185,18 +185,18 @@ mod tests {
 
     #[test]
     fn parse_and_to_json() {
-        let latex = fs::read_to_string("test_resources/latex/lots_of_features.tex").unwrap();
+        let latex = fs::read_to_string("../test_resources/latex/lots_of_features.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         let out = serde_json::to_string_pretty(&ast).unwrap();
-        fs::create_dir("test_resources/json").ok();
-        fs::write("test_resources/json/out.json", out).expect("File write error");
+        fs::create_dir("../test_resources/json").ok();
+        fs::write("../test_resources/json/out.json", out).expect("File write error");
     }
 
     #[test]
     fn simple_latex_mod_formatting() {
-        let formatted_latex = fs::read_to_string("test_resources/latex/simple.tex").unwrap();
+        let formatted_latex = fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
         let unformatted_latex =
-            fs::read_to_string("test_resources/latex/simple_unformatted.tex").unwrap();
+            fs::read_to_string("../test_resources/latex/simple_unformatted.tex").unwrap();
         let ast = parse_latex(unformatted_latex.clone()).expect("Valid Latex");
         let out = ast
             .to_latex(StringificationOptions {

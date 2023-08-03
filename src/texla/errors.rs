@@ -2,8 +2,8 @@ use std::fmt::{Debug, Display, Formatter};
 
 use serde::Serialize;
 
-use crate::ast::errors::AstError;
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
+use ast::errors::AstError;
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct TexlaError {

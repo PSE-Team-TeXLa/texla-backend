@@ -5,11 +5,11 @@ use std::sync::{Arc, Mutex, Weak};
 use serde::de::Unexpected::Str;
 use serde::Serialize;
 
-use crate::ast::errors::StringificationError;
-use crate::ast::latex_constants::*;
-use crate::ast::meta_data::MetaData;
-use crate::ast::options::StringificationOptions;
-use crate::ast::uuid_provider::{Uuid, UuidProvider};
+use crate::errors::StringificationError;
+use crate::latex_constants::*;
+use crate::meta_data::MetaData;
+use crate::options::StringificationOptions;
+use crate::uuid_provider::{Uuid, UuidProvider};
 
 pub type NodeRef = Arc<Mutex<Node>>;
 pub type NodeRefWeak = Weak<Mutex<Node>>;
@@ -271,9 +271,9 @@ pub enum MathKind {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::ast::node::{LeafData, Node};
-    use crate::ast::options::StringificationOptions;
-    use crate::ast::uuid_provider::TexlaUuidProvider;
+    use crate::node::{LeafData, Node};
+    use crate::options::StringificationOptions;
+    use crate::uuid_provider::TexlaUuidProvider;
 
     #[test]
     fn print_text() {

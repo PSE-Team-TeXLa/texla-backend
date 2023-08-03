@@ -2,10 +2,10 @@ use std::fmt::Debug;
 
 use serde::Deserialize;
 
-use crate::ast::errors::OperationError;
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::uuid_provider::Uuid;
-use crate::ast::Ast;
+use crate::errors::OperationError;
+use crate::texla_ast::TexlaAst;
+use crate::uuid_provider::Uuid;
+use crate::Ast;
 
 mod add_node;
 mod delete_metadata;

@@ -1,10 +1,10 @@
 use serde::Serialize;
 
-use crate::ast::errors::AstError;
-use crate::ast::node::NodeRef;
-use crate::ast::operation::Operation;
-use crate::ast::options::StringificationOptions;
-use crate::ast::uuid_provider::Uuid;
+use errors::AstError;
+use node::NodeRef;
+use operation::Operation;
+use options::StringificationOptions;
+use uuid_provider::Uuid;
 
 pub mod errors;
 mod latex_constants;

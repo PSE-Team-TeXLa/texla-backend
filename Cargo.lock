@@ -104,6 +104,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ast"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chumsky",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -174,6 +184,7 @@ dependencies = [
 name = "backend"
 version = "0.1.0"
 dependencies = [
+ "ast",
  "async-trait",
  "axum",
  "chrono",

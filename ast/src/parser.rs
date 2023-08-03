@@ -6,13 +6,12 @@ use chumsky::prelude::*;
 use chumsky::text::newline;
 use chumsky::Parser;
 
-use ast::errors::ParseError;
+use crate::errors::ParseError;
 
-use crate::ast;
-use crate::ast::latex_constants::*;
-use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid};
+use crate::latex_constants::*;
+use crate::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
+use crate::texla_ast::TexlaAst;
+use crate::uuid_provider::{TexlaUuidProvider, Uuid};
 
 type NodeParser<'a> = BoxedParser<'a, char, NodeRef, Simple<char>>;
 type NodesParser<'a> = BoxedParser<'a, char, Vec<NodeRef>, Simple<char>>;

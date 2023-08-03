@@ -2,13 +2,13 @@ use std::sync::{Arc, Mutex};
 
 use serde::Deserialize;
 
-use crate::ast::errors::OperationError;
-use crate::ast::meta_data::MetaData;
-use crate::ast::node::{ExpandableData, Node, NodeType};
-use crate::ast::operation::Operation;
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::uuid_provider::Uuid;
-use crate::ast::Ast;
+use crate::errors::OperationError;
+use crate::meta_data::MetaData;
+use crate::node::{ExpandableData, Node, NodeType};
+use crate::operation::Operation;
+use crate::texla_ast::TexlaAst;
+use crate::uuid_provider::Uuid;
+use crate::Ast;
 
 #[derive(Deserialize, Debug)]
 pub struct EditNode {

@@ -3,8 +3,6 @@ use std::sync::{Arc, Mutex};
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::Socket;
 
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::Ast;
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::storage_manager::{
     DirectoryChangeHandler, StorageManager, TexlaStorageManager,
@@ -12,6 +10,8 @@ use crate::infrastructure::storage_manager::{
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
 use crate::texla::errors::TexlaError;
 use crate::texla::socket::{parse_ast_from_disk, TexlaSocket};
+use ast::texla_ast::TexlaAst;
+use ast::Ast;
 
 pub type TexlaState = State<TexlaAst, TexlaStorageManager<GitManager>>;
 // TODO: maybe Mutex is not needed (if it is, use RwLock instead)
