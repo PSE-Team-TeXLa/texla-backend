@@ -1,5 +1,7 @@
 \documentclass{article}
 
+\usepackage{csquotes}
+
 \begin{document}
 
 % TEXLA FILE BEGIN {sections/section1}
