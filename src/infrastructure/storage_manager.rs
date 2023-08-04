@@ -548,7 +548,7 @@ mod tests {
         let main_file = "test_resources/latex/out/with_inputs.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let mut storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
         let latex_single_string =
             lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap());
 
