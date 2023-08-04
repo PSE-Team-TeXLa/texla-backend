@@ -6,13 +6,12 @@ use chumsky::prelude::*;
 use chumsky::text::newline;
 use chumsky::Parser;
 
-use ast::errors::ParseError;
+use crate::errors::ParseError;
 
-use crate::ast;
-use crate::ast::latex_constants::*;
-use crate::ast::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::uuid_provider::{TexlaUuidProvider, Uuid};
+use crate::latex_constants::*;
+use crate::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
+use crate::texla_ast::TexlaAst;
+use crate::uuid_provider::{TexlaUuidProvider, Uuid};
 
 type NodeParser<'a> = BoxedParser<'a, char, NodeRef, Simple<char>>;
 type NodesParser<'a> = BoxedParser<'a, char, Vec<NodeRef>, Simple<char>>;
@@ -161,7 +160,7 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!(
-                "% TEXLA FILE BEGIN{{{}}}\n...\n% TEXLA FILE END{{{}}}",
+                "% TEXLA FILE BEGIN {{{}}}\n...\n% TEXLA FILE END {{{}}}",
                 &path, &path
             ),
             metadata,
@@ -352,7 +351,7 @@ impl LatexParser {
             Self::segment_command_parser().rewind().to("segment"),
             just("\\begin").rewind(),
             just("\\end").rewind(),
-            just("\\end{document}").rewind(),
+            just("\\end{document}").rewind(), // TODO remove this line?
             just("%").rewind(),
             image.clone().to("image").rewind(),
             math.clone().to("math").rewind(),
@@ -517,8 +516,8 @@ impl LatexParser {
             .then_ignore(just("\\").then(just(keyword)))
             .then(just(UNCOUNTED_SEGMENT_MARKER).or_not())
             .then(Self::argument_surrounded_by(CURLY_BRACES))
-            .then_ignore(newline())
-            .then(prelude.repeated())
+            .then_ignore(newline().or_not())
+            .then(prelude.repeated().padded())
             .then(next_level.repeated())
             .map(
                 move |((((metadata, star), heading), mut blocks), mut subsegments)| {

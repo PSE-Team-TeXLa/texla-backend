@@ -1,10 +1,10 @@
 use serde::Deserialize;
 
-use crate::ast::errors::OperationError;
-use crate::ast::operation::{Operation, Position};
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::uuid_provider::Uuid;
-use crate::ast::Ast;
+use crate::errors::OperationError;
+use crate::operation::{Operation, Position};
+use crate::texla_ast::TexlaAst;
+use crate::uuid_provider::Uuid;
+use crate::Ast;
 
 #[derive(Deserialize, Debug)]
 pub struct MoveNode {

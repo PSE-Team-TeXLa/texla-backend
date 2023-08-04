@@ -29,7 +29,7 @@ pub async fn start() {
 
     // replace separators in path with system-dependent variant
     let main_file = args.main_file.replace(['/', '\\'], MAIN_SEPARATOR_STR);
-    // TODO use Path instead of String
+    // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
 
     println!("Opening file: {}", main_file);
 

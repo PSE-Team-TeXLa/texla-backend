@@ -35,7 +35,7 @@ pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
     res.expect("Could not start webserver");
 }
 
-fn static_files() -> ServeDir<SetStatus<ServeFile>> {
+fn static_files() -> ServeDir<ServeFile> {
     // TODO: write build script, that includes the dir
     // (https://stackoverflow.com/questions/57535794/how-do-i-include-a-folder-in-the-building-process)
     let frontend_path = std::env::current_exe()
@@ -48,7 +48,7 @@ fn static_files() -> ServeDir<SetStatus<ServeFile>> {
     println!("Serving static files from: {}", frontend_path.display());
 
     // TODO: is index.html really the root of our svelte app?
-    ServeDir::new(frontend_path.as_path()).not_found_service(ServeFile::new(
+    ServeDir::new(frontend_path.as_path()).fallback(ServeFile::new(
         frontend_path
             .join(PathBuf::from("index.html"))
             .canonicalize()

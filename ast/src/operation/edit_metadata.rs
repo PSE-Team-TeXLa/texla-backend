@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use crate::ast::Ast;
+use crate::Ast;
 use serde::Deserialize;
 
-use crate::ast::errors::OperationError;
-use crate::ast::operation::Operation;
-use crate::ast::texla_ast::TexlaAst;
-use crate::ast::uuid_provider::Uuid;
+use crate::errors::OperationError;
+use crate::operation::Operation;
+use crate::texla_ast::TexlaAst;
+use crate::uuid_provider::Uuid;
 
 #[derive(Deserialize, Debug)]
 pub struct EditMetadata {

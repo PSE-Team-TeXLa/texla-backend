@@ -1,26 +1,53 @@
 Very interesting preamble
 another line of preamble
 \begin{document}
-\section{Title1}
+\section{Text}
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam non ipsum non quam egestas pretium eget id orci. Duis imperdiet imperdiet rutrum. Sed commodo nunc non ex finibus, nec rhoncus libero tempus. Nam at felis ipsum. Sed eleifend sapien aliquam arcu dictum, a vehicula sem tincidunt. Sed odio leo, accumsan eu ante semper, rutrum maximus quam. Aenean eget tempor mauris, ac convallis ex. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nam tincidunt ante ac velit porttitor tincidunt. Duis eget neque neque. Integer sollicitudin, sem et pharetra tempor, nisi lorem laoreet odio, placerat hendrerit metus nisl at nulla.
+
+Cras malesuada sit amet elit eget porta. Mauris sit amet dignissim lectus. Mauris viverra nulla in gravida viverra. Aenean ante felis, vehicula ut aliquam nec, tempor ac elit. Morbi condimentum sem nisi, nec luctus augue malesuada sit amet. Pellentesque nec efficitur urna. Mauris sapien mauris, imperdiet eget mauris vel, molestie commodo lorem. Donec ut varius neque. Morbi id varius dui. Quisque cursus dictum condimentum. Aliquam egestas non nunc ut pretium. Donec sollicitudin fermentum ante, ultrices vulputate justo tincidunt in. In mollis mollis luctus. Integer facilisis nisl felis. Aliquam sagittis, ligula a feugiat porttitor, ante erat facilisis sem, in pulvinar magna purus et mauris.
+
+Maecenas sollicitudin diam eget turpis ullamcorper convallis et ut tortor. Praesent tempor malesuada mi, eget sodales nisi tempor sit amet. Duis enim enim, lobortis eget sem vehicula, viverra consectetur ligula. Morbi sodales euismod risus non euismod. Mauris faucibus, metus sed posuere fermentum, mauris lectus luctus risus, sit amet auctor dolor leo eget mi. Phasellus feugiat sagittis justo eu faucibus. Nullam eu iaculis nisl. Suspendisse ante enim, laoreet ac metus id, volutpat sagittis nisi.
+
+Pellentesque at justo sem. In interdum at elit eget varius. Etiam rutrum, elit vitae consectetur euismod, justo tortor commodo orci, eu auctor metus eros a nisl. In hac habitasse platea dictumst. Donec eget rutrum purus. Vivamus aliquam, augue congue venenatis lobortis, dolor sapien finibus nibh, eu porttitor elit urna posuere nibh. Praesent tincidunt, augue ac euismod semper, lorem turpis viverra magna, non vulputate purus dui eget nibh. Curabitur auctor suscipit ante in placerat. Donec quis augue eu est vehicula aliquam sed non tortor. Morbi id odio et sapien semper rutrum non non nisl. Integer sit amet velit viverra, faucibus enim a, tincidunt neque. Proin blandit semper pharetra. Integer fringilla ipsum venenatis, tincidunt quam ac, tempus libero. In hac habitasse platea dictumst. In elementum, quam ac suscipit tempus, mi turpis sollicitudin nunc, non molestie metus mauris vestibulum nisi. Vivamus in urna posuere, cursus ligula et, ultricies felis.
+
+\section{Segments}
+This is a Section
+
+\subsection{Subsection}
+This is a Subsection
+
+\subsubsection{Subsubsection}
+This is a Subsubsection
+
+\paragraph{para}
+This is a paragraph
+
+\subparagraph{subpara}
+This is a subparagraph
+
+Very unimportant Text
+
+Unnecessary Text
+
+\section{Features}
 Something \textbf{bold}
 
-% This is a separate comment
-
-% This is energy and mass
+% The Following is inline Math:
 
 $E = mc^2$
 
-% TEXLA METADATA (key1: value1,)
 \includegraphics{image.png}
 \caption{Funny picture}
-\subsection{Subtitle}
-% TEXLA METADATA (key1: useful_value,)
-another Block of text
-aaaaa
+\subsection{Environments}
+\begin{Some_Env}
+Text inside Env
 
-jhhgghjg
+\begin{Nested_Env}
+Text inside Nested Env
 
-\section{Math}
+\end{Nested_Env}
+\end{Some_Env}
+\subsection{Math}
 \label{math}
 $$1+2 = 3$$
 \[x^n + y^n = z^n\]
@@ -34,22 +61,6 @@ $$1+2 = 3$$
 Some Text
 
 \input{input}
-
-\section{Environments}
-\begin{Some_Env}
-Text inside Env
-
-\begin{Nested_Env}
-Text inside Nested Env
-
-\end{Nested_Env}
-\end{Some_Env}
-\section{Segments}
-\subsection{Subsection}
-\subsubsection{Subsubsection}
-\paragraph{para}
-\subparagraph{subpara}
-Very unimportant Text
 
 \section*{Uncounted Section}
 \end{document}
