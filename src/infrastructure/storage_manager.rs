@@ -2,15 +2,15 @@ use std::fs;
 use std::ops::Range;
 use std::path::Path;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
-use std::ptr::write;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use chumsky::prelude::*;
 use debounced::debounced;
-use futures::{channel::mpsc::channel, SinkExt, StreamExt};
-use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use futures::future::Ready;
+use futures::{channel::mpsc::channel, future, FutureExt, SinkExt, Stream, StreamExt};
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
@@ -20,6 +20,7 @@ use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsMa
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
 
 const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(100);
+const OWN_WRITE_THRESHOLD: Duration = Duration::from_millis(10);
 
 #[async_trait]
 pub trait StorageManager {
@@ -220,6 +221,7 @@ where
         // TODO (or after refactor)
     }
 
+    // TODO: should this be called before or after writing or both?
     fn log_writing(&mut self) {
         self.last_write_time = Some(Instant::now());
     }
@@ -229,6 +231,7 @@ where
         storage_manager: Arc<Mutex<Self>>,
         handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
     ) -> notify::Result<()> {
+        // TODO: any reason for buffer size only 1?
         let (mut tx, rx) = channel(1);
 
         let mut watcher = RecommendedWatcher::new(
@@ -241,36 +244,57 @@ where
         )?;
 
         watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
-        // FIXME: the debouncer discards earlier events and their paths
-        let mut debounced_receiver = debounced(rx, DIRECTORY_WATCHER_DEBOUNCE_DELAY);
 
-        while let Some(res) = debounced_receiver.next().await {
-            println!("got debounced event (unfiltered)");
-            match res {
+        // TODO: save watcher in storage manager; unwatch when socket disconnects
+
+        // TODO: refactor into own function
+        // filter the events for foreign events
+        // FIXME: received a "Detected foreign change" from a change in the frontend
+        let filtered = rx.filter_map(|res| -> Ready<Option<Event>> {
+            future::ready::<Option<Event>>(match res {
                 Ok(event) => {
+                    // TODO: remove println
+                    println!("notify");
+
                     let write_time = storage_manager.lock().unwrap().last_write_time;
-                    let change_time = Instant::now() - DIRECTORY_WATCHER_DEBOUNCE_DELAY * 2;
                     if let Some(write_time) = write_time {
-                        println!("diff: {:?}", change_time - write_time);
+                        println!(
+                            "time since last write log: {:?}",
+                            Instant::now() - write_time
+                        );
                     }
-                    // TODO: we do not get all changed paths here (see above)
-                    let only_git_files = event
-                        .paths
-                        .iter()
-                        .all(|p| p.to_str().unwrap().contains(".git"));
+                    let foreign_change = write_time.is_none()
+                        || (Instant::now() - write_time.expect("this is checked"))
+                            .gt(&OWN_WRITE_THRESHOLD);
 
-                    event.paths.iter().for_each(|p| println!("path: {:?}", p));
+                    // TODO: make this prettier
+                    if foreign_change {
+                        let only_git_files = event
+                            .paths
+                            .iter()
+                            .all(|p| p.to_str().expect("non UTF-8 path").contains(".git"));
 
-                    if !only_git_files
-                        && (write_time.is_none()
-                            || write_time.expect("this is checked").lt(&change_time))
-                    {
-                        println!("Detected foreign change");
-                        handler.lock().unwrap().handle_directory_change();
+                        if !only_git_files {
+                            Some(event)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
                     }
                 }
-                Err(e) => eprintln!("watch error (not propagating): {:?}", e),
-            }
+                Err(err) => {
+                    eprintln!("watch error (not propagating): {:?}", err);
+                    None
+                }
+            })
+        });
+
+        let mut debounced = debounced(filtered, DIRECTORY_WATCHER_DEBOUNCE_DELAY);
+
+        while let Some(_event) = debounced.next().await {
+            println!("Detected foreign change (debounced)");
+            handler.lock().unwrap().handle_directory_change();
         }
 
         Ok(())
@@ -437,6 +461,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             let text_byte_range =
                 Self::char_range_to_byte_range(&latex_single_string, text_char_range);
 
+            self.log_writing();
             fs::write(path_abs_os, &latex_single_string[text_byte_range])
                 .expect("Could not write file");
             self.log_writing();
@@ -452,6 +477,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             )
         }
 
+        self.log_writing();
         fs::write(&self.main_file, latex_single_string).expect("Could not write file");
         self.log_writing();
         // TODO IMPORTANT: start timers
