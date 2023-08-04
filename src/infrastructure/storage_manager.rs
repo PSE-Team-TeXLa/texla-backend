@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use chumsky::prelude::*;
 use debounced::debounced;
 use futures::future::Ready;
-use futures::{channel::mpsc::channel, future, FutureExt, SinkExt, Stream, StreamExt};
+use futures::{channel::mpsc::channel, future, SinkExt, StreamExt};
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
@@ -217,7 +217,7 @@ where
             .to_path_buf()
     }
 
-    fn start_timers(this: Arc<Mutex<Self>>) {
+    fn start_timers(_this: Arc<Mutex<Self>>) {
         // TODO (or after refactor)
     }
 

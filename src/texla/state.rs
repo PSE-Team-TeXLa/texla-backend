@@ -1,8 +1,5 @@
 use std::sync::{Arc, Mutex};
 
-use socketioxide::adapter::LocalAdapter;
-use socketioxide::Socket;
-
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::storage_manager::{
     DirectoryChangeHandler, StorageManager, TexlaStorageManager,

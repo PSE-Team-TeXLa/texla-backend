@@ -1,15 +1,13 @@
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
-use axum;
 use axum::body::StreamBody;
-use axum::handler::Handler;
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{Extension, Server};
 use tower_http::services::{ServeDir, ServeFile};
-use tower_http::set_status::SetStatus;
+
 use tower_http::trace::TraceLayer;
 
 use crate::texla::core::TexlaCore;
@@ -75,7 +73,7 @@ async fn user_assets_handler(
 
     let file = match tokio::fs::File::open(main_file_directory.join(&path)).await {
         Ok(file) => file,
-        Err(err) => return Err(StatusCode::IM_A_TEAPOT),
+        Err(_err) => return Err(StatusCode::IM_A_TEAPOT),
     };
     // convert the `AsyncRead` into a `Stream`
     let stream = tokio_util::io::ReaderStream::new(file);
