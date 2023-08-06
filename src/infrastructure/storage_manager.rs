@@ -3,7 +3,7 @@ use std::ops::Range;
 use std::path::Path;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use async_trait::async_trait;
 use chumsky::prelude::*;
@@ -19,8 +19,10 @@ use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsMa
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
 
+/// The time we wait for file changes to settle before notifying the frontend
 const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(100);
-const OWN_WRITE_THRESHOLD: Duration = Duration::from_millis(10);
+/// The time notify is allowed to take for picking up our own file changes and reporting them
+const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100);
 
 #[async_trait]
 pub trait StorageManager {
@@ -33,7 +35,10 @@ pub trait StorageManager {
     fn remote_url(&self) -> Option<&String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn stop_timers(&mut self);
-    fn save(&mut self, latex_single_string: String) -> Result<(), InfrastructureError>;
+    async fn save(
+        this: Arc<Mutex<Self>>,
+        latex_single_string: String,
+    ) -> Result<(), InfrastructureError>;
     fn end_session(&mut self) -> Result<(), VcsError>;
 }
 
@@ -44,11 +49,12 @@ where
     vcs_manager: V,
     directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
     merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
-    main_file: String,
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
+    main_file: String,
     pull_timer: Option<JoinHandle<()>>,
     worksession_timer: Option<JoinHandle<()>>,
-    last_write_time: Option<Instant>,
+    // TODO: this may become redundant with the pull_timer being active or not
+    writing: bool,
 }
 
 impl<V> TexlaStorageManager<V>
@@ -70,7 +76,7 @@ where
             main_file,
             pull_timer: None,
             worksession_timer: None,
-            last_write_time: None,
+            writing: false,
         }
     }
 
@@ -221,11 +227,6 @@ where
         // TODO (or after refactor)
     }
 
-    // TODO: should this be called before or after writing or both?
-    fn log_writing(&mut self) {
-        self.last_write_time = Some(Instant::now());
-    }
-
     async fn watch<P: AsRef<Path>>(
         path: P,
         storage_manager: Arc<Mutex<Self>>,
@@ -236,6 +237,7 @@ where
 
         let mut watcher = RecommendedWatcher::new(
             move |res| {
+                // TODO: block_on should never be used inside a tokio runtime
                 futures::executor::block_on(async {
                     tx.send(res).await.unwrap();
                 })
@@ -253,34 +255,21 @@ where
         let filtered = rx.filter_map(|res| -> Ready<Option<Event>> {
             future::ready::<Option<Event>>(match res {
                 Ok(event) => {
-                    // TODO: remove println
-                    println!("notify");
-
-                    let write_time = storage_manager.lock().unwrap().last_write_time;
-                    if let Some(write_time) = write_time {
-                        println!(
-                            "time since last write log: {:?}",
-                            Instant::now() - write_time
-                        );
-                    }
-                    let foreign_change = write_time.is_none()
-                        || (Instant::now() - write_time.expect("this is checked"))
-                            .gt(&OWN_WRITE_THRESHOLD);
-
-                    // TODO: make this prettier
-                    if foreign_change {
+                    if storage_manager.lock().unwrap().writing {
+                        // this is our own change => ignore it
+                        None
+                    } else {
                         let only_git_files = event
                             .paths
                             .iter()
                             .all(|p| p.to_str().expect("non UTF-8 path").contains(".git"));
 
-                        if !only_git_files {
-                            Some(event)
-                        } else {
+                        if only_git_files {
+                            // these were only git changes => ignore them
                             None
+                        } else {
+                            Some(event)
                         }
-                    } else {
-                        None
                     }
                 }
                 Err(err) => {
@@ -442,44 +431,55 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         }
     }
 
-    fn save(&mut self, mut latex_single_string: String) -> Result<(), InfrastructureError> {
+    // TODO: problem: this storage manager could be used to perform multiple saves simultaneously
+    async fn save(
+        this: Arc<Mutex<Self>>,
+        mut latex_single_string: String,
+    ) -> Result<(), InfrastructureError> {
         // define parser for % TEXLA FILE BEGIN ...'
-        let parser = Self::texla_file_parser();
+        {
+            let parser = Self::texla_file_parser();
 
-        loop {
-            let parse_res = parser.parse(latex_single_string.clone());
-            if parse_res.is_err() {
-                break;
+            // TODO: get rid of some of the locks, but do not lock the storage_manager for too long!
+            this.lock().unwrap().writing = true;
+
+            loop {
+                let parse_res = parser.parse(latex_single_string.clone());
+                if parse_res.is_err() {
+                    break;
+                }
+
+                let (path, input_char_range, text_char_range) = parse_res.unwrap();
+                let (path_abs_os, path_rel_latex) = this.lock().unwrap().get_paths(path);
+
+                // convert ranges to handle non-ASCII characters correctly
+                let input_byte_range =
+                    Self::char_range_to_byte_range(&latex_single_string, input_char_range);
+                let text_byte_range =
+                    Self::char_range_to_byte_range(&latex_single_string, text_char_range);
+
+                fs::write(path_abs_os, &latex_single_string[text_byte_range])
+                    .expect("Could not write file");
+
+                // replace '% TEXLA FILE BEGIN ... % TEXLA FILE END' in string with '\input{...}'
+                latex_single_string.replace_range(
+                    input_byte_range,
+                    &format!(
+                        "{}{{{}}}",
+                        Self::INPUT_COMMAND,
+                        path_rel_latex.to_str().unwrap()
+                    ),
+                )
             }
 
-            let (path, input_char_range, text_char_range) = parse_res.unwrap();
-            let (path_abs_os, path_rel_latex) = self.get_paths(path);
-
-            // convert ranges to handle non-ASCII characters correctly
-            let input_byte_range =
-                Self::char_range_to_byte_range(&latex_single_string, input_char_range);
-            let text_byte_range =
-                Self::char_range_to_byte_range(&latex_single_string, text_char_range);
-
-            self.log_writing();
-            fs::write(path_abs_os, &latex_single_string[text_byte_range])
+            fs::write(&this.lock().unwrap().main_file.clone(), latex_single_string)
                 .expect("Could not write file");
-            self.log_writing();
-
-            // replace '% TEXLA FILE BEGIN ... % TEXLA FILE END' in string with '\input{...}'
-            latex_single_string.replace_range(
-                input_byte_range,
-                &format!(
-                    "{}{{{}}}",
-                    Self::INPUT_COMMAND,
-                    path_rel_latex.to_str().unwrap()
-                ),
-            )
         }
 
-        self.log_writing();
-        fs::write(&self.main_file, latex_single_string).expect("Could not write file");
-        self.log_writing();
+        // this is frankly needed, because notify does not pick up all changes immediately
+        sleep(NOTIFY_DELAY_TOLERANCE).await;
+        this.lock().unwrap().writing = false;
+
         // TODO IMPORTANT: start timers
 
         Ok(())
@@ -504,6 +504,7 @@ pub trait DirectoryChangeHandler: Send + Sync {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::sync::{Arc, Mutex};
 
     use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
@@ -538,8 +539,8 @@ mod tests {
         )
     }
 
-    #[test]
-    fn save() {
+    #[tokio::test]
+    async fn save() {
         // rebuild test directory
         fs::remove_dir_all("test_resources/latex/out").ok();
         fs::create_dir_all("test_resources/latex/out/sections/section2")
@@ -548,11 +549,13 @@ mod tests {
         let main_file = "test_resources/latex/out/with_inputs.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let mut storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
         let latex_single_string =
             lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap());
 
-        storage_manager.save(latex_single_string).unwrap();
+        StorageManager::save(Arc::new(Mutex::new(storage_manager)), latex_single_string)
+            .await
+            .unwrap();
 
         assert_eq!(
             lf(fs::read_to_string("test_resources/latex/with_inputs.tex").unwrap()),
