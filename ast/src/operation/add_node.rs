@@ -52,6 +52,7 @@ impl Operation<TexlaAst> for AddNode {
 // Then, add a subsubsection after \subsection{Subtitle}
 // look for subsubsection in ast, as well as for correct parent reference
 
+#[cfg(test)]
 mod tests {
     use crate::node::{ExpandableData, NodeType};
     use crate::operation::add_node::AddNode;
@@ -66,6 +67,7 @@ mod tests {
         s.replace("\r\n", "\n")
     }
 
+    #[test]
     fn test_add_node() {
         let latex = fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
         let mut ast = parse_latex(latex.clone()).expect("Valid Latex");
@@ -102,6 +104,7 @@ mod tests {
         assert!(new_subsection_uuid.is_some(), "subsection added");
     }
 
+    //does not work
     fn find_uuid_by_content(ast: &TexlaAst, content: &str) -> Option<Uuid> {
         for (uuid, node_ref_weak) in &ast.portal {
             let node_ref = node_ref_weak.upgrade().expect("Invalid weak reference");
