@@ -6,7 +6,7 @@ use crate::infrastructure::storage_manager::{
 };
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
 use crate::texla::errors::TexlaError;
-use crate::texla::socket::{parse_ast_from_disk, TexlaSocket};
+use crate::texla::socket::{parse_ast_from_disk, send, TexlaSocket};
 use ast::texla_ast::TexlaAst;
 use ast::Ast;
 
@@ -33,11 +33,11 @@ impl DirectoryChangeHandler for TexlaState {
         match parse_ast_from_disk(&storage_manager) {
             Ok(ast) => {
                 self.ast = ast;
-                self.socket.emit("new_ast", self.ast.clone()).ok();
+                send(&self.socket, "new_ast", self.ast.clone()).ok();
             }
             Err(err) => {
                 // TODO: prepend information that files were changed on disk/remote?
-                self.socket.emit("error", err).ok();
+                send(&self.socket, "error", err).ok();
             }
         };
     }
@@ -45,6 +45,6 @@ impl DirectoryChangeHandler for TexlaState {
 
 impl MergeConflictHandler for TexlaState {
     fn handle_merge_conflict(&self, error: InfrastructureError) {
-        self.socket.emit("error", TexlaError::from(error)).ok();
+        send(&self.socket, "error", TexlaError::from(error)).ok();
     }
 }

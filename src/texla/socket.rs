@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::process::exit;
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -52,7 +53,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         Ok(ast) => ast,
         Err(err) => {
             println!("Found invalid ast: {}", err);
-            socket.emit("error", err).ok();
+            send(&socket, "error", err).ok();
             return;
             // this will display the error in the frontend
             // the frontend will not receive any further messages
@@ -84,8 +85,8 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         let storage_manager = state.storage_manager.lock().unwrap();
 
         // initial messages
-        socket.emit("remote_url", storage_manager.remote_url()).ok();
-        socket.emit("new_ast", &state.ast).ok();
+        send(&socket, "remote_url", storage_manager.remote_url()).ok();
+        send(&socket, "new_ast", &state.ast).ok();
     }
 
     socket.on("active", |socket, _: String, _, _| async move {
@@ -108,16 +109,16 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         let mut state = state_ref.lock().unwrap();
         match perform_and_check_operation(&mut state, operation) {
             Ok(()) => {
-                socket.emit("new_ast", &state.ast).ok();
+                send(&socket, "new_ast", &state.ast).ok();
                 println!("Operation was okay");
                 println!("Saved changes");
                 // println!("new_ast {:#?}", &state.ast);
             }
             Err(err) => {
                 println!("Operation was not okay: {}", err);
-                socket.emit("error", err).ok();
+                send(&socket, "error", err).ok();
                 // send old ast in order to enable frontend to roll back to it
-                socket.emit("new_ast", &state.ast).ok();
+                send(&socket, "new_ast", &state.ast).ok();
             }
         }
     });
@@ -140,13 +141,13 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         match result {
             Ok(_) => {
                 println!("Quitting...");
-                socket.emit("quit", "ok").ok();
+                send(&socket, "quit", "ok").ok();
                 sleep(std::time::Duration::from_secs(1)).await;
                 socket.disconnect().ok();
                 exit(0);
             }
             Err(err) => {
-                socket.emit("error", TexlaError::from(err)).ok();
+                send(&socket, "error", TexlaError::from(err)).ok();
             }
         };
     });
@@ -211,6 +212,7 @@ fn stringify_and_save(
     Ok(())
 }
 
+// TODO: move into export handler?
 async fn handle_export(
     socket: TexlaSocket,
     options: StringificationOptions,
@@ -221,19 +223,33 @@ async fn handle_export(
     let state = state_ref.lock().unwrap();
 
     if let Err(err) = stringify_and_save(&state, options) {
-        socket.emit("error", err).ok();
+        send(&socket, "error", err).ok();
         return;
     }
 
     // TODO: save original files again
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
-            socket.emit("export_ready", url).ok();
+            send(&socket, "export_ready", url).ok();
         }
         Err(err) => {
-            socket.emit("error", TexlaError::from(err)).ok();
+            send(&socket, "error", TexlaError::from(err)).ok();
         }
     }
+}
+
+pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> Result<(), ()> {
+    match socket.emit(event, data) {
+        Ok(_) => {}
+        Err(_err) => {
+            // TODO: extremely temporary!
+            // this only works with the unreleased main branch of socketioxide and would be
+            // obsolet with an almost finished pull request:
+            // https://github.com/Totodore/socketioxide/pull/41
+            println!("Detected a closed socket!");
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
