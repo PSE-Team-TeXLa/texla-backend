@@ -255,6 +255,7 @@ where
         let filtered = rx.filter_map(|res| -> Ready<Option<Event>> {
             future::ready::<Option<Event>>(match res {
                 Ok(event) => {
+                    // TODO: we also want to ignore changes, when the frontend is currently active
                     if storage_manager.lock().unwrap().writing {
                         // this is our own change => ignore it
                         None
