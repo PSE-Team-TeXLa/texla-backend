@@ -1,0 +1,3 @@
+[submodule "socketioxide"]
+	path = socketioxide
+	url = https://github.com/lscobe16/socketioxide.git
