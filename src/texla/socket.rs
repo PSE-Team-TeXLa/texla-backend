@@ -93,7 +93,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         let state_ref = extract_state(&socket);
         let state = state_ref.lock().unwrap();
         // stop synchronization in order to prevent losing changes
-        state.storage_manager.lock().unwrap().stop_timers();
+        state.storage_manager.lock().unwrap().wait_for_frontend();
         println!("Waiting for frontend to finalize operation...");
     });
 
@@ -135,7 +135,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
             let state_ref = extract_state(&socket);
             let state = state_ref.lock().unwrap();
             let mut storage_manager = state.storage_manager.lock().unwrap();
-            storage_manager.end_session()
+            storage_manager.end_worksession()
         };
         match result {
             Ok(_) => {
@@ -249,7 +249,10 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
         }
         Err(_err) => {
             println!("Detected a closed socket!");
-            // TODO: free socket resources, especially the the storage manager and its tasks
+            let state = extract_state(&socket);
+            let mut state = state.lock().unwrap();
+            let mut sm = state.storage_manager.lock().unwrap();
+            sm.disassemble();
         }
     }
     Ok(())

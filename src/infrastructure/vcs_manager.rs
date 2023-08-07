@@ -32,7 +32,7 @@ impl StringOutput {
     }
 }
 
-pub trait VcsManager {
+pub trait VcsManager: Send + Sync {
     fn pull(&self) -> Result<(), VcsError>;
     fn commit(&self, message: Option<String>) -> Result<(), VcsError>;
     fn push(&self) -> Result<(), VcsError>;

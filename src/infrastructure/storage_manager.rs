@@ -11,11 +11,12 @@ use debounced::debounced;
 use futures::future::Ready;
 use futures::{channel::mpsc::channel, future, SinkExt, StreamExt};
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
+use crate::infrastructure::pull_timer::PullTimerManager;
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
+use crate::infrastructure::work_session::WorksessionManager;
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
 
@@ -34,50 +35,52 @@ pub trait StorageManager {
     async fn start(this: Arc<Mutex<Self>>);
     fn remote_url(&self) -> Option<&String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
-    fn stop_timers(&mut self);
+    fn wait_for_frontend(&mut self);
     async fn save(
         this: Arc<Mutex<Self>>,
         latex_single_string: String,
     ) -> Result<(), InfrastructureError>;
-    fn end_session(&mut self) -> Result<(), VcsError>;
+    fn end_worksession(&mut self) -> Result<(), VcsError>;
+    async fn disassemble(&mut self);
 }
 
 pub struct TexlaStorageManager<V>
 where
-    V: VcsManager + Send + Sync,
+    V: VcsManager,
 {
-    vcs_manager: V,
+    pub(super) vcs_manager: V,
     directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
     merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
     main_file: String,
-    pull_timer: Option<JoinHandle<()>>,
-    worksession_timer: Option<JoinHandle<()>>,
+    pull_timer_manager: Option<PullTimerManager>,
+    worksession_manager: Option<WorksessionManager>,
+    watcher: Option<RecommendedWatcher>,
     // TODO: this may become redundant with the pull_timer being active or not
     writing: bool,
 }
 
-impl<V> TexlaStorageManager<V>
-where
-    V: VcsManager + Send + Sync,
-{
+impl TexlaStorageManager<GitManager> {
     const LATEX_FILE_EXTENSION: &'static str = "tex";
     const LATEX_PATH_SEPARATOR: &'static str = "/";
     const FILE_BEGIN_MARK: &'static str = "% TEXLA FILE BEGIN ";
     const FILE_END_MARK: &'static str = "% TEXLA FILE END ";
     const INPUT_COMMAND: &'static str = "\\input";
 
-    pub fn new(vcs_manager: V, main_file: String) -> Self {
+    pub fn new(vcs_manager: GitManager, main_file: String) -> Self {
         // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
         Self {
             vcs_manager,
             directory_change_handler: None,
             merge_conflict_handler: None,
             main_file,
-            pull_timer: None,
-            worksession_timer: None,
+            pull_timer_manager: None,
+            worksession_manager: None,
+            watcher: None,
             writing: false,
         }
+
+        // TODO: integrate start here?
     }
 
     fn lf(s: String) -> String {
@@ -223,10 +226,21 @@ where
             .to_path_buf()
     }
 
-    fn start_timers(_this: Arc<Mutex<Self>>) {
-        // TODO (or after refactor)
+    fn pull_timer_manager(&mut self) -> &mut PullTimerManager {
+        self.pull_timer_manager
+            .as_mut()
+            .expect("Pull timer manager not initialized")
+    }
+    fn worksession_manager(&mut self) -> &mut WorksessionManager {
+        self.worksession_manager
+            .as_mut()
+            .expect("Worksession manager not initialized")
+    }
+    fn watcher(&mut self) -> &mut RecommendedWatcher {
+        self.watcher.as_mut().expect("Watcher not initialized")
     }
 
+    // TODO: outsource this
     async fn watch<P: AsRef<Path>>(
         path: P,
         storage_manager: Arc<Mutex<Self>>,
@@ -237,7 +251,8 @@ where
 
         let mut watcher = RecommendedWatcher::new(
             move |res| {
-                // TODO: block_on should never be used inside a tokio runtime
+                // TODO: block_on should never be used inside a tokio runtime (use sync_channel
+                // instead or make this lambda async)
                 futures::executor::block_on(async {
                     tx.send(res).await.unwrap();
                 })
@@ -247,11 +262,10 @@ where
 
         watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
 
-        // TODO: save watcher in storage manager; unwatch when socket disconnects
+        storage_manager.lock().unwrap().watcher = Some(watcher);
 
         // TODO: refactor into own function
         // filter the events for foreign events
-        // FIXME: received a "Detected foreign change" from a change in the frontend
         let filtered = rx.filter_map(|res| -> Ready<Option<Event>> {
             future::ready::<Option<Event>>(match res {
                 Ok(event) => {
@@ -303,59 +317,16 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     async fn start(this: Arc<Mutex<Self>>) {
-        // TODO get duration intervals from CLI arguments
-        let pull_duration = Duration::from_millis(500);
-        let worksession_duration = Duration::from_millis(5000);
+        let mut sm = this.lock().unwrap();
+        sm.pull_timer_manager = Some(PullTimerManager::new(this.clone()));
+        sm.worksession_manager = Some(WorksessionManager::new(this.clone()));
 
-        let mut guard_outer = this.lock().unwrap();
-        // TODO unwrap every time instead?
-
-        // TODO error handling (report errors via callback function in socket?)
-        let that = this.clone();
-        guard_outer.pull_timer = Some(tokio::spawn(async move {
-            loop {
-                let pull_result = that.lock().unwrap().vcs_manager.pull();
-                if pull_result.is_err() {
-                    // TODO in case of merge conflict, inform user
-                    // TODO in case of other error (how to differentiate?), repeat pull only? (*)
-                }
-
-                sleep(pull_duration).await;
-            }
-        }));
-
-        let that = this.clone();
-        guard_outer.worksession_timer = Some(tokio::spawn(async move {
-            sleep(worksession_duration).await;
-
-            let guard_inner = that.lock().unwrap();
-            // TODO unwrap every time instead?
-
-            let commit_result = guard_inner.vcs_manager.commit(None);
-            if commit_result.is_err() {
-                // TODO in case of error, repeat commit? (*)
-            }
-
-            let pull_result = guard_inner.vcs_manager.pull();
-            if pull_result.is_err() {
-                // TODO in case of merge conflict, inform user
-                // TODO in case of other error (how to differentiate?), repeat pull only? (*)
-            }
-
-            let push_result = guard_inner.vcs_manager.push();
-            if push_result.is_err() {
-                // TODO in case of push rejection, pull and push again (*)
-                // TODO in case of other error (how to differentiate?), repeat push only? (*)
-            }
-        }));
+        sm.pull_timer_manager().activate();
 
         // TODO (*): inform user after several unsuccessful tries
         //  (maximum number of repetitions stored in a constant or as CLI argument)
 
-        // TODO start DirectoryChangeHandler
-        // TODO after VS: start async timer-based background tasks and start DirectoryChangeHandler
-        // we probably want to use tokio::spawn() here
-
+        // TODO: outsource this
         let sm = this.clone();
         tokio::spawn(async move {
             // TODO: do this outside the task
@@ -420,16 +391,10 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         Ok(Self::lf(latex_single_string))
     }
 
-    fn stop_timers(&mut self) {
-        if let Some(handle) = &self.pull_timer {
-            handle.abort();
-            self.pull_timer = None;
-        }
-
-        if let Some(handle) = &self.worksession_timer {
-            handle.abort();
-            self.worksession_timer = None;
-        }
+    fn wait_for_frontend(&mut self) {
+        self.pull_timer_manager().deactivate();
+        // TODO: this would not be necessary, if we used a sync_channel
+        futures::executor::block_on(self.worksession_manager().pause());
     }
 
     // TODO: problem: this storage manager could be used to perform multiple saves simultaneously
@@ -481,20 +446,31 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         sleep(NOTIFY_DELAY_TOLERANCE).await;
         this.lock().unwrap().writing = false;
 
-        // TODO IMPORTANT: start timers
+        let mut sm = this.lock().unwrap();
+        sm.pull_timer_manager().activate();
+        // TODO: this also would not be necessary, if we used a sync_channel
+        futures::executor::block_on(sm.worksession_manager().start_or_uphold());
 
         Ok(())
     }
 
-    fn end_session(&mut self) -> Result<(), VcsError> {
+    fn end_worksession(&mut self) -> Result<(), VcsError> {
         // TODO after VS: stop async timer-based background tasks and stop DirectoryChangeHandler
 
         // don't call save() here since you can't quit (i.e. end the session) with unsaved changes
 
-        self.stop_timers();
-
         self.vcs_manager.commit(None)?;
-        self.vcs_manager.push()
+        self.vcs_manager.push()?;
+        self.pull_timer_manager().activate();
+
+        Ok(())
+    }
+
+    async fn disassemble(&mut self) {
+        self.worksession_manager().disassemble();
+        self.pull_timer_manager().disassemble();
+        // TODO: make this work after refactor (move directory watcher into separate file)
+        // self.watcher().unwatch();
     }
 }
 
@@ -504,11 +480,13 @@ pub trait DirectoryChangeHandler: Send + Sync {
 
 #[cfg(test)]
 mod tests {
+    use crate::infrastructure::pull_timer::PullTimerManager;
     use std::fs;
     use std::sync::{Arc, Mutex};
 
     use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
+    use crate::infrastructure::work_session::WorksessionManager;
 
     fn lf(s: String) -> String {
         s.replace("\r\n", "\n")
@@ -551,10 +529,14 @@ mod tests {
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let shared = Arc::new(Mutex::new(storage_manager));
         let latex_single_string =
             lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap());
 
-        StorageManager::save(Arc::new(Mutex::new(storage_manager)), latex_single_string)
+        shared.lock().unwrap().pull_timer_manager = Some(PullTimerManager::new(shared.clone()));
+        shared.lock().unwrap().worksession_manager = Some(WorksessionManager::new(shared.clone()));
+
+        StorageManager::save(shared, latex_single_string)
             .await
             .unwrap();
 
