@@ -239,16 +239,16 @@ async fn handle_export(
 }
 
 pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> Result<(), ()> {
+    // this only works with a modified main branch of socketioxide (see Cargo.toml)
+    // with the upcoming release (after 0.3.0) you could relax this check and instead free
+    // resources in a on_disconnect handler (see https://github.com/Totodore/socketioxide/pull/41)
     match socket.emit(event, data) {
         Ok(_) => {
-            println!("Successfully sent")
+            println!("Successfully sent {} to {}", event, socket.sid)
         }
         Err(_err) => {
-            // TODO: extremely temporary!
-            // this only works with the unreleased main branch of socketioxide and would be
-            // obsolet with an almost finished pull request:
-            // https://github.com/Totodore/socketioxide/pull/41
             println!("Detected a closed socket!");
+            // TODO: free socket resources, especially the the storage manager and its tasks
         }
     }
     Ok(())
