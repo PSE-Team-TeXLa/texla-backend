@@ -240,7 +240,9 @@ async fn handle_export(
 
 pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> Result<(), ()> {
     match socket.emit(event, data) {
-        Ok(_) => {}
+        Ok(_) => {
+            println!("Successfully sent")
+        }
         Err(_err) => {
             // TODO: extremely temporary!
             // this only works with the unreleased main branch of socketioxide and would be
