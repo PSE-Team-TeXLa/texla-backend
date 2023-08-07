@@ -76,7 +76,10 @@ async fn end_worksession(storage_manager: &Arc<Mutex<TexlaStorageManager<GitMana
     }
 
     let push_result = storage_manager.vcs_manager.push();
+    println!("Pushing at end of worksession");
+    // TODO: this fails most of the time (not always)
     if push_result.is_err() {
+        println!("Push error");
         // TODO in case of push rejection, pull and push again (*)
         // TODO in case of other error (how to differentiate?), repeat push only? (*)
     }

@@ -82,10 +82,13 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     {
         let state_ref = extract_state(&socket);
         let state = state_ref.lock().unwrap();
-        let storage_manager = state.storage_manager.lock().unwrap();
+        let remote_url = {
+            let storage_manager = state.storage_manager.lock().unwrap();
+            storage_manager.remote_url().map(|url| url.to_string())
+        };
 
         // initial messages
-        send(&socket, "remote_url", storage_manager.remote_url()).ok();
+        send(&socket, "remote_url", remote_url).ok();
         send(&socket, "new_ast", &state.ast).ok();
     }
 
@@ -242,17 +245,21 @@ async fn handle_export(
 pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> Result<(), ()> {
     // this only works with a modified main branch of socketioxide (see Cargo.toml)
     // with the upcoming release (after 0.3.0) you could relax this check and instead free
-    // resources in a on_disconnect handler (see https://github.com/Totodore/socketioxide/pull/41)
+    // resources in a on_disconnect handler (see https://github.com/Totodore/socketioxide/pull/41).
     match socket.emit(event, data) {
         Ok(_) => {
             println!("Successfully sent {} to {}", event, socket.sid)
         }
         Err(_err) => {
-            println!("Detected a closed socket!");
-            let state = extract_state(&socket);
-            let mut state = state.lock().unwrap();
-            let mut sm = state.storage_manager.lock().unwrap();
-            sm.disassemble();
+            println!("Detected a closed socket: {}", socket.sid);
+            // make sure locks are released before doing this
+            let socket = socket.clone();
+            tokio::spawn(async move {
+                let state = extract_state(&socket);
+                let state = state.lock().unwrap();
+                let mut sm = state.storage_manager.lock().unwrap();
+                sm.disassemble();
+            });
         }
     }
     Ok(())

@@ -41,7 +41,7 @@ pub trait StorageManager {
         latex_single_string: String,
     ) -> Result<(), InfrastructureError>;
     fn end_worksession(&mut self) -> Result<(), VcsError>;
-    async fn disassemble(&mut self);
+    fn disassemble(&mut self);
 }
 
 pub struct TexlaStorageManager<V>
@@ -466,11 +466,15 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         Ok(())
     }
 
-    async fn disassemble(&mut self) {
+    fn disassemble(&mut self) {
+        println!("Disassembling, freeing resources...");
         self.worksession_manager().disassemble();
         self.pull_timer_manager().disassemble();
-        // TODO: make this work after refactor (move directory watcher into separate file)
-        // self.watcher().unwatch();
+
+        let path = self.main_file_directory();
+        self.watcher()
+            .unwatch(path.as_path())
+            .expect("Could not unwatch directory");
     }
 }
 

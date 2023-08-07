@@ -39,6 +39,7 @@ impl PullTimerManager {
 
 async fn pull_repeatedly<V: VcsManager>(storage_manager: Arc<Mutex<TexlaStorageManager<V>>>) {
     loop {
+        // TODO: this locks the storage_manager for too much time, operations are getting slow
         let pull_result = storage_manager.lock().unwrap().vcs_manager.pull();
         if pull_result.is_err() {
             // TODO in case of merge conflict, inform user
