@@ -2,10 +2,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use debounced::debounced;
-use futures::channel::mpsc::{channel, Sender};
-use futures::SinkExt;
 use futures::StreamExt;
+use tokio::sync::mpsc::{channel, Sender};
 use tokio::task::JoinHandle;
+use tokio_stream::wrappers::ReceiverStream;
 
 use crate::infrastructure::storage_manager::TexlaStorageManager;
 use crate::infrastructure::vcs_manager::{GitManager, VcsManager};
@@ -24,11 +24,13 @@ pub(crate) struct WorksessionManager {
     join_handle: JoinHandle<()>,
 }
 
+const WORKSESSION_EVENT_BUFFER_SIZE: usize = 2;
+
 impl WorksessionManager {
     pub(crate) fn new(storage_manager: Arc<Mutex<TexlaStorageManager<GitManager>>>) -> Self {
-        // TODO: maybe this should be a sync_channel, but then we probably need a crate
-        let (tx, rx) = channel(2);
-        let mut debounced = debounced(rx, WORKSESSION_LENGTH);
+        let (tx, rx) = channel(WORKSESSION_EVENT_BUFFER_SIZE);
+        let stream = ReceiverStream::new(rx);
+        let mut debounced = debounced(stream, WORKSESSION_LENGTH);
 
         let join_handle = tokio::spawn(async move {
             while let Some(msg) = debounced.next().await {
@@ -45,12 +47,12 @@ impl WorksessionManager {
         Self { tx, join_handle }
     }
 
-    pub(crate) async fn start_or_uphold(&mut self) {
-        self.tx.send(WorksessionMessage::Uphold).await.unwrap();
+    pub(crate) fn start_or_uphold(&mut self) {
+        self.tx.blocking_send(WorksessionMessage::Uphold).unwrap();
     }
 
-    pub(crate) async fn pause(&mut self) {
-        self.tx.send(WorksessionMessage::Pause).await.unwrap();
+    pub(crate) fn pause(&mut self) {
+        self.tx.blocking_send(WorksessionMessage::Pause).unwrap();
     }
 
     pub(crate) fn disassemble(&self) {

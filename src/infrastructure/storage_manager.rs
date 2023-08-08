@@ -9,9 +9,11 @@ use async_trait::async_trait;
 use chumsky::prelude::*;
 use debounced::debounced;
 use futures::future::Ready;
-use futures::{channel::mpsc::channel, future, SinkExt, StreamExt};
+use futures::{future, StreamExt};
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use tokio::sync::mpsc::channel;
 use tokio::time::sleep;
+use tokio_stream::wrappers::ReceiverStream;
 
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
 use crate::infrastructure::pull_timer::PullTimerManager;
@@ -246,27 +248,23 @@ impl TexlaStorageManager<GitManager> {
         storage_manager: Arc<Mutex<Self>>,
         handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
     ) -> notify::Result<()> {
-        // TODO: any reason for buffer size only 1?
-        let (mut tx, rx) = channel(1);
+        let (tx, rx) = channel(10);
 
         let mut watcher = RecommendedWatcher::new(
             move |res| {
-                // TODO: block_on should never be used inside a tokio runtime (use sync_channel
-                // instead or make this lambda async)
-                futures::executor::block_on(async {
-                    tx.send(res).await.unwrap();
-                })
+                tx.blocking_send(res).unwrap();
             },
             Config::default(),
         )?;
 
         watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
-
         storage_manager.lock().unwrap().watcher = Some(watcher);
+
+        let stream = ReceiverStream::new(rx);
 
         // TODO: refactor into own function
         // filter the events for foreign events
-        let filtered = rx.filter_map(|res| -> Ready<Option<Event>> {
+        let filtered = stream.filter_map(|res| -> Ready<Option<Event>> {
             future::ready::<Option<Event>>(match res {
                 Ok(event) => {
                     // TODO: we also want to ignore changes, when the frontend is currently active
@@ -393,8 +391,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
     fn wait_for_frontend(&mut self) {
         self.pull_timer_manager().deactivate();
-        // TODO: this would not be necessary, if we used a sync_channel
-        futures::executor::block_on(self.worksession_manager().pause());
+        self.worksession_manager().pause();
     }
 
     // TODO: problem: this storage manager could be used to perform multiple saves simultaneously
@@ -448,8 +445,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
         let mut sm = this.lock().unwrap();
         sm.pull_timer_manager().activate();
-        // TODO: this also would not be necessary, if we used a sync_channel
-        futures::executor::block_on(sm.worksession_manager().start_or_uphold());
+        sm.worksession_manager().start_or_uphold();
 
         Ok(())
     }
@@ -484,10 +480,10 @@ pub trait DirectoryChangeHandler: Send + Sync {
 
 #[cfg(test)]
 mod tests {
-    use crate::infrastructure::pull_timer::PullTimerManager;
     use std::fs;
     use std::sync::{Arc, Mutex};
 
+    use crate::infrastructure::pull_timer::PullTimerManager;
     use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
     use crate::infrastructure::work_session::WorksessionManager;
@@ -540,31 +536,34 @@ mod tests {
         shared.lock().unwrap().pull_timer_manager = Some(PullTimerManager::new(shared.clone()));
         shared.lock().unwrap().worksession_manager = Some(WorksessionManager::new(shared.clone()));
 
-        StorageManager::save(shared, latex_single_string)
-            .await
-            .unwrap();
+        // this is needed, because we use some blocking calls and you cannot block the main thread
+        tokio::spawn(async move {
+            StorageManager::save(shared, latex_single_string)
+                .await
+                .unwrap();
 
-        assert_eq!(
-            lf(fs::read_to_string("test_resources/latex/with_inputs.tex").unwrap()),
-            lf(fs::read_to_string("test_resources/latex/out/with_inputs.tex").unwrap())
-        );
-        assert_eq!(
-            lf(fs::read_to_string("test_resources/latex/sections/section1.tex").unwrap()),
-            lf(fs::read_to_string("test_resources/latex/out/sections/section1.tex").unwrap())
-        );
-        assert_eq!(
-            lf(fs::read_to_string("test_resources/latex/sections/section2.tex").unwrap()),
-            lf(fs::read_to_string("test_resources/latex/out/sections/section2.tex").unwrap())
-        );
-        assert_eq!(
-            lf(
-                fs::read_to_string("test_resources/latex/sections/section2/subsection1.tex")
-                    .unwrap()
-            ),
-            lf(
-                fs::read_to_string("test_resources/latex/out/sections/section2/subsection1.tex")
-                    .unwrap()
-            )
-        );
+            assert_eq!(
+                lf(fs::read_to_string("test_resources/latex/with_inputs.tex").unwrap()),
+                lf(fs::read_to_string("test_resources/latex/out/with_inputs.tex").unwrap())
+            );
+            assert_eq!(
+                lf(fs::read_to_string("test_resources/latex/sections/section1.tex").unwrap()),
+                lf(fs::read_to_string("test_resources/latex/out/sections/section1.tex").unwrap())
+            );
+            assert_eq!(
+                lf(fs::read_to_string("test_resources/latex/sections/section2.tex").unwrap()),
+                lf(fs::read_to_string("test_resources/latex/out/sections/section2.tex").unwrap())
+            );
+            assert_eq!(
+                lf(
+                    fs::read_to_string("test_resources/latex/sections/section2/subsection1.tex")
+                        .unwrap()
+                ),
+                lf(fs::read_to_string(
+                    "test_resources/latex/out/sections/section2/subsection1.tex"
+                )
+                .unwrap())
+            );
+        });
     }
 }
