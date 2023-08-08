@@ -51,32 +51,13 @@ impl DirectoryWatcher {
 
         let stream = ReceiverStream::new(rx);
 
-        // TODO: refactor into own function
         let sm = storage_manager.clone();
-        let filtered = stream.filter_map(move |res: notify::Result<Event>| -> Option<Event> {
+        let filtered = stream.filter(move |res: &notify::Result<Event>| -> bool {
             match res {
-                Ok(event) => {
-                    // TODO: we also want to ignore changes, when the frontend is currently active
-                    if sm.lock().unwrap().writing {
-                        // this is our own change => ignore it
-                        None
-                    } else {
-                        let only_git_files = event
-                            .paths
-                            .iter()
-                            .all(|p| p.to_str().expect("non UTF-8 path").contains(".git"));
-
-                        if only_git_files {
-                            // these were only git changes => ignore them
-                            None
-                        } else {
-                            Some(event)
-                        }
-                    }
-                }
+                Ok(event) => Self::is_notify_event_interesting(&sm, event),
                 Err(err) => {
                     eprintln!("watch error (not propagating): {:?}", err);
-                    None
+                    false
                 }
             }
         });
@@ -96,6 +77,25 @@ impl DirectoryWatcher {
             storage_manager,
             passer_join_handle,
         })
+    }
+
+    fn is_notify_event_interesting(
+        sm: &Arc<Mutex<TexlaStorageManager<GitManager>>>,
+        event: &Event,
+    ) -> bool {
+        // TODO: we also want to ignore changes, when the frontend is currently active
+
+        if sm.lock().unwrap().writing {
+            // this is our own change => ignore it
+            false
+        } else {
+            let only_git_files = event
+                .paths
+                .iter()
+                .all(|p| p.to_str().expect("non UTF-8 path").contains(".git"));
+
+            !only_git_files
+        }
     }
 
     pub(crate) fn disassemble(&mut self) {
