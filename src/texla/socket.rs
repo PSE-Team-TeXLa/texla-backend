@@ -1,11 +1,10 @@
-use serde::Serialize;
 use std::process::exit;
 use std::sync::{Arc, Mutex, RwLock};
 
+use serde::Serialize;
 use socketioxide::adapter::LocalAdapter;
 use socketioxide::extensions::Ref;
 use socketioxide::{Namespace, Socket, SocketIoLayer};
-use tokio::join;
 use tokio::time::sleep;
 use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
@@ -154,8 +153,9 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         };
     });
 
-    // let the tasks in storage_manager be executed
-    join!(storage_manager_handle);
+    if let Err(err) = storage_manager_handle.await {
+        send(&socket, "error", TexlaError::from(err)).ok();
+    };
 }
 
 pub fn parse_ast_from_disk(

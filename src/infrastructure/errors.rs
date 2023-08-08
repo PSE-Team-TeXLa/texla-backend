@@ -70,7 +70,7 @@ impl From<zip::result::ZipError> for InfrastructureError {
 impl From<notify::Error> for InfrastructureError {
     fn from(err: notify::Error) -> Self {
         Self {
-            message: err.to_string(),
+            message: format!("Could not start directory watcher: {}", err),
         }
     }
 }
