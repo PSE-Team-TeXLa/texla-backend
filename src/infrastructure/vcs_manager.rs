@@ -32,7 +32,7 @@ impl StringOutput {
     }
 }
 
-pub trait VcsManager {
+pub trait VcsManager: Send + Sync {
     fn pull(&self) -> Result<(), VcsError>;
     fn commit(&self, message: Option<String>) -> Result<(), VcsError>;
     fn push(&self) -> Result<(), VcsError>;
@@ -131,7 +131,9 @@ impl VcsManager for GitManager {
         }
 
         // TODO adapt return type to accept MergeConflictError and VcsError without into()?
+        println!("Pulling...");
         let pull_output = self.git(Self::GIT_PULL.to_vec());
+        println!("Pull over");
 
         if !pull_output.status.success() {
             let stderr = pull_output.stderr;
@@ -167,7 +169,9 @@ impl VcsManager for GitManager {
             }
         };
 
+        println!("Committing...");
         let add_output = self.git(Self::GIT_ADD.to_vec());
+        println!("Commit over");
 
         if !add_output.status.success() {
             return Err(VcsError {

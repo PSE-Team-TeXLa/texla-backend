@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::{format, write, Display, Formatter};
+use std::fmt::{Display, Formatter};
 use std::string::String;
 
 use serde::Serialize;

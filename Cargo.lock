@@ -520,8 +520,6 @@ checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
 [[package]]
 name = "engineioxide"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dca1acab657285b9446f84f5f3095d55cb54ef96e8d2d864fb7b7487e8eeb34"
 dependencies = [
  "async-trait",
  "base64 0.21.2",
@@ -960,9 +958,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.10.5"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
 dependencies = [
  "either",
 ]
@@ -1500,8 +1498,6 @@ dependencies = [
 [[package]]
 name = "socketioxide"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb260df99aab020e889de427ed3cd96bf353ef939c961dde63202cfe0ccdd9bb"
 dependencies = [
  "dashmap",
  "engineioxide",
