@@ -18,7 +18,6 @@ const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(100);
 pub(crate) struct DirectoryWatcher {
     path: PathBuf,
     watcher: RecommendedWatcher,
-    storage_manager: Arc<Mutex<TexlaStorageManager<GitManager>>>,
     passer_join_handle: JoinHandle<()>,
 }
 
@@ -74,7 +73,6 @@ impl DirectoryWatcher {
         Ok(Self {
             path,
             watcher,
-            storage_manager,
             passer_join_handle,
         })
     }
