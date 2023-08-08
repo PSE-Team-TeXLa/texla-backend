@@ -1,20 +1,14 @@
 use std::fs;
 use std::ops::Range;
-use std::path::Path;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_trait::async_trait;
 use chumsky::prelude::*;
-use debounced::debounced;
-use futures::future::Ready;
-use futures::{future, StreamExt};
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use tokio::sync::mpsc::channel;
 use tokio::time::sleep;
-use tokio_stream::wrappers::ReceiverStream;
 
+use crate::infrastructure::dir_watcher::DirectoryWatcher;
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
 use crate::infrastructure::pull_timer::PullTimerManager;
 use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
@@ -22,8 +16,6 @@ use crate::infrastructure::work_session::WorksessionManager;
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
 
-/// The time we wait for file changes to settle before notifying the frontend
-const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(100);
 /// The time notify is allowed to take for picking up our own file changes and reporting them
 const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100);
 
@@ -34,7 +26,7 @@ pub trait StorageManager {
         dc_handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
         mc_handler: Arc<Mutex<dyn MergeConflictHandler>>,
     );
-    async fn start(this: Arc<Mutex<Self>>);
+    async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError>;
     fn remote_url(&self) -> Option<&String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn wait_for_frontend(&mut self);
@@ -51,15 +43,15 @@ where
     V: VcsManager,
 {
     pub(super) vcs_manager: V,
-    directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
+    pub(crate) directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
     merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
     main_file: String,
     pull_timer_manager: Option<PullTimerManager>,
     worksession_manager: Option<WorksessionManager>,
-    watcher: Option<RecommendedWatcher>,
+    dir_watcher: Option<DirectoryWatcher>,
     // TODO: this may become redundant with the pull_timer being active or not
-    writing: bool,
+    pub(crate) writing: bool,
 }
 
 impl TexlaStorageManager<GitManager> {
@@ -78,7 +70,7 @@ impl TexlaStorageManager<GitManager> {
             main_file,
             pull_timer_manager: None,
             worksession_manager: None,
-            watcher: None,
+            dir_watcher: None,
             writing: false,
         }
 
@@ -221,7 +213,7 @@ impl TexlaStorageManager<GitManager> {
     }
 
     // TODO: use this everywhere. Maybe make it even more global
-    fn main_file_directory(&self) -> PathBuf {
+    pub(crate) fn main_file_directory(&self) -> PathBuf {
         PathBuf::from(&self.main_file)
             .parent()
             .expect("Could not find parent directory")
@@ -238,68 +230,10 @@ impl TexlaStorageManager<GitManager> {
             .as_mut()
             .expect("Worksession manager not initialized")
     }
-    fn watcher(&mut self) -> &mut RecommendedWatcher {
-        self.watcher.as_mut().expect("Watcher not initialized")
-    }
-
-    // TODO: outsource this
-    async fn watch<P: AsRef<Path>>(
-        path: P,
-        storage_manager: Arc<Mutex<Self>>,
-        handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
-    ) -> notify::Result<()> {
-        let (tx, rx) = channel(10);
-
-        let mut watcher = RecommendedWatcher::new(
-            move |res| {
-                tx.blocking_send(res).unwrap();
-            },
-            Config::default(),
-        )?;
-
-        watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
-        storage_manager.lock().unwrap().watcher = Some(watcher);
-
-        let stream = ReceiverStream::new(rx);
-
-        // TODO: refactor into own function
-        // filter the events for foreign events
-        let filtered = stream.filter_map(|res| -> Ready<Option<Event>> {
-            future::ready::<Option<Event>>(match res {
-                Ok(event) => {
-                    // TODO: we also want to ignore changes, when the frontend is currently active
-                    if storage_manager.lock().unwrap().writing {
-                        // this is our own change => ignore it
-                        None
-                    } else {
-                        let only_git_files = event
-                            .paths
-                            .iter()
-                            .all(|p| p.to_str().expect("non UTF-8 path").contains(".git"));
-
-                        if only_git_files {
-                            // these were only git changes => ignore them
-                            None
-                        } else {
-                            Some(event)
-                        }
-                    }
-                }
-                Err(err) => {
-                    eprintln!("watch error (not propagating): {:?}", err);
-                    None
-                }
-            })
-        });
-
-        let mut debounced = debounced(filtered, DIRECTORY_WATCHER_DEBOUNCE_DELAY);
-
-        while let Some(_event) = debounced.next().await {
-            println!("Detected foreign change (debounced)");
-            handler.lock().unwrap().handle_directory_change();
-        }
-
-        Ok(())
+    fn dir_watcher(&mut self) -> &mut DirectoryWatcher {
+        self.dir_watcher
+            .as_mut()
+            .expect("Directory watcher not initialized")
     }
 }
 
@@ -314,35 +248,16 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         self.merge_conflict_handler = Some(mc_handler);
     }
 
-    async fn start(this: Arc<Mutex<Self>>) {
+    async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError> {
+        let directory_watcher = DirectoryWatcher::new(this.clone())?;
         let mut sm = this.lock().unwrap();
         sm.pull_timer_manager = Some(PullTimerManager::new(this.clone()));
         sm.worksession_manager = Some(WorksessionManager::new(this.clone()));
+        sm.dir_watcher = Some(directory_watcher);
 
         sm.pull_timer_manager().activate();
 
-        // TODO (*): inform user after several unsuccessful tries
-        //  (maximum number of repetitions stored in a constant or as CLI argument)
-
-        // TODO: outsource this
-        let sm = this.clone();
-        tokio::spawn(async move {
-            // TODO: do this outside the task
-            let (path, handler) = {
-                let sm = sm.lock().unwrap();
-                let path = sm.main_file_directory();
-                println!("Starting directory watcher for {:?}", path);
-                let handler = sm
-                    .directory_change_handler
-                    .as_ref()
-                    .expect("Starting directory watcher without directory change handler")
-                    .clone();
-                (path, handler)
-            };
-            if let Err(e) = Self::watch(path, sm, handler).await {
-                println!("error: {:?}", e)
-            }
-        });
+        Ok(())
     }
 
     fn remote_url(&self) -> Option<&String> {
@@ -466,11 +381,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         println!("Disassembling, freeing resources...");
         self.worksession_manager().disassemble();
         self.pull_timer_manager().disassemble();
-
-        let path = self.main_file_directory();
-        self.watcher()
-            .unwatch(path.as_path())
-            .expect("Could not unwatch directory");
+        self.dir_watcher().disassemble();
     }
 }
 
