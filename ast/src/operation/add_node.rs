@@ -70,6 +70,10 @@ mod tests {
 
         // 1. Get the parent node and count its children before the operation
         let parent_node_before = ast.get_node(subsection_uuid);
+
+        //let raw_latex_parent = parent_node_before.lock().unwrap().raw_latex.to_string();
+        //println!("raw latex: {}", raw_latex_parent);
+
         let children_count_before = match &parent_node_before.lock().unwrap().node_type {
             NodeType::Expandable { children, .. } => children.len(),
             _ => panic!("Parent node should be of type Expandable"),

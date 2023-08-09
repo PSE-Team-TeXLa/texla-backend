@@ -64,3 +64,78 @@ impl Operation<TexlaAst> for EditNode {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::node::{NodeRef, NodeType};
+    use crate::operation::add_node::AddNode;
+    use crate::operation::edit_node::EditNode;
+    use crate::operation::Position;
+    use crate::parser::parse_latex;
+    use crate::texla_ast::TexlaAst;
+    use crate::uuid_provider::Uuid;
+    use crate::Ast;
+    use std::fs;
+
+    #[test]
+    fn test_edit_node() {
+        let source_latex = fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+        let mut ast = parse_latex(source_latex.clone()).expect("Valid Latex");
+
+        //let original_to_latex = ast.to_latex(Default::default());
+        //println!(
+        //    "original_to_latex: {}",
+        //    original_to_latex.unwrap().to_string()
+        //);
+
+        let target_uuid = find_uuid_by_content(&ast, "\\section{Title1}").expect("Failed to find");
+
+        let node_before = ast.get_node(target_uuid).clone();
+
+        let raw_latex = "\\section{Title1New}";
+
+        let operation = Box::new(EditNode {
+            target: target_uuid,
+            raw_latex: raw_latex.to_string(),
+        });
+
+        ast.execute(operation).expect("should succeed");
+
+        let new_target_uuid =
+            find_uuid_by_content(&ast, "\\section{Title1New}").expect("Failed to find");
+
+        let node_after = ast.get_node(new_target_uuid).clone();
+    }
+
+    fn find_uuid_by_content(ast: &TexlaAst, content: &str) -> Option<Uuid> {
+        find_uuid_by_content_recursive(&ast.root, content)
+    }
+
+    fn find_uuid_by_content_recursive(node_ref: &NodeRef, content: &str) -> Option<Uuid> {
+        let node = node_ref.lock().unwrap();
+        let current_raw_latex = &node.raw_latex.to_string();
+        //println!("current_raw_latex: {}", current_raw_latex.to_string());
+
+        // Check if the raw_latex of the current node matches the content
+        if current_raw_latex.contains(content) {
+            return Some(node.uuid);
+        }
+
+        // If not, continue the traversal based on the node type
+        match &node.node_type {
+            NodeType::Expandable { children, .. } => {
+                for child_ref in children {
+                    if let Some(uuid) = find_uuid_by_content_recursive(child_ref, content) {
+                        return Some(uuid);
+                    }
+                }
+            }
+            NodeType::Leaf { .. } => {
+                // For Leaf nodes, we've already checked the raw_latex above.
+                // So, there's no need for additional checks here.
+            }
+        }
+
+        None
+    }
+}
