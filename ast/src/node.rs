@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::string::String;
 use std::sync::{Arc, Mutex, Weak};
 
-
 use serde::Serialize;
 
 use crate::errors::StringificationError;
@@ -11,11 +10,11 @@ use crate::meta_data::MetaData;
 use crate::options::StringificationOptions;
 use crate::uuid_provider::{Uuid, UuidProvider};
 
-pub type NodeRef = Arc<Mutex<Node>>;
-pub type NodeRefWeak = Weak<Mutex<Node>>;
+pub(crate) type NodeRef = Arc<Mutex<Node>>;
+pub(crate) type NodeRefWeak = Weak<Mutex<Node>>;
 
 #[derive(Debug, Serialize)]
-pub struct Node {
+pub(crate) struct Node {
     pub(crate) uuid: Uuid,
     pub(crate) node_type: NodeType,
     #[serde(flatten)]
@@ -42,7 +41,7 @@ impl Node {
         }
     }
 
-    pub fn new_leaf(
+    pub(crate) fn new_leaf(
         data: LeafData,
         uuid_provider: &mut impl UuidProvider,
         portal: &mut HashMap<Uuid, NodeRefWeak>,
@@ -61,7 +60,7 @@ impl Node {
         this
     }
 
-    pub fn new_expandable(
+    pub(crate) fn new_expandable(
         data: ExpandableData,
         children: Vec<NodeRef>,
         uuid_provider: &mut impl UuidProvider,
@@ -92,7 +91,7 @@ impl Node {
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
-pub enum NodeType {
+pub(crate) enum NodeType {
     Expandable {
         data: ExpandableData,
         children: Vec<NodeRef>,
@@ -103,7 +102,7 @@ pub enum NodeType {
 }
 
 impl NodeType {
-    pub fn children_to_latex(
+    pub(crate) fn children_to_latex(
         &self,
         level: i8,
         options: &StringificationOptions,
@@ -117,7 +116,7 @@ impl NodeType {
         }
     }
 
-    pub fn to_latex(
+    pub(crate) fn to_latex(
         &self,
         level: i8,
         options: &StringificationOptions,
@@ -177,7 +176,7 @@ impl NodeType {
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
-pub enum ExpandableData {
+pub(crate) enum ExpandableData {
     Document {
         preamble: String,
         postamble: String,
@@ -200,7 +199,7 @@ pub enum ExpandableData {
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
-pub enum LeafData {
+pub(crate) enum LeafData {
     Text {
         text: String,
     },
@@ -260,7 +259,7 @@ impl LeafData {
 }
 
 #[derive(Debug, Serialize, Clone)]
-pub enum MathKind {
+pub(crate) enum MathKind {
     SquareBrackets,
     DoubleDollars,
     Displaymath,

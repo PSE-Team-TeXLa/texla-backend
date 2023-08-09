@@ -22,7 +22,7 @@ pub struct TexlaAst {
 }
 
 impl TexlaAst {
-    pub fn new(mut root: Node) -> Self {
+    pub(crate) fn new(mut root: Node) -> Self {
         let mut portal: HashMap<Uuid, NodeRefWeak> = HashMap::new();
         let mut uuid_provider = TexlaUuidProvider::new();
         root.uuid = uuid_provider.new_uuid();
@@ -39,8 +39,16 @@ impl TexlaAst {
         }
     }
 
+    pub(crate) fn get_node(&self, uuid: Uuid) -> NodeRef {
+        self.portal
+            .get(&uuid)
+            .expect("unknown uuid")
+            .upgrade()
+            .expect("portal should never contain invalid weak pointers when an operation comes")
+    }
+
     // TODO: maybe replace unwraps by expect or error returning
-    pub fn insert_node_at_position(&mut self, node_ref: NodeRef, position: Position) {
+    pub(crate) fn insert_node_at_position(&mut self, node_ref: NodeRef, position: Position) {
         let parent_ref = self.get_node(position.parent);
         let mut parent = parent_ref.lock().unwrap();
         let parent_children = match &mut parent.node_type {
@@ -64,7 +72,7 @@ impl TexlaAst {
     }
 
     /// returns the [Position] of the removed node
-    pub fn remove_node(&mut self, node_ref: &NodeRef) -> Position {
+    pub(crate) fn remove_node(&mut self, node_ref: &NodeRef) -> Position {
         let node = node_ref.lock().unwrap();
         let parent_ref_weak = &node.parent.as_ref().expect("root cannot be removed");
         let parent_ref = parent_ref_weak.upgrade().unwrap();
@@ -104,15 +112,6 @@ impl Ast for TexlaAst {
 
     fn execute(&mut self, operation: Box<dyn Operation<TexlaAst>>) -> Result<(), AstError> {
         Ok(operation.execute_on(self)?)
-    }
-
-    // TODO: move from trait to impl
-    fn get_node(&self, uuid: Uuid) -> NodeRef {
-        self.portal
-            .get(&uuid)
-            .expect("unknown uuid")
-            .upgrade()
-            .expect("portal should never contain invalid weak pointers when an operation comes")
     }
 }
 

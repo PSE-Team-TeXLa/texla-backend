@@ -38,8 +38,8 @@ impl From<OperationError> for AstError {
 
 //TODO Decide on Chumsky Error Strategy, then make this nicer (after VS)
 #[derive(Debug, PartialEq)]
-pub struct ParseError {
-    pub message: String,
+pub(crate) struct ParseError {
+    pub(crate) message: String,
 }
 
 impl Display for ParseError {
@@ -60,8 +60,8 @@ impl From<Vec<Simple<char>>> for ParseError {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct StringificationError {
-    pub message: String,
+pub(crate) struct StringificationError {
+    pub(crate) message: String,
 }
 impl Display for StringificationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -79,7 +79,7 @@ impl From<serde_json::Error> for StringificationError {
 
 #[derive(Debug, PartialEq)]
 pub struct OperationError {
-    pub message: String,
+    pub(crate) message: String,
 }
 
 impl Display for OperationError {

@@ -7,7 +7,6 @@ use chumsky::text::newline;
 use chumsky::Parser;
 
 use crate::errors::ParseError;
-
 use crate::latex_constants::*;
 use crate::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
 use crate::texla_ast::TexlaAst;
@@ -22,7 +21,7 @@ struct LatexParser {
     portal: RefCell<HashMap<Uuid, NodeRefWeak>>,
 }
 
-pub fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
+pub(crate) fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
     // TODO: for performance, the parser should not be created every time, but reused
     // (could be realized by using reference arguments instead of attributes)
     let parser = LatexParser::new();
