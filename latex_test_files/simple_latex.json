@@ -1,0 +1,95 @@
+{
+  "root": {
+    "uuid": 23,
+    "node_type": {
+      "type": "Expandable",
+      "data": {
+        "type": "Document",
+        "preamble": "",
+        "postamble": ""
+      },
+      "children": [
+        {
+          "uuid": 18,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Title1"
+            },
+            "children": [
+              {
+                "uuid": 2,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Text",
+                    "text": "Something"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "Something"
+              },
+              {
+                "uuid": 16,
+                "node_type": {
+                  "type": "Expandable",
+                  "data": {
+                    "type": "Segment",
+                    "heading": "Subtitle"
+                  },
+                  "children": [
+                    {
+                      "uuid": 9,
+                      "node_type": {
+                        "type": "Leaf",
+                        "data": {
+                          "type": "Text",
+                          "text": "another Block of text\naaaaa"
+                        }
+                      },
+                      "meta_data": {},
+                      "raw_latex": "another Block of text\naaaaa"
+                    },
+                    {
+                      "uuid": 14,
+                      "node_type": {
+                        "type": "Leaf",
+                        "data": {
+                          "type": "Text",
+                          "text": "jhhgghjg"
+                        }
+                      },
+                      "meta_data": {},
+                      "raw_latex": "jhhgghjg"
+                    }
+                  ]
+                },
+                "meta_data": {},
+                "raw_latex": "\\subsection{Subtitle}"
+              }
+            ]
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Title1}"
+        },
+        {
+          "uuid": 21,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Title2"
+            },
+            "children": []
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Title2}"
+        }
+      ]
+    },
+    "meta_data": {},
+    "raw_latex": ""
+  },
+  "highest_level": 2
+}

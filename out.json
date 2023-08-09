@@ -1,0 +1,488 @@
+{
+  "root": {
+    "uuid": 95,
+    "node_type": {
+      "type": "Expandable",
+      "data": {
+        "type": "Document",
+        "preamble": "Very interesting preamble\nanother line of preamble\n",
+        "postamble": ""
+      },
+      "children": [
+        {
+          "uuid": 48,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Title1",
+              "counted": true
+            },
+            "children": [
+              {
+                "uuid": 23,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Text",
+                    "text": "Something \\textbf{bold}"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "Something \\textbf{bold}"
+              },
+              {
+                "uuid": 24,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Comment",
+                    "comment": "% This is a separate comment"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "% This is a separate comment"
+              },
+              {
+                "uuid": 27,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Comment",
+                    "comment": "% This is energy and mass"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "% This is energy and mass"
+              },
+              {
+                "uuid": 30,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Text",
+                    "text": "$E = mc^2$"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "$E = mc^2$"
+              },
+              {
+                "uuid": 31,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Image",
+                    "path": "image.png",
+                    "options": null
+                  }
+                },
+                "meta_data": {
+                  "key1": "value1"
+                },
+                "raw_latex": "\\includegraphics{image.png}"
+              },
+              {
+                "uuid": 32,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Caption",
+                    "caption": "Funny picture"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "\\caption{Funny picture}"
+              },
+              {
+                "uuid": 47,
+                "node_type": {
+                  "type": "Expandable",
+                  "data": {
+                    "type": "Segment",
+                    "heading": "Subtitle",
+                    "counted": true
+                  },
+                  "children": [
+                    {
+                      "uuid": 36,
+                      "node_type": {
+                        "type": "Leaf",
+                        "data": {
+                          "type": "Text",
+                          "text": "another Block of text\naaaaa"
+                        }
+                      },
+                      "meta_data": {
+                        "key1": "useful_value"
+                      },
+                      "raw_latex": "another Block of text\naaaaa"
+                    },
+                    {
+                      "uuid": 46,
+                      "node_type": {
+                        "type": "Leaf",
+                        "data": {
+                          "type": "Text",
+                          "text": "jhhgghjg"
+                        }
+                      },
+                      "meta_data": {},
+                      "raw_latex": "jhhgghjg"
+                    }
+                  ]
+                },
+                "meta_data": {},
+                "raw_latex": "\\subsection{Subtitle}\n..."
+              }
+            ]
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Title1}\n..."
+        },
+        {
+          "uuid": 54,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Math",
+              "counted": true
+            },
+            "children": [
+              {
+                "uuid": 49,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Label",
+                    "label": "math"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "\\label{math}"
+              },
+              {
+                "uuid": 50,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Math",
+                    "kind": "DoubleDollars",
+                    "content": "1+2 = 3"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "$$1+2 = 3$$"
+              },
+              {
+                "uuid": 51,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Math",
+                    "kind": "SquareBrackets",
+                    "content": "x^n + y^n = z^n"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "\\[x^n + y^n = z^n\\]"
+              },
+              {
+                "uuid": 52,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Math",
+                    "kind": "Displaymath",
+                    "content": "\n69 + 1 = 420\n"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "\\begin{displaymath}\n69 + 1 = 420\n\\end{displaymath}"
+              },
+              {
+                "uuid": 53,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Math",
+                    "kind": "Equation",
+                    "content": "\n69 + 1 = 690\n"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "\\begin{equation}\n69 + 1 = 690\n\\end{equation}"
+              }
+            ]
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Math}\n..."
+        },
+        {
+          "uuid": 68,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Files",
+              "counted": true
+            },
+            "children": [
+              {
+                "uuid": 56,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Text",
+                    "text": "Some Text"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "Some Text"
+              },
+              {
+                "uuid": 57,
+                "node_type": {
+                  "type": "Leaf",
+                  "data": {
+                    "type": "Comment",
+                    "comment": "% Comment Right before file!"
+                  }
+                },
+                "meta_data": {},
+                "raw_latex": "% Comment Right before file!"
+              },
+              {
+                "uuid": 67,
+                "node_type": {
+                  "type": "Expandable",
+                  "data": {
+                    "type": "File",
+                    "path": "file1"
+                  },
+                  "children": [
+                    {
+                      "uuid": 63,
+                      "node_type": {
+                        "type": "Leaf",
+                        "data": {
+                          "type": "Text",
+                          "text": "Text in file"
+                        }
+                      },
+                      "meta_data": {},
+                      "raw_latex": "Text in file"
+                    },
+                    {
+                      "uuid": 66,
+                      "node_type": {
+                        "type": "Expandable",
+                        "data": {
+                          "type": "Segment",
+                          "heading": "Subsection in File",
+                          "counted": true
+                        },
+                        "children": [
+                          {
+                            "uuid": 65,
+                            "node_type": {
+                              "type": "Leaf",
+                              "data": {
+                                "type": "Text",
+                                "text": "Some Text as well"
+                              }
+                            },
+                            "meta_data": {},
+                            "raw_latex": "Some Text as well"
+                          }
+                        ]
+                      },
+                      "meta_data": {},
+                      "raw_latex": "\\subsection{Subsection in File}\n..."
+                    }
+                  ]
+                },
+                "meta_data": {},
+                "raw_latex": "% TEXLA FILE BEGIN{file1}\n...\n% TEXLA FILE END{file1}"
+              }
+            ]
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Files}\n..."
+        },
+        {
+          "uuid": 87,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Environments",
+              "counted": true
+            },
+            "children": [
+              {
+                "uuid": 86,
+                "node_type": {
+                  "type": "Expandable",
+                  "data": {
+                    "type": "Environment",
+                    "name": "Some_Env"
+                  },
+                  "children": [
+                    {
+                      "uuid": 83,
+                      "node_type": {
+                        "type": "Leaf",
+                        "data": {
+                          "type": "Text",
+                          "text": "Text inside Env"
+                        }
+                      },
+                      "meta_data": {},
+                      "raw_latex": "Text inside Env"
+                    },
+                    {
+                      "uuid": 85,
+                      "node_type": {
+                        "type": "Expandable",
+                        "data": {
+                          "type": "Environment",
+                          "name": "Nested_Env"
+                        },
+                        "children": [
+                          {
+                            "uuid": 84,
+                            "node_type": {
+                              "type": "Leaf",
+                              "data": {
+                                "type": "Text",
+                                "text": "Text inside Nested Env"
+                              }
+                            },
+                            "meta_data": {},
+                            "raw_latex": "Text inside Nested Env"
+                          }
+                        ]
+                      },
+                      "meta_data": {},
+                      "raw_latex": "\\begin{Nested_Env}\n...\n\\end{Nested_Env}"
+                    }
+                  ]
+                },
+                "meta_data": {},
+                "raw_latex": "\\begin{Some_Env}\n...\n\\end{Some_Env}"
+              }
+            ]
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Environments}\n..."
+        },
+        {
+          "uuid": 93,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Segments",
+              "counted": true
+            },
+            "children": [
+              {
+                "uuid": 92,
+                "node_type": {
+                  "type": "Expandable",
+                  "data": {
+                    "type": "Segment",
+                    "heading": "Subsection",
+                    "counted": true
+                  },
+                  "children": [
+                    {
+                      "uuid": 91,
+                      "node_type": {
+                        "type": "Expandable",
+                        "data": {
+                          "type": "Segment",
+                          "heading": "Subsubsection",
+                          "counted": true
+                        },
+                        "children": [
+                          {
+                            "uuid": 90,
+                            "node_type": {
+                              "type": "Expandable",
+                              "data": {
+                                "type": "Segment",
+                                "heading": "para",
+                                "counted": true
+                              },
+                              "children": [
+                                {
+                                  "uuid": 89,
+                                  "node_type": {
+                                    "type": "Expandable",
+                                    "data": {
+                                      "type": "Segment",
+                                      "heading": "subpara",
+                                      "counted": true
+                                    },
+                                    "children": [
+                                      {
+                                        "uuid": 88,
+                                        "node_type": {
+                                          "type": "Leaf",
+                                          "data": {
+                                            "type": "Text",
+                                            "text": "Very unimportant Text"
+                                          }
+                                        },
+                                        "meta_data": {},
+                                        "raw_latex": "Very unimportant Text"
+                                      }
+                                    ]
+                                  },
+                                  "meta_data": {},
+                                  "raw_latex": "\\subparagraph{subpara}\n..."
+                                }
+                              ]
+                            },
+                            "meta_data": {},
+                            "raw_latex": "\\paragraph{para}\n..."
+                          }
+                        ]
+                      },
+                      "meta_data": {},
+                      "raw_latex": "\\subsubsection{Subsubsection}\n..."
+                    }
+                  ]
+                },
+                "meta_data": {},
+                "raw_latex": "\\subsection{Subsection}\n..."
+              }
+            ]
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Segments}\n..."
+        },
+        {
+          "uuid": 94,
+          "node_type": {
+            "type": "Expandable",
+            "data": {
+              "type": "Segment",
+              "heading": "Uncounted Section",
+              "counted": false
+            },
+            "children": []
+          },
+          "meta_data": {},
+          "raw_latex": "\\section{Uncounted Section}\n..."
+        }
+      ]
+    },
+    "meta_data": {},
+    "raw_latex": ""
+  },
+  "highest_level": 1
+}
