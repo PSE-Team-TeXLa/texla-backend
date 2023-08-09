@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-pub type Uuid = u64;
+pub(crate) type Uuid = u64;
 
 static JS_MAX_SAFE_INTEGER: Uuid = 2u64.pow(53);
 static MAX_UUID: Uuid = JS_MAX_SAFE_INTEGER;
@@ -8,13 +8,13 @@ static MAX_UUID: Uuid = JS_MAX_SAFE_INTEGER;
 // TODO: subject to change (unsafe!)
 static mut HIGHEST_UUID: Uuid = 0;
 
-pub trait UuidProvider {
+pub(crate) trait UuidProvider {
     fn new_uuid(&mut self) -> Uuid;
     // TODO use Option<Uuid> as return type as in spec?
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct TexlaUuidProvider {
+pub(crate) struct TexlaUuidProvider {
     highest_uuid: Uuid,
 }
 
@@ -29,7 +29,7 @@ impl UuidProvider for TexlaUuidProvider {
 }
 
 impl TexlaUuidProvider {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         TexlaUuidProvider { highest_uuid: 0 }
     }
 }

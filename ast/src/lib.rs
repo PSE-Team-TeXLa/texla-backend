@@ -1,9 +1,8 @@
-use serde::Serialize;
-
 use errors::AstError;
 use node::NodeRef;
 use operation::Operation;
 use options::StringificationOptions;
+use serde::Serialize;
 use uuid_provider::Uuid;
 
 pub mod errors;
@@ -22,6 +21,4 @@ pub trait Ast: Sized + Send + Sync + Serialize {
 
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError>;
     fn execute(&mut self, operation: Box<dyn Operation<Self>>) -> Result<(), AstError>;
-    fn get_node(&self, uuid: Uuid) -> NodeRef; // TODO define method here?
-                                               // TODO add methods for deleting a node and inserting a node?
 }
