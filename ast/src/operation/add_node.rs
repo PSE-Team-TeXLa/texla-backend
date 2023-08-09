@@ -10,7 +10,7 @@ use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::UuidProvider;
 use crate::Ast;
 
-/// Test Docu for Add Node
+/// Tries to add a node represented by `raw_latex` into the [Ast] at the given [Position].
 #[derive(Deserialize, Debug)]
 pub struct AddNode {
     pub destination: Position,
