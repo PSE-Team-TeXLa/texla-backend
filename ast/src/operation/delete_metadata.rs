@@ -21,3 +21,9 @@ impl Operation<TexlaAst> for DeleteMetadata {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    fn test_delete_metadata() {}
+}
