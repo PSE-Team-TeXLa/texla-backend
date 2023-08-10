@@ -77,21 +77,21 @@ mod tests {
 
     #[test]
     fn test_edit_node() {
-        let original_section_name = "\\section{Title1}";
-        let changed_section_name = "\\section{EditedTitle}";
+        let original_section_raw_latex = "\\section{Title1}";
+        let changed_section_raw_latex = "\\section{EditedTitle}";
 
         let original_latex_single_string =
             fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let mut target_uuid =
-            find_uuid_by_content(&ast, original_section_name).expect("Failed to find");
+            find_uuid_by_content(&ast, original_section_raw_latex).expect("Failed to find");
 
         let node_before = ast.get_node(target_uuid).clone();
 
         let operation = Box::new(EditNode {
             target: target_uuid,
-            raw_latex: changed_section_name.to_string(),
+            raw_latex: changed_section_raw_latex.to_string(),
         });
 
         ast.execute(operation).expect("should succeed");
@@ -101,7 +101,8 @@ mod tests {
         let new_latex_single_string_unwrapped = new_latex_single_string.unwrap();
         ast = parse_latex(new_latex_single_string_unwrapped.clone()).expect("should succeed");
 
-        target_uuid = find_uuid_by_content(&ast, changed_section_name).expect("Failed to find");
+        target_uuid =
+            find_uuid_by_content(&ast, changed_section_raw_latex).expect("Failed to find");
 
         let node_after = ast.get_node(target_uuid).clone();
 
@@ -113,21 +114,21 @@ mod tests {
 
         // Old content should be present in the original_latex_single_string and absent in new_latex_single_string
         assert!(
-            original_latex_single_string.contains(original_section_name),
+            original_latex_single_string.contains(original_section_raw_latex),
             "The original LaTeX should contain '\\section{{Title1}}'"
         );
         assert!(
-            !original_latex_single_string.contains(changed_section_name),
+            !original_latex_single_string.contains(changed_section_raw_latex),
             "The edited LaTeX should not contain '\\section{{EditedTitle}}'"
         );
 
         // New content should be absent in the original_latex_single_string and present in new_latex_single_string
         assert!(
-            !new_latex_single_string_unwrapped.contains(original_section_name),
+            !new_latex_single_string_unwrapped.contains(original_section_raw_latex),
             "The original LaTeX should not contain '\\section{{EditedTitle}}'"
         );
         assert!(
-            new_latex_single_string_unwrapped.contains(changed_section_name),
+            new_latex_single_string_unwrapped.contains(changed_section_raw_latex),
             "The edited LaTeX should contain '\\section{{EditedTitle}}'"
         );
     }
