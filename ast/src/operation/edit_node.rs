@@ -68,9 +68,7 @@ impl Operation<TexlaAst> for EditNode {
 #[cfg(test)]
 mod tests {
     use crate::node::{NodeRef, NodeType};
-    use crate::operation::add_node::AddNode;
     use crate::operation::edit_node::EditNode;
-    use crate::operation::Position;
     use crate::parser::parse_latex;
     use crate::texla_ast::TexlaAst;
     use crate::uuid_provider::Uuid;
@@ -79,32 +77,59 @@ mod tests {
 
     #[test]
     fn test_edit_node() {
-        let source_latex = fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
-        let mut ast = parse_latex(source_latex.clone()).expect("Valid Latex");
+        let original_section_name = "\\section{Title1}";
+        let changed_section_name = "\\section{EditedTitle}";
 
-        //let original_to_latex = ast.to_latex(Default::default());
-        //println!(
-        //    "original_to_latex: {}",
-        //    original_to_latex.unwrap().to_string()
-        //);
+        let original_latex_single_string =
+            fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+        let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
-        let target_uuid = find_uuid_by_content(&ast, "\\section{Title1}").expect("Failed to find");
+        let mut target_uuid =
+            find_uuid_by_content(&ast, original_section_name).expect("Failed to find");
 
         let node_before = ast.get_node(target_uuid).clone();
 
-        let raw_latex = "\\section{Title1New}";
-
         let operation = Box::new(EditNode {
             target: target_uuid,
-            raw_latex: raw_latex.to_string(),
+            raw_latex: changed_section_name.to_string(),
         });
 
         ast.execute(operation).expect("should succeed");
 
-        let new_target_uuid =
-            find_uuid_by_content(&ast, "\\section{Title1New}").expect("Failed to find");
+        // reparse LaTeX
+        let new_latex_single_string = ast.to_latex(Default::default());
+        let new_latex_single_string_unwrapped = new_latex_single_string.unwrap();
+        ast = parse_latex(new_latex_single_string_unwrapped.clone()).expect("should succeed");
 
-        let node_after = ast.get_node(new_target_uuid).clone();
+        target_uuid = find_uuid_by_content(&ast, changed_section_name).expect("Failed to find");
+
+        let node_after = ast.get_node(target_uuid).clone();
+
+        assert_ne!(
+            node_before.lock().unwrap().uuid,
+            node_after.lock().unwrap().uuid,
+            "UUID Should have changed"
+        );
+
+        // Old content should be present in the original_latex_single_string and absent in new_latex_single_string
+        assert!(
+            original_latex_single_string.contains(original_section_name),
+            "The original LaTeX should contain '\\section{{Title1}}'"
+        );
+        assert!(
+            !original_latex_single_string.contains(changed_section_name),
+            "The edited LaTeX should not contain '\\section{{EditedTitle}}'"
+        );
+
+        // New content should be absent in the original_latex_single_string and present in new_latex_single_string
+        assert!(
+            !new_latex_single_string_unwrapped.contains(original_section_name),
+            "The original LaTeX should not contain '\\section{{EditedTitle}}'"
+        );
+        assert!(
+            new_latex_single_string_unwrapped.contains(changed_section_name),
+            "The edited LaTeX should contain '\\section{{EditedTitle}}'"
+        );
     }
 
     fn find_uuid_by_content(ast: &TexlaAst, content: &str) -> Option<Uuid> {
@@ -114,7 +139,6 @@ mod tests {
     fn find_uuid_by_content_recursive(node_ref: &NodeRef, content: &str) -> Option<Uuid> {
         let node = node_ref.lock().unwrap();
         let current_raw_latex = &node.raw_latex.to_string();
-        //println!("current_raw_latex: {}", current_raw_latex.to_string());
 
         // Check if the raw_latex of the current node matches the content
         if current_raw_latex.contains(content) {
@@ -135,7 +159,6 @@ mod tests {
                 // So, there's no need for additional checks here.
             }
         }
-
         None
     }
 }
