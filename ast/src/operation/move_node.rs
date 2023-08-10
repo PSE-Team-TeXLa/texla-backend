@@ -24,7 +24,6 @@ impl Operation<TexlaAst> for MoveNode {
 #[cfg(test)]
 mod tests {
     use crate::node::{NodeRef, NodeType};
-    use crate::operation::delete_node::DeleteNode;
     use crate::operation::move_node::MoveNode;
     use crate::operation::Position;
     use crate::parser::parse_latex;
@@ -49,24 +48,15 @@ mod tests {
 
         let target_uuid =
             find_uuid_by_content(&ast, leaf_to_be_moved_content).expect("Failed to find");
-        let mut parent_uuid =
+        let parent_uuid =
             find_uuid_by_content(&ast, subsection_to_be_moved_to_content).expect("Failed to find");
         let after_sibling_uuid =
             find_uuid_by_content(&ast, subsection_first_child_content).expect("Failed to find");
-        let mut title1_node_uuid =
-            find_uuid_by_content(&ast, section_to_be_moved_from_content).expect("Failed to find");
 
-        let title1_node_before = ast.get_node(title1_node_uuid);
-        let title1_children_count_before = match &title1_node_before.lock().unwrap().node_type {
-            NodeType::Expandable { children, .. } => children.len(),
-            _ => panic!("Parent node should be of type Expandable"),
-        };
-
-        let subtitle_node_before = ast.get_node(parent_uuid);
-        let subtitle_children_count_before = match &subtitle_node_before.lock().unwrap().node_type {
-            NodeType::Expandable { children, .. } => children.len(),
-            _ => panic!("Parent node should be of type Expandable"),
-        };
+        let title1_children_count_before =
+            get_node_and_count_children(&ast, section_to_be_moved_from_content);
+        let subtitle_children_count_before =
+            get_node_and_count_children(&ast, subsection_to_be_moved_to_content);
 
         let position = Position {
             parent: parent_uuid,
@@ -83,22 +73,10 @@ mod tests {
         let new_latex_single_string = ast.to_latex(Default::default()).unwrap();
         ast = parse_latex(new_latex_single_string.clone()).expect("Valid Latex");
 
-        title1_node_uuid =
-            find_uuid_by_content(&ast, section_to_be_moved_from_content).expect("Failed to find");
-        parent_uuid =
-            find_uuid_by_content(&ast, subsection_to_be_moved_to_content).expect("Failed to find");
-
-        let title1_node_after = ast.get_node(title1_node_uuid);
-        let title1_children_count_after = match &title1_node_after.lock().unwrap().node_type {
-            NodeType::Expandable { children, .. } => children.len(),
-            _ => panic!("Parent node should be of type Expandable"),
-        };
-
-        let subtitle_node_after = ast.get_node(parent_uuid);
-        let subtitle_children_count_after = match &subtitle_node_after.lock().unwrap().node_type {
-            NodeType::Expandable { children, .. } => children.len(),
-            _ => panic!("Parent node should be of type Expandable"),
-        };
+        let title1_children_count_after =
+            get_node_and_count_children(&ast, section_to_be_moved_from_content);
+        let subtitle_children_count_after =
+            get_node_and_count_children(&ast, subsection_to_be_moved_to_content);
 
         assert_eq!(
             title1_children_count_before - 1,
@@ -141,5 +119,18 @@ mod tests {
             }
         }
         None
+    }
+
+    fn get_node_and_count_children(ast: &TexlaAst, content: &str) -> usize {
+        let node_uuid = find_uuid_by_content(ast, content).expect("Failed to find");
+        let node_ref = ast.get_node(node_uuid);
+        count_children_of_node(&node_ref)
+    }
+
+    fn count_children_of_node(node_ref: &NodeRef) -> usize {
+        match &node_ref.lock().unwrap().node_type {
+            NodeType::Expandable { children, .. } => children.len(),
+            _ => 0, // Return 0 for non-Expandable nodes
+        }
     }
 }
