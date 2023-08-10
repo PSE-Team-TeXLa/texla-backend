@@ -80,7 +80,8 @@ mod tests {
 
         // count children
         let mut subsection_uuid =
-            find_uuid_by_content(&ast, "\\subsection{Subtitle}").expect("Failed to find");
+            find_uuid_by_content(&ast, subsection_with_children_to_be_merged_content)
+                .expect("Failed to find");
         let parent_node_before = ast.get_node(subsection_uuid);
         let children_count_before = match &parent_node_before.lock().unwrap().node_type {
             NodeType::Expandable { children, .. } => children.len(),
@@ -97,8 +98,8 @@ mod tests {
         ast.execute(operation).expect("should succeed");
         // reparse
         let new_latex_single_string = ast.to_latex(Default::default()).unwrap();
-
         ast = parse_latex(new_latex_single_string.clone()).expect("Valid Latex");
+
         subsection_uuid = find_uuid_by_content(&ast, subsection_with_children_to_be_merged_content)
             .expect("Failed to find");
 
