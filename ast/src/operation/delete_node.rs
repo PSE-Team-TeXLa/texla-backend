@@ -31,17 +31,21 @@ mod tests {
 
     #[test]
     fn test_delete_node() {
-        let subsection_name_to_be_deleted = "\\subsection{Subtitle}";
-        let subsection_first_child_content = "another Block of text\naaaaa";
-        let subsection_second_child_content = "jhhgghjg";
-        let section_that_is_no_child_of_subsection_content = "\\section{Title2}";
+        let subsection_name_to_be_deleted_raw_latex = "\\subsection{Subtitle}";
+        let subsection_first_child_raw_latex = "another Block of text\naaaaa";
+        let subsection_second_child_raw_latex = "jhhgghjg";
+        let section_that_contains_to_be_deleted_subsection = "\\section{Title1}";
+        let section_that_is_no_child_of_subsection_raw_latex = "\\section{Title2}";
 
         let original_latex_single_string =
             fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
-        let target_uuid =
-            find_uuid_by_content(&ast, subsection_name_to_be_deleted).expect("Failed to find");
+        let target_uuid = find_uuid_by_content(&ast, subsection_name_to_be_deleted_raw_latex)
+            .expect("Failed to find");
+
+        let title1_children_count_before =
+            get_node_and_count_children(&ast, section_that_contains_to_be_deleted_subsection);
 
         let operation = Box::new(DeleteNode {
             target: target_uuid,
@@ -51,18 +55,28 @@ mod tests {
 
         // reparse
         let new_latex_single_string = ast.to_latex(Default::default()).unwrap();
+        ast = parse_latex(new_latex_single_string.clone()).expect("Valid Latex");
 
-        assert!(original_latex_single_string.contains(subsection_name_to_be_deleted));
-        assert!(original_latex_single_string.contains(subsection_first_child_content));
-        assert!(original_latex_single_string.contains(subsection_second_child_content));
+        let title1_children_count_after =
+            get_node_and_count_children(&ast, section_that_contains_to_be_deleted_subsection);
+
+        assert!(original_latex_single_string.contains(subsection_name_to_be_deleted_raw_latex));
+        assert!(original_latex_single_string.contains(subsection_first_child_raw_latex));
+        assert!(original_latex_single_string.contains(subsection_second_child_raw_latex));
         assert!(
-            original_latex_single_string.contains(section_that_is_no_child_of_subsection_content)
+            original_latex_single_string.contains(section_that_is_no_child_of_subsection_raw_latex)
         );
 
-        assert!(!new_latex_single_string.contains(subsection_name_to_be_deleted));
-        assert!(!new_latex_single_string.contains(subsection_name_to_be_deleted));
-        assert!(!new_latex_single_string.contains(subsection_name_to_be_deleted));
-        assert!(new_latex_single_string.contains(section_that_is_no_child_of_subsection_content));
+        assert!(!new_latex_single_string.contains(subsection_name_to_be_deleted_raw_latex));
+        assert!(!new_latex_single_string.contains(subsection_name_to_be_deleted_raw_latex));
+        assert!(!new_latex_single_string.contains(subsection_name_to_be_deleted_raw_latex));
+        assert!(new_latex_single_string.contains(section_that_is_no_child_of_subsection_raw_latex));
+
+        assert_eq!(
+            title1_children_count_before - 1,
+            title1_children_count_after,
+            "Section Title should have one less child"
+        );
     }
 
     fn find_uuid_by_content(ast: &TexlaAst, content: &str) -> Option<Uuid> {
@@ -93,5 +107,18 @@ mod tests {
             }
         }
         None
+    }
+
+    fn get_node_and_count_children(ast: &TexlaAst, content: &str) -> usize {
+        let node_uuid = find_uuid_by_content(ast, content).expect("Failed to find");
+        let node_ref = ast.get_node(node_uuid);
+        count_children_of_node(&node_ref)
+    }
+
+    fn count_children_of_node(node_ref: &NodeRef) -> usize {
+        match &node_ref.lock().unwrap().node_type {
+            NodeType::Expandable { children, .. } => children.len(),
+            _ => 0, // Return 0 for non-Expandable nodes
+        }
     }
 }
