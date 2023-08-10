@@ -58,7 +58,6 @@ impl Operation<TexlaAst> for MergeNodes {
 #[cfg(test)]
 mod tests {
     use crate::node::{NodeRef, NodeType};
-    use crate::operation::delete_node::DeleteNode;
     use crate::operation::merge_nodes::MergeNodes;
     use crate::parser::parse_latex;
     use crate::texla_ast::TexlaAst;
