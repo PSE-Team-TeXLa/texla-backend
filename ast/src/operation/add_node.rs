@@ -87,7 +87,7 @@ mod tests {
 
         let subsection_children_count_after =
             get_node_and_count_children(&ast, subsection_to_be_added_to_raw_latex);
-        let subsubsection_childer_count_after_adding =
+        let subsubsection_children_count_after_adding =
             get_node_and_count_children(&ast, subsubsection_to_be_added_raw_latex);
 
         // subsection{subtitle} should now only have one child, namely subsubsection
@@ -99,7 +99,7 @@ mod tests {
         );
 
         assert_eq!(
-            subsection_children_count_before, subsubsection_childer_count_after_adding,
+            subsection_children_count_before, subsubsection_children_count_after_adding,
             "subsubsection should now contain the children of subsection"
         );
 
