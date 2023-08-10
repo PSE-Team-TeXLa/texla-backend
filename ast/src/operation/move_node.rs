@@ -32,7 +32,7 @@ mod tests {
     use crate::Ast;
     use std::fs;
 
-    //move "another Block of text aaa" leaf to \subsection{Subtitle} behind Something Leaf
+    // Move "another Block of text aaa" leaf to \subsection{Subtitle} behind Something Leaf
 
     #[test]
     fn test_move_leaf() {
@@ -88,6 +88,69 @@ mod tests {
             subtitle_children_count_before + 1,
             subtitle_children_count_after,
             "The subtitle node should have one more child after the operation"
+        );
+    }
+
+    // Move subsection subtitle from title 1 to title 2
+    #[test]
+    fn test_move_expandable() {
+        let subsection_to_be_moved = "\\subsection{Subtitle}";
+        let section_to_be_moved_from_content = "\\section{Title1}";
+        let section_to_be_moved_to_content = "\\section{Title2}";
+
+        let original_latex_single_string =
+            fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+        let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
+
+        let target_uuid =
+            find_uuid_by_content(&ast, subsection_to_be_moved).expect("Failed to find");
+        let parent_uuid =
+            find_uuid_by_content(&ast, section_to_be_moved_to_content).expect("Failed to find");
+
+        let title1_children_count_before =
+            get_node_and_count_children(&ast, section_to_be_moved_from_content);
+        let title2_children_count_before =
+            get_node_and_count_children(&ast, section_to_be_moved_to_content);
+        let subtitle_children_count_before =
+            get_node_and_count_children(&ast, subsection_to_be_moved);
+
+        let position = Position {
+            parent: parent_uuid,
+            after_sibling: None,
+        };
+
+        let operation = Box::new(MoveNode {
+            target: target_uuid,
+            destination: position,
+        });
+
+        ast.execute(operation).expect("Should succeed");
+        // reparse
+        let new_latex_single_string = ast.to_latex(Default::default()).unwrap();
+        ast = parse_latex(new_latex_single_string.clone()).expect("Valid Latex");
+
+        let title1_children_count_after =
+            get_node_and_count_children(&ast, section_to_be_moved_from_content);
+        let title2_children_count_after =
+            get_node_and_count_children(&ast, section_to_be_moved_to_content);
+        let subtitle_children_count_after =
+            get_node_and_count_children(&ast, subsection_to_be_moved);
+
+        assert_eq!(
+            title1_children_count_before - 1,
+            title1_children_count_after,
+            "The parent node should have one more child after the operation"
+        );
+
+        assert_eq!(
+            title2_children_count_before + 1,
+            title2_children_count_after,
+            "The parent node should have one less child after the operation"
+        );
+
+        assert_eq!(
+            subtitle_children_count_before, subtitle_children_count_after,
+            "The subtitle node should have the same number of children after the operation"
         );
     }
 
