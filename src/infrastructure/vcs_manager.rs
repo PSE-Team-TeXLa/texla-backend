@@ -3,9 +3,7 @@ use std::process::{Command, ExitStatus, Output};
 
 use chrono::Local;
 
-use crate::infrastructure::errors::{
-    InfrastructureError, MergeConflictError, PushRejectionError, VcsError,
-};
+use crate::infrastructure::errors::{InfrastructureError, VcsError};
 
 struct StringOutput {
     status: ExitStatus,
@@ -130,23 +128,14 @@ impl VcsManager for GitManager {
             return Ok(());
         }
 
-        // TODO adapt return type to accept MergeConflictError and VcsError without into()?
         println!("Pulling...");
         let pull_output = self.git(Self::GIT_PULL.to_vec());
         println!("Pull over");
 
         if !pull_output.status.success() {
-            let stderr = pull_output.stderr;
-            return if stderr.starts_with("error")
-                || (stderr.contains('\n')
-                    && stderr.split_once('\n').unwrap().1.starts_with("CONFLICT"))
-            {
-                Err(MergeConflictError.into())
-            } else {
-                Err(VcsError {
-                    message: "unable to push local changes".to_string(),
-                })
-            };
+            return Err(VcsError {
+                message: "unable to pull remote changes".to_string(),
+            });
         }
 
         Ok(())
@@ -197,26 +186,12 @@ impl VcsManager for GitManager {
             return Ok(());
         }
 
-        // TODO adapt return type to accept PushRejectionError and VcsError without into()?
         let push_output = self.git(Self::GIT_PUSH.to_vec());
 
         if !push_output.status.success() {
-            let stderr = push_output.stderr;
-            return if stderr.contains('\n')
-                && stderr
-                    .split_once('\n')
-                    .unwrap()
-                    .1
-                    .starts_with(" ! [rejected]")
-            {
-                Err(PushRejectionError.into())
-            } else {
-                Err(VcsError {
-                    message: "unable to push local changes, \
-                    possibly because remote repository can't be reached"
-                        .to_string(),
-                })
-            };
+            return Err(VcsError {
+                message: "unable to push local changes".to_string(),
+            });
         }
 
         Ok(())
