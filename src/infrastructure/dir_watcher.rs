@@ -90,7 +90,7 @@ impl DirectoryWatcher {
             let only_git_files = event
                 .paths
                 .iter()
-                .all(|p| p.to_str().expect("non UTF-8 path").contains(".git"));
+                .all(|p| p.components().any(|c| c.as_os_str() == ".git"));
 
             !only_git_files
         }
