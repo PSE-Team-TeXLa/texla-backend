@@ -50,8 +50,8 @@ impl WorksessionManager {
 
     pub(crate) fn start_or_uphold(&mut self) {
         // Optimally this should be using Sender::blocking_send, but that says that the main
-        // thread should not be blocked. I did not find a way to put this outside the main way
-        // (I think it should already be)
+        // thread should not be blocked. I did not find a way to put this outside the main
+        // tokio::task::spawn_blocking should do exactly what we want, but somehow it does not work
         block_on(async move {
             self.tx.send(WorksessionMessage::Uphold).await.unwrap();
         });
