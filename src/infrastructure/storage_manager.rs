@@ -7,6 +7,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use chumsky::prelude::*;
 use tokio::time::sleep;
+use tracing::debug;
 
 use crate::infrastructure::dir_watcher::DirectoryWatcher;
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
@@ -57,6 +58,7 @@ where
 impl TexlaStorageManager<GitManager> {
     const LATEX_FILE_EXTENSION: &'static str = "tex";
     const LATEX_PATH_SEPARATOR: &'static str = "/";
+    // TODO: shouldn't these start with a newline?
     const FILE_BEGIN_MARK: &'static str = "% TEXLA FILE BEGIN ";
     const FILE_END_MARK: &'static str = "% TEXLA FILE END ";
     const INPUT_COMMAND: &'static str = "\\input";
@@ -117,46 +119,26 @@ impl TexlaStorageManager<GitManager> {
             .boxed()
     }
 
-    fn texla_file_parser() -> BoxedParser<'static, char, TexlaFileParserResult, Simple<char>> {
-        recursive(|input| {
-            take_until(just(Self::FILE_BEGIN_MARK))
-                .map_with_span(|(_, _), span: Range<usize>| -> usize {
-                    span.end() - Self::char_len(Self::FILE_BEGIN_MARK) // = input_start
-                })
-                .then(Self::curly_braces_parser())
-                .map_with_span(
-                    |(input_start, path_begin), span| -> (String, usize, usize) {
-                        (path_begin, input_start, span.end() + 1) // span.end() + 1 = text_start
-                    },
-                )
-                .then_with(move |(path_begin, input_start, text_start)| {
-                    take_until(
-                        input.clone().or(just(Self::FILE_END_MARK)
-                            .map_with_span(|_, span: Range<usize>| -> usize {
-                                span.start() - 1 // = text_end
-                            })
-                            .then(Self::curly_braces_parser())
-                            .map_with_span(
-                                move |(text_end, path_end), span| -> (String, usize, usize) {
-                                    (path_end, span.end(), text_end) // span.end() = input_end
-                                },
-                            )
-                            .try_map(move |(path_end, input_end, text_end), span| {
-                                if path_begin != path_end {
-                                    Err(Simple::custom(span, "Invalid latex single string"))
-                                } else {
-                                    Ok((
-                                        path_begin.clone(),
-                                        input_start..input_end,
-                                        text_start..text_end,
-                                    ))
-                                }
-                            })),
-                    )
-                })
-                .map(|(_, result)| result)
-        })
-        .boxed()
+    fn find_texla_file_marks(string: &str) -> Option<(String, Range<usize>, Range<usize>)> {
+        let end_start = string.find(Self::FILE_END_MARK)?;
+        let (path, end_end) = {
+            let string = &string[end_start + Self::FILE_END_MARK.len()..];
+            let brace_open = string.find('{')?;
+            let brace_close = string[brace_open..].find('}')?;
+            let path = string[brace_open..][1..brace_close].to_string();
+            (
+                path,
+                end_start + Self::FILE_END_MARK.len() + brace_open + brace_close + 1,
+            )
+        };
+
+        // TODO: this is strict but above is not (e.g. whitespace between MARK and braces)
+        let begin_mark = format!("{}{{{}}}", Self::FILE_BEGIN_MARK, path);
+        let begin_start = string[..end_start].rfind(&begin_mark)?;
+        let begin_end = begin_start + begin_mark.len();
+
+        // TODO: this assumes newline placement (which is okay, but we should think about it)
+        Some((path, begin_start..end_end, begin_end + 1..end_start))
     }
 
     fn get_paths(&self, input_path: String) -> (PathBuf, PathBuf) {
@@ -314,27 +296,27 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         this: Arc<Mutex<Self>>,
         mut latex_single_string: String,
     ) -> Result<(), InfrastructureError> {
-        // define parser for % TEXLA FILE BEGIN ...'
+        // TODO: make this async using async file io and join_all!()
         {
-            let parser = Self::texla_file_parser();
-
-            // TODO: get rid of some of the locks, but do not lock the storage_manager for too long!
             this.lock().unwrap().writing = true;
 
             loop {
-                let parse_res = parser.parse(latex_single_string.clone());
-                if parse_res.is_err() {
+                let find_res = TexlaStorageManager::find_texla_file_marks(&latex_single_string);
+                if find_res.is_none() {
                     break;
                 }
 
-                let (path, input_char_range, text_char_range) = parse_res.unwrap();
+                let (path, input_byte_range, text_byte_range) = find_res.unwrap();
                 let (path_abs_os, path_rel_latex) = this.lock().unwrap().get_paths(path);
-
-                // convert ranges to handle non-ASCII characters correctly
-                let input_byte_range =
-                    Self::char_range_to_byte_range(&latex_single_string, input_char_range);
-                let text_byte_range =
-                    Self::char_range_to_byte_range(&latex_single_string, text_char_range);
+                debug!("writing file: {:?}", path_abs_os);
+                debug!("string length: {}", latex_single_string.len());
+                debug!("input range: {:?} bytes", input_byte_range);
+                debug!(
+                    "input: {:?}",
+                    &latex_single_string[input_byte_range.clone()]
+                );
+                debug!("text range: {:?} bytes", text_byte_range);
+                debug!("text: {:?}", &latex_single_string[text_byte_range.clone()]);
 
                 fs::write(path_abs_os, &latex_single_string[text_byte_range])
                     .expect("Could not write file");

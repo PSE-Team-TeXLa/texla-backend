@@ -203,6 +203,7 @@ async fn perform_operation(
         let latex_single_string = locked.ast.to_latex(Default::default())?;
         TexlaAst::from_latex(latex_single_string)?
     };
+    // TODO: this should be done in parallel
     stringify_and_save(state, Default::default()).await?;
     Ok(reparsed_ast)
 }
@@ -268,8 +269,12 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
 
 #[cfg(test)]
 mod test {
-    use crate::infrastructure::storage_manager::TexlaStorageManager;
+    use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
+    use ast::options::StringificationOptions;
+    use ast::Ast;
+    use std::sync::{Arc, Mutex};
+    use tokio::runtime::Runtime;
 
     #[test]
     fn pflichtenheft() {
@@ -277,5 +282,26 @@ mod test {
         // TODO replace separator?
         let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
         assert!(super::parse_ast_from_disk(&sm).is_ok());
+    }
+
+    #[test]
+    fn pflichtenheft_read_save() {
+        let file = "test_resources/latex/pflichtenheft/main.tex".to_string();
+        // TODO replace separator?
+        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
+        let ast = super::parse_ast_from_disk(&sm);
+        let ast = ast.unwrap();
+
+        let latex_single_string = ast.to_latex(StringificationOptions::default());
+        let latex_single_string = latex_single_string.unwrap();
+
+        let rt = Runtime::new().unwrap();
+        rt.spawn(async move {
+            StorageManager::save(Arc::new(Mutex::new(sm)), latex_single_string)
+                .await
+                .ok();
+        });
+
+        // TODO: check that there are no changes
     }
 }
