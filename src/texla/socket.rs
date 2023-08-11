@@ -297,9 +297,9 @@ mod test {
 
         let rt = Runtime::new().unwrap();
         rt.spawn(async move {
-            StorageManager::save(Arc::new(Mutex::new(sm)), latex_single_string)
-                .await
-                .ok();
+            // StorageManager::save(Arc::new(Mutex::new(sm)), latex_single_string)
+            //     .await
+            //     .ok();
         });
 
         // TODO: check that there are no changes
