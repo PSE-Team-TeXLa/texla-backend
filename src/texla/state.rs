@@ -1,14 +1,15 @@
 use std::sync::{Arc, Mutex};
 
+use ast::texla_ast::TexlaAst;
+use ast::Ast;
+
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::storage_manager::{
     DirectoryChangeHandler, StorageManager, TexlaStorageManager,
 };
-use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler};
+use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager};
 use crate::texla::errors::TexlaError;
 use crate::texla::socket::{parse_ast_from_disk, send, TexlaSocket};
-use ast::texla_ast::TexlaAst;
-use ast::Ast;
 
 pub type TexlaState = State<TexlaAst, TexlaStorageManager<GitManager>>;
 // TODO: maybe Mutex is not needed (if it is, use RwLock instead)
@@ -43,8 +44,8 @@ impl DirectoryChangeHandler for TexlaState {
     }
 }
 
-impl MergeConflictHandler for TexlaState {
-    fn handle_merge_conflict(&self, error: InfrastructureError) {
+impl GitErrorHandler for TexlaState {
+    fn handle_git_error(&self, error: InfrastructureError) {
         send(&self.socket, "error", TexlaError::from(error)).ok();
     }
 }

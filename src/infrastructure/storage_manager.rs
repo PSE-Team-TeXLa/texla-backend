@@ -11,7 +11,7 @@ use tokio::time::sleep;
 use crate::infrastructure::dir_watcher::DirectoryWatcher;
 use crate::infrastructure::errors::{InfrastructureError, VcsError};
 use crate::infrastructure::pull_timer::PullTimerManager;
-use crate::infrastructure::vcs_manager::{GitManager, MergeConflictHandler, VcsManager};
+use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager, VcsManager};
 use crate::infrastructure::work_session::WorksessionManager;
 
 type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
@@ -24,7 +24,7 @@ pub trait StorageManager {
     fn attach_handlers(
         &mut self,
         dc_handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
-        mc_handler: Arc<Mutex<dyn MergeConflictHandler>>,
+        ge_handler: Arc<Mutex<dyn GitErrorHandler>>,
     );
     async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError>;
     fn remote_url(&self) -> Option<&String>;
@@ -44,7 +44,7 @@ where
 {
     pub(super) vcs_manager: V,
     pub(crate) directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
-    merge_conflict_handler: Option<Arc<Mutex<dyn MergeConflictHandler>>>,
+    git_error_handler: Option<Arc<Mutex<dyn GitErrorHandler>>>,
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
     main_file: String,
     pull_timer_manager: Option<PullTimerManager>,
@@ -66,7 +66,7 @@ impl TexlaStorageManager<GitManager> {
         Self {
             vcs_manager,
             directory_change_handler: None,
-            merge_conflict_handler: None,
+            git_error_handler: None,
             main_file,
             pull_timer_manager: None,
             worksession_manager: None,
@@ -242,10 +242,10 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     fn attach_handlers(
         &mut self,
         dc_handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
-        mc_handler: Arc<Mutex<dyn MergeConflictHandler>>,
+        ge_handler: Arc<Mutex<dyn GitErrorHandler>>,
     ) {
         self.directory_change_handler = Some(dc_handler);
-        self.merge_conflict_handler = Some(mc_handler);
+        self.git_error_handler = Some(ge_handler);
     }
 
     async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError> {

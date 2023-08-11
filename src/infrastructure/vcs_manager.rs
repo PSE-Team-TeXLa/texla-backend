@@ -223,6 +223,6 @@ impl VcsManager for GitManager {
     }
 }
 
-pub trait MergeConflictHandler: Send + Sync {
-    fn handle_merge_conflict(&self, error: InfrastructureError);
+pub trait GitErrorHandler: Send + Sync {
+    fn handle_git_error(&self, error: InfrastructureError);
 }
