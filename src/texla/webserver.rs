@@ -7,7 +7,6 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{Extension, Server};
 use tower_http::services::{ServeDir, ServeFile};
-
 use tower_http::trace::TraceLayer;
 
 use crate::texla::core::TexlaCore;
@@ -73,7 +72,7 @@ async fn user_assets_handler(
 
     let file = match tokio::fs::File::open(main_file_directory.join(&path)).await {
         Ok(file) => file,
-        Err(_err) => return Err(StatusCode::IM_A_TEAPOT),
+        Err(_) => return Err(StatusCode::IM_A_TEAPOT),
     };
     // convert the `AsyncRead` into a `Stream`
     let stream = tokio_util::io::ReaderStream::new(file);

@@ -158,7 +158,7 @@ impl VcsManager for GitManager {
         }
 
         let message = {
-            if let Some(..) = custom_message {
+            if let Some(_) = custom_message {
                 custom_message.unwrap()
             } else {
                 format!(

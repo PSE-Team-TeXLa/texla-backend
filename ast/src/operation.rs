@@ -99,7 +99,7 @@ mod test {
         }
         "#;
         let operation: super::JsonOperation = serde_json::from_str(json).unwrap();
-        let _operation = operation.to_trait_obj();
+        operation.to_trait_obj();
         // if this test runs, the deserialization worked
     }
 }

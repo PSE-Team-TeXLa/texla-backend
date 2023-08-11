@@ -10,16 +10,17 @@ use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
+use ast::operation::{JsonOperation, Operation};
+use ast::options::StringificationOptions;
+use ast::texla_ast::TexlaAst;
+use ast::Ast;
+
 use crate::infrastructure::export_manager::ExportManager;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
 use crate::texla::state::{SharedTexlaState, TexlaState};
-use ast::operation::{JsonOperation, Operation};
-use ast::options::StringificationOptions;
-use ast::texla_ast::TexlaAst;
-use ast::Ast;
 
 pub type TexlaSocket = Arc<Socket<LocalAdapter>>;
 
@@ -250,7 +251,7 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
         Ok(_) => {
             println!("Successfully sent {} to {}", event, socket.sid)
         }
-        Err(_err) => {
+        Err(_) => {
             println!("Detected a closed socket: {}", socket.sid);
             // make sure locks are released before doing this
             let socket = socket.clone();
