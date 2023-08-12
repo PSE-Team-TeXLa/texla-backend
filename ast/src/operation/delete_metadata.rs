@@ -26,12 +26,10 @@ impl Operation<TexlaAst> for DeleteMetadata {
 mod tests {
     use crate::node::{NodeRef, NodeType};
     use crate::operation::delete_metadata::DeleteMetadata;
-    use crate::operation::edit_metadata::EditMetadata;
     use crate::parser::parse_latex;
     use crate::texla_ast::TexlaAst;
     use crate::uuid_provider::Uuid;
     use crate::Ast;
-    use std::collections::HashMap;
     use std::fs;
 
     #[test]
