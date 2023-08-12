@@ -58,7 +58,7 @@ mod tests {
         let subsubsection_to_be_added_raw_latex = "\\subsubsection{Subsubtitle}";
 
         let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+            fs::read_to_string("../test_resources/latex/simple_for_operation_testing.tex").unwrap();
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let subsection_uuid = find_uuid_by_content(&ast, subsection_to_be_added_to_raw_latex)

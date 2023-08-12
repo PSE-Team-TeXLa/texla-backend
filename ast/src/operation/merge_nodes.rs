@@ -73,7 +73,7 @@ mod tests {
         expected_merged_content.push_str(leaf_node_to_be_merged_content);
 
         let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+            fs::read_to_string("../test_resources/latex/simple_for_operation_testing.tex").unwrap();
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let children_count_before =

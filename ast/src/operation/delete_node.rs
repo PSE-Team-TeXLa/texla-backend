@@ -36,7 +36,7 @@ mod tests {
         let section_that_is_no_child_of_subsection_raw_latex = "\\section{Title2}";
 
         let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+            fs::read_to_string("../test_resources/latex/simple_for_operation_testing.tex").unwrap();
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let target_uuid = find_uuid_by_content(&ast, subsection_name_to_be_deleted_raw_latex)
