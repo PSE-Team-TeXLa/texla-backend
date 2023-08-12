@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Output};
+use std::sync::{Arc, Mutex};
 
 use chrono::Local;
 
@@ -31,6 +32,7 @@ impl StringOutput {
 }
 
 pub trait VcsManager: Send + Sync {
+    fn attach_handler(&mut self, ge_handler: Arc<Mutex<dyn GitErrorHandler>>);
     fn pull(&self) -> Result<(), VcsError>;
     fn commit(&self, message: Option<String>) -> Result<(), VcsError>;
     fn push(&self) -> Result<(), VcsError>;
@@ -40,6 +42,7 @@ pub struct GitManager {
     active: bool,
     main_file_directory: PathBuf,
     remote_url: Option<String>,
+    git_error_handler: Option<Arc<Mutex<dyn GitErrorHandler>>>,
 }
 
 impl GitManager {
@@ -72,6 +75,7 @@ impl GitManager {
                 active: false,
                 main_file_directory,
                 remote_url: None,
+                git_error_handler: None,
             };
         }
 
@@ -99,6 +103,7 @@ impl GitManager {
             active: true,
             main_file_directory,
             remote_url,
+            git_error_handler: None,
         }
     }
 
@@ -123,6 +128,10 @@ impl GitManager {
 }
 
 impl VcsManager for GitManager {
+    fn attach_handler(&mut self, ge_handler: Arc<Mutex<dyn GitErrorHandler>>) {
+        self.git_error_handler = Some(ge_handler);
+    }
+
     fn pull(&self) -> Result<(), VcsError> {
         if !self.active {
             return Ok(());

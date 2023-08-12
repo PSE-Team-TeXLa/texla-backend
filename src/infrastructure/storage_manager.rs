@@ -43,7 +43,6 @@ where
 {
     pub(super) vcs_manager: V,
     pub(crate) directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
-    git_error_handler: Option<Arc<Mutex<dyn GitErrorHandler>>>,
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
     main_file: String,
     pull_timer_manager: Option<PullTimerManager>,
@@ -66,7 +65,6 @@ impl TexlaStorageManager<GitManager> {
         Self {
             vcs_manager,
             directory_change_handler: None,
-            git_error_handler: None,
             main_file,
             pull_timer_manager: None,
             worksession_manager: None,
@@ -225,7 +223,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         ge_handler: Arc<Mutex<dyn GitErrorHandler>>,
     ) {
         self.directory_change_handler = Some(dc_handler);
-        self.git_error_handler = Some(ge_handler);
+        self.vcs_manager.attach_handler(ge_handler);
     }
 
     async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError> {
