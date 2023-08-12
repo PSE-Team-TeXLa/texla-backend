@@ -15,8 +15,6 @@ use crate::infrastructure::pull_timer::PullTimerManager;
 use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager, VcsManager};
 use crate::infrastructure::work_session::WorksessionManager;
 
-type TexlaFileParserResult = (String, Range<usize>, Range<usize>);
-
 /// The time notify is allowed to take for picking up our own file changes and reporting them
 const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100);
 
