@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use chrono::Local;
 
-use crate::infrastructure::errors::{InfrastructureError, VcsError};
+use crate::infrastructure::errors::VcsError;
 
 struct StringOutput {
     status: ExitStatus,
@@ -33,9 +33,9 @@ impl StringOutput {
 
 pub trait VcsManager: Send + Sync {
     fn attach_handler(&mut self, ge_handler: Arc<Mutex<dyn GitErrorHandler>>);
-    fn pull(&self) -> Result<(), VcsError>;
-    fn commit(&self, message: Option<String>) -> Result<(), VcsError>;
-    fn push(&self) -> Result<(), VcsError>;
+    fn pull(&self);
+    fn commit(&self, message: Option<String>);
+    fn push(&self);
 }
 
 pub struct GitManager {
@@ -132,9 +132,9 @@ impl VcsManager for GitManager {
         self.git_error_handler = Some(ge_handler);
     }
 
-    fn pull(&self) -> Result<(), VcsError> {
+    fn pull(&self) {
         if !self.active {
-            return Ok(());
+            return;
         }
 
         println!("Pulling...");
@@ -142,17 +142,20 @@ impl VcsManager for GitManager {
         println!("Pull over");
 
         if !pull_output.status.success() {
-            return Err(VcsError {
-                message: "unable to pull remote changes".to_string(),
-            });
+            self.git_error_handler
+                .as_ref()
+                .expect("No git error handler present")
+                .lock()
+                .unwrap()
+                .handle_git_error(VcsError {
+                    message: "unable to pull remote changes".to_string(),
+                });
         }
-
-        Ok(())
     }
 
-    fn commit(&self, custom_message: Option<String>) -> Result<(), VcsError> {
+    fn commit(&self, custom_message: Option<String>) {
         if !self.active {
-            return Ok(());
+            return;
         }
 
         let message = {
@@ -172,9 +175,14 @@ impl VcsManager for GitManager {
         println!("Commit over");
 
         if !add_output.status.success() {
-            return Err(VcsError {
-                message: "unable to add local files to staging area".to_string(),
-            });
+            self.git_error_handler
+                .as_ref()
+                .expect("No git error handler present")
+                .lock()
+                .unwrap()
+                .handle_git_error(VcsError {
+                    message: "unable to add local files to staging area".to_string(),
+                });
         }
 
         let mut command = Self::GIT_COMMIT.to_vec();
@@ -182,31 +190,37 @@ impl VcsManager for GitManager {
         let commit_output = self.git(command);
 
         if !commit_output.status.success() {
-            return Err(VcsError {
-                message: "unable to commit local changes to repository".to_string(),
-            });
+            self.git_error_handler
+                .as_ref()
+                .expect("No git error handler present")
+                .lock()
+                .unwrap()
+                .handle_git_error(VcsError {
+                    message: "unable to commit local changes to repository".to_string(),
+                });
         }
-
-        Ok(())
     }
 
-    fn push(&self) -> Result<(), VcsError> {
+    fn push(&self) {
         if !self.active {
-            return Ok(());
+            return;
         }
 
         let push_output = self.git(Self::GIT_PUSH.to_vec());
 
         if !push_output.status.success() {
-            return Err(VcsError {
-                message: "unable to push local changes".to_string(),
-            });
+            self.git_error_handler
+                .as_ref()
+                .expect("No git error handler present")
+                .lock()
+                .unwrap()
+                .handle_git_error(VcsError {
+                    message: "unable to push local changes".to_string(),
+                });
         }
-
-        Ok(())
     }
 }
 
 pub trait GitErrorHandler: Send + Sync {
-    fn handle_git_error(&self, error: InfrastructureError);
+    fn handle_git_error(&self, error: VcsError);
 }

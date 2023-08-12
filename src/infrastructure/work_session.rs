@@ -74,26 +74,10 @@ async fn end_worksession(storage_manager: &Arc<Mutex<TexlaStorageManager<GitMana
     let storage_manager = storage_manager.lock().unwrap();
     // TODO unwrap every time instead?
 
-    let commit_result = storage_manager.vcs_manager.commit(None);
-    if commit_result.is_err() {
-        // TODO in case of error, repeat commit? (*)
-    }
+    storage_manager.vcs_manager.commit(None);
+    storage_manager.vcs_manager.pull();
 
-    let pull_result = storage_manager.vcs_manager.pull();
-    if pull_result.is_err() {
-        // TODO in case of merge conflict, inform user
-        // TODO in case of other error (how to differentiate?), repeat pull only? (*)
-    }
-
-    let push_result = storage_manager.vcs_manager.push();
     println!("Pushing at end of worksession");
     // TODO: this fails most of the time (not always)
-    if push_result.is_err() {
-        println!("Push error");
-        // TODO in case of push rejection, pull and push again (*)
-        // TODO in case of other error (how to differentiate?), repeat push only? (*)
-    }
-
-    // TODO (*): inform user after several unsuccessful tries
-    //  (maximum number of repetitions stored in a constant or as CLI argument)
+    storage_manager.vcs_manager.push();
 }

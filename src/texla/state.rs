@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use ast::texla_ast::TexlaAst;
 use ast::Ast;
 
-use crate::infrastructure::errors::InfrastructureError;
+use crate::infrastructure::errors::VcsError;
 use crate::infrastructure::storage_manager::{
     DirectoryChangeHandler, StorageManager, TexlaStorageManager,
 };
@@ -45,7 +45,7 @@ impl DirectoryChangeHandler for TexlaState {
 }
 
 impl GitErrorHandler for TexlaState {
-    fn handle_git_error(&self, error: InfrastructureError) {
+    fn handle_git_error(&self, error: VcsError) {
         send(&self.socket, "error", TexlaError::from(error)).ok();
     }
 }

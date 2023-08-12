@@ -348,8 +348,8 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
         // don't call save() here since you can't quit (i.e. end the session) with unsaved changes
 
-        self.vcs_manager.commit(None)?;
-        self.vcs_manager.push()?;
+        self.vcs_manager.commit(None);
+        self.vcs_manager.push();
         self.pull_timer_manager().activate();
 
         Ok(())
