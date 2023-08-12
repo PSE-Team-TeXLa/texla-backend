@@ -121,7 +121,6 @@ impl GitManager {
         Self::git_inside_dir(args, &self.main_file_directory)
     }
 
-    // TODO after VS: is this an acceptable getter?
     pub fn remote_url(&self) -> Option<&String> {
         self.remote_url.as_ref()
     }

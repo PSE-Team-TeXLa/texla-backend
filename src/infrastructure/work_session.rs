@@ -69,7 +69,7 @@ impl WorksessionManager {
 }
 
 // TODO: this seems redundant with (use end_session instead)
-/// [crate::infrastructure::storage_manager::StorageManager::end_worksession]
+/// [crate::infrastructure::storage_manager::StorageManager::end_worksession_on_quit]
 async fn end_worksession(storage_manager: &Arc<Mutex<TexlaStorageManager<GitManager>>>) {
     let storage_manager = storage_manager.lock().unwrap();
     // TODO unwrap every time instead?

@@ -33,7 +33,7 @@ pub trait StorageManager {
         this: Arc<Mutex<Self>>,
         latex_single_string: String,
     ) -> Result<(), InfrastructureError>;
-    fn end_worksession(&mut self) -> Result<(), VcsError>;
+    fn end_worksession_on_quit(&mut self) -> Result<(), VcsError>;
     fn disassemble(&mut self);
 }
 
@@ -343,14 +343,11 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         Ok(())
     }
 
-    fn end_worksession(&mut self) -> Result<(), VcsError> {
-        // TODO after VS: stop async timer-based background tasks and stop DirectoryChangeHandler
-
+    fn end_worksession_on_quit(&mut self) -> Result<(), VcsError> {
         // don't call save() here since you can't quit (i.e. end the session) with unsaved changes
 
         self.vcs_manager.commit(None);
         self.vcs_manager.push();
-        self.pull_timer_manager().activate();
 
         Ok(())
     }

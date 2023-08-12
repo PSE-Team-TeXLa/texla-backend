@@ -138,7 +138,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
             let state_ref = extract_state(&socket);
             let state = state_ref.lock().unwrap();
             let mut storage_manager = state.storage_manager.lock().unwrap();
-            storage_manager.end_worksession()
+            storage_manager.end_worksession_on_quit()
         };
         match result {
             Ok(_) => {
@@ -269,12 +269,13 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
 
 #[cfg(test)]
 mod test {
-    use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
-    use crate::infrastructure::vcs_manager::GitManager;
+    use tokio::runtime::Runtime;
+
     use ast::options::StringificationOptions;
     use ast::Ast;
-    use std::sync::{Arc, Mutex};
-    use tokio::runtime::Runtime;
+
+    use crate::infrastructure::storage_manager::TexlaStorageManager;
+    use crate::infrastructure::vcs_manager::GitManager;
 
     #[test]
     fn pflichtenheft() {
