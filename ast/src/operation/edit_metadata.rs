@@ -26,19 +26,10 @@ impl Operation<TexlaAst> for EditMetadata {
 
 #[cfg(test)]
 mod tests {
-    use crate::node::{NodeRef, NodeType};
-    use crate::operation::edit_metadata::EditMetadata;
-    use crate::parser::parse_latex;
-    use crate::texla_ast::TexlaAst;
-    use crate::uuid_provider::Uuid;
-    use crate::Ast;
-    use std::collections::HashMap;
-    use std::fs;
-
-    use crate::operation::test::count_children_of_node;
+    use super::*;
     use crate::operation::test::find_uuid_by_content;
-    use crate::operation::test::find_uuid_by_content_recursive;
-    use crate::operation::test::get_node_and_count_children;
+    use crate::parser::parse_latex;
+    use std::fs;
 
     #[test]
     fn test_edit_metadata() {

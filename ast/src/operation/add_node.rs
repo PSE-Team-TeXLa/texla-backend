@@ -46,12 +46,10 @@ impl Operation<TexlaAst> for AddNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::add_node::AddNode;
+    use super::*;
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
-    use crate::operation::Position;
     use crate::parser::parse_latex;
-    use crate::Ast;
     use std::fs;
 
     #[test]

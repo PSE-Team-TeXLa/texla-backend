@@ -87,10 +87,8 @@ pub struct Position {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::node::{NodeRef, NodeType};
-    use crate::texla_ast::TexlaAst;
-    use crate::uuid_provider::Uuid;
-    use crate::Ast;
 
     #[test]
     fn from_json() {

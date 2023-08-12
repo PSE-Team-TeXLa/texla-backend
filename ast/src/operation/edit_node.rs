@@ -67,10 +67,9 @@ impl Operation<TexlaAst> for EditNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::edit_node::EditNode;
+    use super::*;
     use crate::operation::test::find_uuid_by_content;
     use crate::parser::parse_latex;
-    use crate::Ast;
     use std::fs;
 
     #[test]

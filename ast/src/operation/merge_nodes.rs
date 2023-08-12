@@ -57,11 +57,10 @@ impl Operation<TexlaAst> for MergeNodes {
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::merge_nodes::MergeNodes;
+    use super::*;
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
     use crate::parser::parse_latex;
-    use crate::Ast;
     use std::fs;
 
     #[test]

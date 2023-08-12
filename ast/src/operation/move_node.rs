@@ -23,12 +23,10 @@ impl Operation<TexlaAst> for MoveNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::move_node::MoveNode;
+    use super::*;
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
-    use crate::operation::Position;
     use crate::parser::parse_latex;
-    use crate::Ast;
     use std::fs;
 
     // Move "another Block of text aaa" leaf to \subsection{Subtitle} behind Something Leaf
