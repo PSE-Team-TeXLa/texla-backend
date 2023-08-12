@@ -35,8 +35,10 @@ mod tests {
     fn test_edit_metadata() {
         let section_containing_meta_data_raw_latex = "\\section{Title1}";
 
-        let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple_with_metadata.tex").unwrap();
+        let original_latex_single_string = fs::read_to_string(
+            "../test_resources/latex/latex_with_metadata/simple_with_metadata.tex",
+        )
+        .unwrap();
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let mut target_uuid = find_uuid_by_content(&ast, section_containing_meta_data_raw_latex)
