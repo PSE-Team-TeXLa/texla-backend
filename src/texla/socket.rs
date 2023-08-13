@@ -134,23 +134,18 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
 
     socket.on("quit", |socket, _: String, _, _| async move {
         println!("Ending worksession...");
-        let result = {
+        {
             let state_ref = extract_state(&socket);
             let state = state_ref.lock().unwrap();
             let mut storage_manager = state.storage_manager.lock().unwrap();
-            storage_manager.end_worksession()
+            storage_manager.end_worksession();
         };
-        match result {
-            Ok(_) => {
-                println!("Quitting...");
-                send(&socket, "quit", "ok").ok();
-                sleep(std::time::Duration::from_secs(1)).await;
-                socket.disconnect().ok();
-                exit(0);
-            }
-            Err(err) => {
-                send(&socket, "error", TexlaError::from(err)).ok();
-            }
+        {
+            println!("Quitting...");
+            send(&socket, "quit", "ok").ok();
+            sleep(std::time::Duration::from_secs(1)).await;
+            socket.disconnect().ok();
+            exit(0);
         };
     });
 
