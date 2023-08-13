@@ -10,7 +10,7 @@ use tokio::time::sleep;
 use tracing::debug;
 
 use crate::infrastructure::dir_watcher::DirectoryWatcher;
-use crate::infrastructure::errors::{InfrastructureError, VcsError};
+use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::pull_timer::PullTimerManager;
 use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager, VcsManager};
 use crate::infrastructure::work_session::WorksessionManager;
@@ -33,7 +33,7 @@ pub trait StorageManager {
         this: Arc<Mutex<Self>>,
         latex_single_string: String,
     ) -> Result<(), InfrastructureError>;
-    fn end_worksession_on_quit(&mut self) -> Result<(), VcsError>;
+    fn end_worksession(&mut self);
     fn disassemble(&mut self);
 }
 
@@ -343,13 +343,15 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         Ok(())
     }
 
-    fn end_worksession_on_quit(&mut self) -> Result<(), VcsError> {
-        // don't call save() here since you can't quit (i.e. end the session) with unsaved changes
+    fn end_worksession(&mut self) {
+        // don't call save() here since all changes are already saved at end of worksession
 
         self.vcs_manager.commit(None);
-        self.vcs_manager.push();
+        self.vcs_manager.pull();
 
-        Ok(())
+        println!("Pushing at end of worksession");
+        // TODO: this fails most of the time (not always)
+        self.vcs_manager.push();
     }
 
     fn disassemble(&mut self) {

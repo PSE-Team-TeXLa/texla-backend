@@ -133,12 +133,12 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     });
 
     socket.on("quit", |socket, _: String, _, _| async move {
-        println!("Saving Changes...");
+        println!("Ending worksession...");
         let result = {
             let state_ref = extract_state(&socket);
             let state = state_ref.lock().unwrap();
             let mut storage_manager = state.storage_manager.lock().unwrap();
-            storage_manager.end_worksession_on_quit()
+            storage_manager.end_worksession()
         };
         match result {
             Ok(_) => {
