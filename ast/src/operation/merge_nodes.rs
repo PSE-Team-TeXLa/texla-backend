@@ -57,11 +57,17 @@ impl Operation<TexlaAst> for MergeNodes {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::fs;
+
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
     use crate::parser::parse_latex;
-    use std::fs;
+
+    use super::*;
+
+    fn lf(s: String) -> String {
+        s.replace("\r\n", "\n")
+    }
 
     #[test]
     fn test_merge_nodes() {
@@ -72,8 +78,10 @@ mod tests {
         let mut expected_merged_content = String::from(subsection_first_child_content);
         expected_merged_content.push_str(leaf_node_to_be_merged_content);
 
-        let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple_for_operation_testing.tex").unwrap();
+        let original_latex_single_string = lf(fs::read_to_string(
+            "../test_resources/latex/simple_for_operation_testing.tex",
+        )
+        .unwrap());
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let children_count_before =

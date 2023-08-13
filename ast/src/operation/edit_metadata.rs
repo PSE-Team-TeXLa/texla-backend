@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use crate::Ast;
 use serde::Deserialize;
 
 use crate::errors::OperationError;
 use crate::operation::Operation;
 use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
+use crate::Ast;
 
 #[derive(Deserialize, Debug)]
 pub struct EditMetadata {
@@ -26,19 +26,25 @@ impl Operation<TexlaAst> for EditMetadata {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::fs;
+
     use crate::operation::test::find_uuid_by_content;
     use crate::parser::parse_latex;
-    use std::fs;
+
+    use super::*;
+
+    fn lf(s: String) -> String {
+        s.replace("\r\n", "\n")
+    }
 
     #[test]
     fn test_edit_metadata() {
         let section_containing_meta_data_raw_latex = "\\section{Title1}";
 
-        let original_latex_single_string = fs::read_to_string(
+        let original_latex_single_string = lf(fs::read_to_string(
             "../test_resources/latex/latex_with_metadata/simple_with_metadata.tex",
         )
-        .unwrap();
+        .unwrap());
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let mut target_uuid = find_uuid_by_content(&ast, section_containing_meta_data_raw_latex)

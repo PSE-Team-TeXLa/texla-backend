@@ -23,11 +23,17 @@ impl Operation<TexlaAst> for MoveNode {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::fs;
+
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
     use crate::parser::parse_latex;
-    use std::fs;
+
+    use super::*;
+
+    fn lf(s: String) -> String {
+        s.replace("\r\n", "\n")
+    }
 
     // Move "another Block of text aaa" leaf to \subsection{Subtitle} behind Something Leaf
 
@@ -40,7 +46,7 @@ mod tests {
         let leaf_to_be_moved_content = "Something";
 
         let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+            lf(fs::read_to_string("../test_resources/latex/simple.tex").unwrap());
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let target_uuid =
@@ -95,8 +101,10 @@ mod tests {
         let section_to_be_moved_from_content = "\\section{Title1}";
         let section_to_be_moved_to_content = "\\section{Title2}";
 
-        let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple_for_operation_testing.tex").unwrap();
+        let original_latex_single_string = lf(fs::read_to_string(
+            "../test_resources/latex/simple_for_operation_testing.tex",
+        )
+        .unwrap());
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let target_uuid =

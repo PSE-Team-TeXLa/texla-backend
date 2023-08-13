@@ -67,18 +67,26 @@ impl Operation<TexlaAst> for EditNode {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::fs;
+
     use crate::operation::test::find_uuid_by_content;
     use crate::parser::parse_latex;
-    use std::fs;
+
+    use super::*;
+
+    fn lf(s: String) -> String {
+        s.replace("\r\n", "\n")
+    }
 
     #[test]
     fn test_edit_node() {
         let original_section_raw_latex = "\\section{Title1}";
         let changed_section_raw_latex = "\\section{EditedTitle}";
 
-        let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple_for_operation_testing.tex").unwrap();
+        let original_latex_single_string = lf(fs::read_to_string(
+            "../test_resources/latex/simple_for_operation_testing.tex",
+        )
+        .unwrap());
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let mut target_uuid =

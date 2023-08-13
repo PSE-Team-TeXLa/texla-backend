@@ -46,19 +46,27 @@ impl Operation<TexlaAst> for AddNode {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::fs;
+
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
     use crate::parser::parse_latex;
-    use std::fs;
+
+    use super::*;
+
+    fn lf(s: String) -> String {
+        s.replace("\r\n", "\n")
+    }
 
     #[test]
     fn test_add_node() {
         let subsection_to_be_added_to_raw_latex = "\\subsection{Subtitle}";
         let subsubsection_to_be_added_raw_latex = "\\subsubsection{Subsubtitle}";
 
-        let original_latex_single_string =
-            fs::read_to_string("../test_resources/latex/simple_for_operation_testing.tex").unwrap();
+        let original_latex_single_string = lf(fs::read_to_string(
+            "../test_resources/latex/simple_for_operation_testing.tex",
+        )
+        .unwrap());
         let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
 
         let subsection_uuid = find_uuid_by_content(&ast, subsection_to_be_added_to_raw_latex)
