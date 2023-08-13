@@ -349,9 +349,10 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         self.vcs_manager.commit(None);
         self.vcs_manager.pull();
 
-        println!("Pushing at end of worksession");
+        println!("Pushing at end of worksession...");
         // TODO: this fails most of the time (not always)
         self.vcs_manager.push();
+        println!("Push over");
     }
 
     fn disassemble(&mut self) {
