@@ -45,7 +45,7 @@ mod tests {
             "../test_resources/latex/latex_with_metadata/simple_with_metadata.tex",
         )
         .unwrap());
-        let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
+        let mut ast = parse_latex(original_latex_single_string).expect("Valid Latex");
 
         let mut target_uuid = find_uuid_by_content(&ast, section_containing_meta_data_raw_latex)
             .expect("Failed to find");
@@ -71,13 +71,13 @@ mod tests {
         ast.execute(operation).expect("Should succeed");
         // reparse, default sets true for both comments and metadata
         let new_latex_single_string = ast.to_latex(Default::default()).unwrap();
-        ast = parse_latex(new_latex_single_string.clone()).expect("Valid Latex");
+        ast = parse_latex(new_latex_single_string).expect("Valid Latex");
 
         target_uuid = find_uuid_by_content(&ast, section_containing_meta_data_raw_latex)
             .expect("Failed to find");
 
         // Combine keys from original_meta_data and new_meta_data
-        let mut expected_meta_data = original_meta_data.clone();
+        let mut expected_meta_data = original_meta_data;
         expected_meta_data.extend(to_add_meta_data.clone());
 
         let new_meta_data = ast

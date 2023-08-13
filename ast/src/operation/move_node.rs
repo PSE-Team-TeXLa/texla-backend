@@ -47,7 +47,7 @@ mod tests {
 
         let original_latex_single_string =
             lf(fs::read_to_string("../test_resources/latex/simple.tex").unwrap());
-        let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
+        let mut ast = parse_latex(original_latex_single_string).expect("Valid Latex");
 
         let target_uuid =
             find_uuid_by_content(&ast, leaf_to_be_moved_content).expect("Failed to find");
@@ -74,7 +74,7 @@ mod tests {
         ast.execute(operation).expect("Should succeed");
         // reparse
         let new_latex_single_string = ast.to_latex(Default::default()).unwrap();
-        ast = parse_latex(new_latex_single_string.clone()).expect("Valid Latex");
+        ast = parse_latex(new_latex_single_string).expect("Valid Latex");
 
         let title1_children_count_after =
             get_node_and_count_children(&ast, section_to_be_moved_from_content);
@@ -105,7 +105,7 @@ mod tests {
             "../test_resources/latex/simple_for_operation_testing.tex",
         )
         .unwrap());
-        let mut ast = parse_latex(original_latex_single_string.clone()).expect("Valid Latex");
+        let mut ast = parse_latex(original_latex_single_string).expect("Valid Latex");
 
         let target_uuid =
             find_uuid_by_content(&ast, subsection_to_be_moved).expect("Failed to find");
@@ -132,7 +132,7 @@ mod tests {
         ast.execute(operation).expect("Should succeed");
         // reparse
         let new_latex_single_string = ast.to_latex(Default::default()).unwrap();
-        ast = parse_latex(new_latex_single_string.clone()).expect("Valid Latex");
+        ast = parse_latex(new_latex_single_string).expect("Valid Latex");
 
         let title1_children_count_after =
             get_node_and_count_children(&ast, section_to_be_moved_from_content);

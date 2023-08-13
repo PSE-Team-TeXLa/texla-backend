@@ -92,7 +92,7 @@ mod tests {
         let mut target_uuid =
             find_uuid_by_content(&ast, original_section_raw_latex).expect("Failed to find");
 
-        let node_before = ast.get_node(target_uuid).clone();
+        let node_before = ast.get_node(target_uuid);
 
         let operation = Box::new(EditNode {
             target: target_uuid,
@@ -109,7 +109,7 @@ mod tests {
         target_uuid =
             find_uuid_by_content(&ast, changed_section_raw_latex).expect("Failed to find");
 
-        let node_after = ast.get_node(target_uuid).clone();
+        let node_after = ast.get_node(target_uuid);
 
         assert_ne!(
             node_before.lock().unwrap().uuid,
