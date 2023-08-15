@@ -236,16 +236,18 @@ async fn handle_export(
         return;
     }
 
-    let new_state = extract_state(&socket).clone();
+    let state_after_export = extract_state(&socket).clone();
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
-            new_state.lock().unwrap().ast =
-                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments).unwrap();
+            state_after_export.lock().unwrap().ast =
+                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
+                    .expect("Should be valid as it comes from working ast");
             send(&socket, "export_ready", url).ok();
         }
         Err(err) => {
-            new_state.lock().unwrap().ast =
-                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments).unwrap();
+            state_after_export.lock().unwrap().ast =
+                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
+                    .expect("Should be valid as it comes from working ast");
             send(&socket, "error", TexlaError::from(err)).ok();
         }
     }
