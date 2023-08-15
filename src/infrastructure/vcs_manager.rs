@@ -141,6 +141,7 @@ impl VcsManager for GitManager {
         println!("Pull over");
 
         if !pull_output.status.success() {
+            println!("Git error (pull): {}", pull_output.stderr);
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
@@ -174,6 +175,7 @@ impl VcsManager for GitManager {
         println!("Commit over");
 
         if !add_output.status.success() {
+            println!("Git error (add): {}", add_output.stderr);
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
@@ -189,6 +191,7 @@ impl VcsManager for GitManager {
         let commit_output = self.git(command);
 
         if !commit_output.status.success() {
+            println!("Git error (commit): {}", commit_output.stderr);
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
@@ -208,6 +211,7 @@ impl VcsManager for GitManager {
         let push_output = self.git(Self::GIT_PUSH.to_vec());
 
         if !push_output.status.success() {
+            println!("Git error (push): {}", push_output.stderr);
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
