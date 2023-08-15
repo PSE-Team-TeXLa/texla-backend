@@ -224,6 +224,10 @@ async fn handle_export(
     println!("Preparing export with options: {:?}", options);
     let state = extract_state(&socket).clone();
 
+    // TODO: Missing metadata and comments on export BUG is on this line.
+    // TODO: Leave stringify_and_save and instead work on a copy.
+    let copy_latex_single_string = state.lock().unwrap().ast.to_latex(Default::default());
+
     if let Err(err) = stringify_and_save(state, options).await {
         send(&socket, "error", err).ok();
         return;
@@ -232,6 +236,10 @@ async fn handle_export(
     // TODO: save original files again
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
+            let new_state = extract_state(&socket).clone();
+            let storage_manager = new_state.lock().unwrap().storage_manager.clone();
+            let _temporary =
+                StorageManager::save(storage_manager, copy_latex_single_string.unwrap());
             send(&socket, "export_ready", url).ok();
         }
         Err(err) => {
