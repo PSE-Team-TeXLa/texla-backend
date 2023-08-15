@@ -35,11 +35,11 @@ pub(crate) fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
     })
 }
 
-const PARENTHESIS: (&'static str, &'static str) = ("(", ")");
-const SQUARE_BRACKETS: (&'static str, &'static str) = ("[", "]");
-const CURLY_BRACES: (&'static str, &'static str) = ("{", "}");
+const PARENTHESIS: (&str, &str) = ("(", ")");
+const SQUARE_BRACKETS: (&str, &str) = ("[", "]");
+const CURLY_BRACES: (&str, &str) = ("{", "}");
 
-const METADATA_MARKER: &'static str = "% TEXLA METADATA";
+const METADATA_MARKER: &str = "% TEXLA METADATA";
 
 impl LatexParser {
     // TODO Indentation Support
