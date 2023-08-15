@@ -1,5 +1,6 @@
 use std::process::exit;
 use std::sync::{Arc, Mutex, RwLock};
+use std::time::Duration;
 
 use serde::Serialize;
 use socketioxide::adapter::LocalAdapter;
@@ -21,6 +22,8 @@ use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
 use crate::texla::state::{SharedTexlaState, TexlaState};
+
+const QUIT_DELAY: Duration = Duration::from_secs(1);
 
 pub type TexlaSocket = Arc<Socket<LocalAdapter>>;
 
@@ -145,7 +148,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         };
         println!("Quitting...");
         send(&socket, "quit", "ok").ok();
-        sleep(std::time::Duration::from_secs(1)).await;
+        sleep(QUIT_DELAY).await;
         socket.disconnect().ok();
         exit(0);
     });

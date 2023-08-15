@@ -12,6 +12,7 @@ use tower_http::trace::TraceLayer;
 use crate::texla::core::TexlaCore;
 use crate::texla::socket::socket_service;
 
+const LOCALHOST_IP: [u8; 4] = [127, 0, 0, 1];
 const PORT: u16 = 13814;
 const FRONTEND_SUBDIR: &str = "frontend";
 
@@ -25,7 +26,7 @@ pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
         .layer(socket_service(core.clone()))
         .layer(Extension(core.clone()));
 
-    let res = Server::bind(&([127, 0, 0, 1], PORT).into())
+    let res = Server::bind(&(LOCALHOST_IP, PORT).into())
         .serve(app.into_make_service())
         .await;
 
