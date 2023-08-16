@@ -73,7 +73,7 @@ impl LatexParser {
         )
     }
 
-    fn build_math(&self, text: String, kind: MathKind) -> NodeRef {
+    fn build_math(&self, text: String, kind: &MathKind) -> NodeRef {
         Node::new_leaf(
             LeafData::Math {
                 kind: kind.clone(),
@@ -230,28 +230,7 @@ impl LatexParser {
     }
 
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
-        let key_value_pair = text::ident()
-            .then_ignore(just(":"))
-            // TODO: this prevents leading or trailing spaces in values. Do we want that?
-            .then(text::ident().padded())
-            .map(|(key, value)| (key, value))
-            .boxed();
-
-        let metadata = just("% TEXLA METADATA")
-            .padded()
-            .ignore_then(
-                key_value_pair
-                    .separated_by(just(","))
-                    .allow_trailing()
-                    .delimited_by(just("("), just(")")),
-            )
-            .padded()
-            .or_not()
-            .map(|option| match option {
-                Some(pairs) => pairs.into_iter().collect::<HashMap<String, String>>(),
-                None => HashMap::new(),
-            })
-            .boxed();
+        let metadata = Self::metadata();
 
         let comment = metadata
             .clone()
@@ -265,10 +244,10 @@ impl LatexParser {
                 if string.starts_with("TEXLA") {
                     Err(Simple::custom(
                         span,
-                        "found TEXLA Metadata instead of regular Comment",
+                        "found TeXLa metadata instead of regular comment",
                     ))
                 } else {
-                    Ok(self.build_comment(comment.iter().collect(), metadata))
+                    Ok(self.build_comment(string, metadata))
                 }
             })
             .padded()
@@ -299,25 +278,15 @@ impl LatexParser {
             })
             .boxed();
 
-        let math_double_dollars = take_until(just("$$").rewind())
-            .delimited_by(just("$$"), just("$$"))
-            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::DoubleDollars))
-            .boxed();
-
-        let math_square_brackets = take_until(just("\\]").rewind())
-            .delimited_by(just("\\["), just("\\]"))
-            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::SquareBrackets))
-            .boxed();
-
-        let math_equation = take_until(just("\\end{equation}").rewind())
-            .delimited_by(just("\\begin{equation}"), just("\\end{equation}"))
-            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::Equation))
-            .boxed();
-
-        let math_displaymath = take_until(just("\\end{displaymath}").rewind())
-            .delimited_by(just("\\begin{displaymath}"), just("\\end{displaymath}"))
-            .map(|(inner, _)| self.build_math(inner.iter().collect(), MathKind::Displaymath))
-            .boxed();
+        let math_double_dollars = self.math_delimited_by("$$", "$$", MathKind::DoubleDollars);
+        let math_square_brackets = self.math_delimited_by("\\[", "\\]", MathKind::SquareBrackets);
+        let math_equation =
+            self.math_delimited_by("\\begin{equation}", "\\end{equation}", MathKind::Equation);
+        let math_displaymath = self.math_delimited_by(
+            "\\begin{displaymath}",
+            "\\end{displaymath}",
+            MathKind::Displaymath,
+        );
 
         let math = choice((
             math_double_dollars,
@@ -454,7 +423,8 @@ impl LatexParser {
             .map(|(preamble, _)| preamble.iter().collect())
             .boxed();
 
-        let document = preamble
+        // document parser
+        preamble
             .clone()
             .or_not()
             .then(metadata.clone())
@@ -473,11 +443,22 @@ impl LatexParser {
                 )
             })
             .then_ignore(end().padded())
-            .boxed();
-        document
+            .boxed()
     }
 
-    fn metadata() -> impl Parser<char, HashMap<String, String>, Error = Simple<char>> + 'static {
+    fn math_delimited_by<'a>(
+        &'a self,
+        begin: &'a str,
+        end: &'a str,
+        kind: MathKind,
+    ) -> BoxedParser<'a, char, NodeRef, Simple<char>> {
+        take_until(just(end).rewind())
+            .delimited_by(just(begin), just(end))
+            .map(move |(inner, _)| self.build_math(inner.iter().collect(), &kind))
+            .boxed()
+    }
+
+    fn metadata() -> BoxedParser<'static, char, HashMap<String, String>, Simple<char>> {
         let key_value_pair = text::ident()
             .then_ignore(just(":"))
             // TODO: this prevents leading or trailing spaces in values. Do we want that?
@@ -562,6 +543,7 @@ impl LatexParser {
                             Err(Simple::custom(
                                 span,
                                 format!(
+                                    // TODO change error message
                                     "File opened: {path} but not closing tag was for {path_end}"
                                 ),
                             ))
