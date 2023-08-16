@@ -8,6 +8,7 @@ use crate::errors::StringificationError;
 use crate::latex_constants::*;
 use crate::meta_data::MetaData;
 use crate::options::StringificationOptions;
+use crate::texla_constants::*;
 use crate::uuid_provider::{Uuid, UuidProvider};
 
 pub(crate) type NodeRef = Arc<Mutex<Node>>;
@@ -133,7 +134,7 @@ impl NodeType {
                             false => String::from(UNCOUNTED_SEGMENT_MARKER),
                             true => String::new(),
                         };
-                        let keyword = LEVELS
+                        let keyword = SEGMENT_LEVELS
                             .iter()
                             .find(|(lvl, _)| *lvl == level)
                             .map(|(_, keyword)| keyword)
@@ -154,7 +155,7 @@ impl NodeType {
                         let children = self.children_to_latex(level, options)?; //Dont increase the
                                                                                 // nesting level since file is not in hierarchy
                         Ok(format!(
-                            "% TEXLA FILE BEGIN {{{path}}}\n{children}% TEXLA FILE END {{{path}}}\n"
+                            "{FILE_BEGIN_MARK}{{{path}}}\n{children}{FILE_END_MARK}{{{path}}}\n"
                         ))
                     }
                     ExpandableData::Environment { name } => {

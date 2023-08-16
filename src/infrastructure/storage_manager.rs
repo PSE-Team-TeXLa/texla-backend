@@ -9,6 +9,9 @@ use chumsky::prelude::*;
 use tokio::time::sleep;
 use tracing::debug;
 
+use ast::latex_constants::*;
+use ast::texla_constants::*;
+
 use crate::infrastructure::dir_watcher::DirectoryWatcher;
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::pull_timer::PullTimerManager;
@@ -57,10 +60,6 @@ where
 impl TexlaStorageManager<GitManager> {
     const LATEX_FILE_EXTENSION: &'static str = "tex";
     const LATEX_PATH_SEPARATOR: &'static str = "/";
-    // TODO: shouldn't these start with a newline?
-    const FILE_BEGIN_MARK: &'static str = "% TEXLA FILE BEGIN ";
-    const FILE_END_MARK: &'static str = "% TEXLA FILE END ";
-    const INPUT_COMMAND: &'static str = "\\input";
 
     pub fn new(
         vcs_manager: GitManager,
@@ -112,9 +111,9 @@ impl TexlaStorageManager<GitManager> {
     }
 
     fn latex_input_parser() -> BoxedParser<'static, char, (String, Range<usize>), Simple<char>> {
-        take_until(just::<_, _, Simple<char>>(Self::INPUT_COMMAND))
+        take_until(just::<_, _, Simple<char>>(INPUT))
             .map_with_span(|_, span| -> usize {
-                span.end() - Self::char_len(Self::INPUT_COMMAND) // = input_start
+                span.end() - Self::char_len(INPUT) // = input_start
             })
             // TODO allow white spaces (but no newlines?) around curly braces?
             .then(Self::curly_braces_parser())
@@ -125,20 +124,20 @@ impl TexlaStorageManager<GitManager> {
     }
 
     fn find_texla_file_marks(string: &str) -> Option<(String, Range<usize>, Range<usize>)> {
-        let end_start = string.find(Self::FILE_END_MARK)?;
+        let end_start = string.find(FILE_END_MARK)?;
         let (path, end_end) = {
-            let string = &string[end_start + Self::FILE_END_MARK.len()..];
+            let string = &string[end_start + FILE_END_MARK.len()..];
             let brace_open = string.find('{')?;
             let brace_close = string[brace_open..].find('}')?;
             let path = string[brace_open..][1..brace_close].to_string();
             (
                 path,
-                end_start + Self::FILE_END_MARK.len() + brace_open + brace_close + 1,
+                end_start + FILE_END_MARK.len() + brace_open + brace_close + 1,
             )
         };
 
         // TODO: this is strict but above is not (e.g. whitespace between MARK and braces)
-        let begin_mark = format!("{}{{{}}}", Self::FILE_BEGIN_MARK, path);
+        let begin_mark = format!("{}{{{}}}", FILE_BEGIN_MARK, path);
         let begin_start = string[..end_start].rfind(&begin_mark)?;
         let begin_end = begin_start + begin_mark.len();
 
@@ -282,11 +281,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
                 path_byte_range,
                 &format!(
                     "{}{{{}}}\n{}\n{}{{{}}}",
-                    Self::FILE_BEGIN_MARK,
-                    path_str,
-                    input_text,
-                    Self::FILE_END_MARK,
-                    path_str
+                    FILE_BEGIN_MARK, path_str, input_text, FILE_END_MARK, path_str
                 ),
             );
         }
@@ -332,11 +327,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
                 // replace '% TEXLA FILE BEGIN ... % TEXLA FILE END' in string with '\input{...}'
                 latex_single_string.replace_range(
                     input_byte_range,
-                    &format!(
-                        "{}{{{}}}",
-                        Self::INPUT_COMMAND,
-                        path_rel_latex.to_str().unwrap()
-                    ),
+                    &format!("{}{{{}}}", INPUT, path_rel_latex.to_str().unwrap()),
                 )
             }
 

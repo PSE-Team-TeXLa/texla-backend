@@ -10,7 +10,14 @@ use crate::errors::ParseError;
 use crate::latex_constants::*;
 use crate::node::{ExpandableData, LeafData, MathKind, Node, NodeRef, NodeRefWeak};
 use crate::texla_ast::TexlaAst;
+use crate::texla_constants::*;
 use crate::uuid_provider::{TexlaUuidProvider, Uuid};
+
+const PARENTHESIS: (&str, &str) = ("(", ")");
+const SQUARE_BRACKETS: (&str, &str) = ("[", "]");
+const CURLY_BRACES: (&str, &str) = ("{", "}");
+
+const METADATA_MARKER: &str = "% TEXLA METADATA";
 
 type NodeParser<'a> = BoxedParser<'a, char, NodeRef, Simple<char>>;
 type NodesParser<'a> = BoxedParser<'a, char, Vec<NodeRef>, Simple<char>>;
@@ -34,12 +41,6 @@ pub(crate) fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
         highest_level,
     })
 }
-
-const PARENTHESIS: (&str, &str) = ("(", ")");
-const SQUARE_BRACKETS: (&str, &str) = ("[", "]");
-const CURLY_BRACES: (&str, &str) = ("{", "}");
-
-const METADATA_MARKER: &str = "% TEXLA METADATA";
 
 impl LatexParser {
     // TODO Indentation Support
@@ -159,8 +160,8 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             format!(
-                "% TEXLA FILE BEGIN {{{}}}\n...\n% TEXLA FILE END {{{}}}",
-                &path, &path
+                "{}{{{}}}\n...\n{}{{{}}}",
+                FILE_BEGIN_MARK, &path, FILE_END_MARK, &path
             ),
             metadata,
         )
@@ -423,7 +424,7 @@ impl LatexParser {
 
         let mut segment_in_inputs_parsers = vec![subparagraphs_in_inputs];
 
-        LEVELS
+        SEGMENT_LEVELS
             .iter()
             .rev()
             .enumerate()
@@ -543,11 +544,11 @@ impl LatexParser {
     ) -> BoxedParser<'a, char, NodeRef, Simple<char>> {
         recursive(|things_in_inputs| {
             Self::metadata()
-                .then_ignore(just("% TEXLA FILE BEGIN"))
+                .then_ignore(just(FILE_BEGIN_MARK))
                 .then(Self::argument_surrounded_by(CURLY_BRACES).padded())
                 .then(prelude.repeated())
                 .then(things_in_inputs.or(thing.clone()).repeated())
-                .then_ignore(just("% TEXLA FILE END").padded())
+                .then_ignore(just(FILE_END_MARK).padded())
                 .then(Self::argument_surrounded_by(CURLY_BRACES).padded())
                 .try_map(
                     |((((metadata, path), mut prelude), mut children), path_end), span| {
@@ -584,7 +585,7 @@ impl LatexParser {
 
     fn segment_command_parser() -> impl Parser<char, i8, Error = Simple<char>> + 'static {
         // TODO find way to ignore \sectioning (use keyword?)
-        choice(LEVELS.map(|(level, keyword)| {
+        choice(SEGMENT_LEVELS.map(|(level, keyword)| {
             just::<char, &str, Simple<char>>("\\")
                 .ignore_then(just(keyword))
                 .to(level)
