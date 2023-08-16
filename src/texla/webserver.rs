@@ -12,7 +12,7 @@ use tower_http::trace::TraceLayer;
 use crate::texla::core::TexlaCore;
 use crate::texla::socket::socket_service;
 
-const PORT: u16 = 13814;
+pub const PORT: u16 = 13814;
 const FRONTEND_SUBDIR: &str = "frontend";
 
 pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {

@@ -5,7 +5,7 @@ use clap::Parser;
 
 use crate::infrastructure::export_manager::TexlaExportManager;
 use crate::texla::core::TexlaCore;
-use crate::texla::webserver::start_axum;
+use crate::texla::webserver::{start_axum, PORT};
 
 #[derive(Parser, Debug)]
 struct CliArguments {
@@ -39,6 +39,11 @@ pub async fn start() {
     };
 
     let core = Arc::new(RwLock::new(core));
+
+    if let Err(err) = open::that(format!("http://localhost:{}/", PORT)) {
+        println!("Could not open browser: {}", err);
+        println!("Please open http://localhost:{}/ manually", PORT);
+    }
 
     start_axum(core).await;
 }
