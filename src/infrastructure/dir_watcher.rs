@@ -13,7 +13,7 @@ use crate::infrastructure::storage_manager::TexlaStorageManager;
 use crate::infrastructure::vcs_manager::GitManager;
 
 /// The time we wait for file changes to settle before notifying the frontend
-const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(100);
+const DIRECTORY_WATCHER_DEBOUNCE_DELAY: Duration = Duration::from_millis(100); // TODO use CLI argument?
 
 pub(crate) struct DirectoryWatcher {
     path: PathBuf,

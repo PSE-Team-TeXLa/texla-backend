@@ -23,7 +23,7 @@ use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
 use crate::texla::state::{SharedTexlaState, TexlaState};
 
-const QUIT_DELAY: Duration = Duration::from_secs(1);
+const QUIT_DELAY: Duration = Duration::from_secs(1); // TODO use CLI argument?
 
 pub type TexlaSocket = Arc<Socket<LocalAdapter>>;
 
@@ -49,7 +49,12 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         let core = core.read().unwrap();
 
         let vcs_manager = GitManager::new(core.main_file.clone());
-        TexlaStorageManager::new(vcs_manager, core.main_file.clone())
+        TexlaStorageManager::new(
+            vcs_manager,
+            core.main_file.clone(),
+            core.pull_interval,
+            core.worksession_interval,
+        )
     };
 
     let ast = match parse_ast_from_disk(&storage_manager) {
@@ -280,7 +285,7 @@ mod test {
     fn pflichtenheft() {
         let file = "test_resources/latex/pflichtenheft/main.tex".to_string();
         // TODO replace separator?
-        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
+        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file, 500, 5000);
         assert!(super::parse_ast_from_disk(&sm).is_ok());
     }
 
@@ -288,7 +293,7 @@ mod test {
     fn pflichtenheft_read_save() {
         let file = "test_resources/latex/pflichtenheft/main.tex".to_string();
         // TODO replace separator?
-        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
+        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file, 500, 5000);
         let ast = super::parse_ast_from_disk(&sm);
         let ast = ast.unwrap();
 

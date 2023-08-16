@@ -16,7 +16,7 @@ use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager, VcsManager
 use crate::infrastructure::work_session::WorksessionManager;
 
 /// The time notify is allowed to take for picking up our own file changes and reporting them
-const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100);
+const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100); // TODO use CLI argument?
 
 #[async_trait]
 pub trait StorageManager {
@@ -46,7 +46,9 @@ where
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
     main_file: String,
     pull_timer_manager: Option<PullTimerManager>,
+    pub(crate) pull_interval: u64,
     worksession_manager: Option<WorksessionManager>,
+    pub(crate) worksession_interval: u64,
     dir_watcher: Option<DirectoryWatcher>,
     // TODO: this may become redundant with the pull_timer being active or not
     pub(crate) writing: bool,
@@ -60,14 +62,21 @@ impl TexlaStorageManager<GitManager> {
     const FILE_END_MARK: &'static str = "% TEXLA FILE END ";
     const INPUT_COMMAND: &'static str = "\\input";
 
-    pub fn new(vcs_manager: GitManager, main_file: String) -> Self {
+    pub fn new(
+        vcs_manager: GitManager,
+        main_file: String,
+        pull_interval: u64,
+        worksession_interval: u64,
+    ) -> Self {
         // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
         Self {
             vcs_manager,
             directory_change_handler: None,
             main_file,
             pull_timer_manager: None,
+            pull_interval,
             worksession_manager: None,
+            worksession_interval,
             dir_watcher: None,
             writing: false,
         }
@@ -230,7 +239,10 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         let directory_watcher = DirectoryWatcher::new(this.clone())?;
         let mut sm = this.lock().unwrap();
         sm.pull_timer_manager = Some(PullTimerManager::new(this.clone()));
-        sm.worksession_manager = Some(WorksessionManager::new(this.clone()));
+        sm.worksession_manager = Some(WorksessionManager::new(
+            this.clone(),
+            sm.worksession_interval,
+        ));
         sm.dir_watcher = Some(directory_watcher);
 
         sm.pull_timer_manager().activate();
@@ -386,7 +398,7 @@ mod tests {
         let main_file = "test_resources/latex/with_inputs.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
@@ -399,7 +411,7 @@ mod tests {
         let main_file = "test_resources/latex/with_inputs_huge.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
@@ -417,13 +429,18 @@ mod tests {
         let main_file = "test_resources/latex/out/with_inputs.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let worksession_interval = 5000;
+        let storage_manager =
+            TexlaStorageManager::new(vcs_manager, main_file, 500, worksession_interval);
         let shared = Arc::new(Mutex::new(storage_manager));
         let latex_single_string =
             lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap());
 
         shared.lock().unwrap().pull_timer_manager = Some(PullTimerManager::new(shared.clone()));
-        shared.lock().unwrap().worksession_manager = Some(WorksessionManager::new(shared.clone()));
+        shared.lock().unwrap().worksession_manager = Some(WorksessionManager::new(
+            shared.clone(),
+            worksession_interval,
+        ));
 
         // this is needed, because we use some blocking calls and you cannot block the main thread
         tokio::spawn(async move {

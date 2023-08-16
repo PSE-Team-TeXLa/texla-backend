@@ -12,7 +12,6 @@ struct CliArguments {
     #[arg(short, long)]
     main_file: String,
 
-    // TODO how do we pass the following values to TexlaStorageManager?
     #[arg(short, long, default_value = "500")] // in milliseconds
     pull_interval: u64,
 
@@ -33,12 +32,12 @@ pub async fn start() {
 
     println!("Opening file: {}", main_file);
 
-    let core = TexlaCore {
+    let core = Arc::new(RwLock::new(TexlaCore {
         export_manager: TexlaExportManager::new(main_file.clone()),
         main_file,
-    };
-
-    let core = Arc::new(RwLock::new(core));
+        pull_interval: args.pull_interval,
+        worksession_interval: args.worksession_interval,
+    }));
 
     start_axum(core).await;
 }

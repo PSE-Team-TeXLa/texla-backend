@@ -11,10 +11,10 @@ use tokio_stream::wrappers::ReceiverStream;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 
-const WORKSESSION_LENGTH: Duration = Duration::from_secs(5);
+const WORKSESSION_EVENT_BUFFER_SIZE: usize = 10; // TODO use CLI argument?
 
 pub(crate) enum WorksessionMessage {
-    /// Keep the worksession alive for another [WorksessionManager::WORKSESSION_LENGTH]
+    /// Keep the worksession alive for another worksession interval
     Uphold,
     /// Keep the worksession alive indefinitely
     Pause,
@@ -25,20 +25,21 @@ pub(crate) struct WorksessionManager {
     join_handle: JoinHandle<()>,
 }
 
-const WORKSESSION_EVENT_BUFFER_SIZE: usize = 10;
-
 impl WorksessionManager {
-    pub(crate) fn new(storage_manager: Arc<Mutex<TexlaStorageManager<GitManager>>>) -> Self {
+    pub(crate) fn new(
+        storage_manager: Arc<Mutex<TexlaStorageManager<GitManager>>>,
+        worksession_interval: u64,
+    ) -> Self {
         let (tx, rx) = channel(WORKSESSION_EVENT_BUFFER_SIZE);
         let stream = ReceiverStream::new(rx);
-        let mut debounced = debounced(stream, WORKSESSION_LENGTH);
+        let mut debounced = debounced(stream, Duration::from_millis(worksession_interval));
 
         let join_handle = tokio::spawn(async move {
             while let Some(msg) = debounced.next().await {
                 match msg {
                     WorksessionMessage::Uphold => storage_manager.lock().unwrap().end_worksession(),
                     WorksessionMessage::Pause => {
-                        // nothing happened in the last WORKSESSION_LENGTH and the last message
+                        // nothing happened in the last worksession interval and the last message
                         // was Pause => do not stop the worksession
                     }
                 }
