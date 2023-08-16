@@ -224,17 +224,30 @@ async fn handle_export(
     println!("Preparing export with options: {:?}", options);
     let state = extract_state(&socket).clone();
 
+    let latex_single_string_with_metadata_and_comments = state
+        .lock()
+        .unwrap()
+        .ast
+        .to_latex(Default::default())
+        .unwrap();
+
     if let Err(err) = stringify_and_save(state, options).await {
         send(&socket, "error", err).ok();
         return;
     }
 
-    // TODO: save original files again
+    let state_after_export = extract_state(&socket).clone();
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
+            state_after_export.lock().unwrap().ast =
+                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
+                    .expect("Should be valid as it comes from working ast");
             send(&socket, "export_ready", url).ok();
         }
         Err(err) => {
+            state_after_export.lock().unwrap().ast =
+                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
+                    .expect("Should be valid as it comes from working ast");
             send(&socket, "error", TexlaError::from(err)).ok();
         }
     }
