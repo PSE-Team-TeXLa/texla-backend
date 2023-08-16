@@ -139,7 +139,7 @@ impl NodeType {
                             .find(|(lvl, _)| *lvl == level)
                             .map(|(_, keyword)| keyword)
                             .ok_or(StringificationError {
-                                message: format!("Invalid nesting level: {}", level),
+                                message: format!("Invalid nesting level: {level}"),
                             })?;
                         Ok(format!("\\{keyword}{count}{{{heading}}}\n{children}"))
                     }
@@ -148,8 +148,10 @@ impl NodeType {
                         postamble,
                     } => {
                         let children = self.children_to_latex(level, options)?;
-                        Ok(format!("{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"
-                    ))
+                        Ok(format!(
+                            "{preamble}\\begin{{document}}\n{children}\\end{{document}}\n\
+                            {postamble}"
+                        ))
                     }
                     ExpandableData::File { path } => {
                         let children = self.children_to_latex(level, options)?; //Dont increase the

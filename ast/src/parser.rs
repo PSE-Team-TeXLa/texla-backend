@@ -64,11 +64,11 @@ impl LatexParser {
     fn build_comment(&self, comment: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Comment {
-                comment: format!("% {}", comment.clone()),
+                comment: format!("% {comment}"),
             },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("% {}", comment.clone()),
+            format!("% {comment}"),
             metadata,
         )
     }
@@ -83,16 +83,16 @@ impl LatexParser {
             self.portal.borrow_mut().deref_mut(),
             match kind {
                 MathKind::SquareBrackets => {
-                    format!("\\[{}\\]", text.clone())
+                    format!("\\[{text}\\]")
                 }
                 MathKind::DoubleDollars => {
-                    format!("$${}$$", text.clone())
+                    format!("$${text}$$")
                 }
                 MathKind::Displaymath => {
-                    format!("\\begin{{displaymath}}{}\\end{{displaymath}}", text.clone())
+                    format!("\\begin{{displaymath}}{text}\\end{{displaymath}}")
                 }
                 MathKind::Equation => {
-                    format!("\\begin{{equation}}{}\\end{{equation}}", text.clone())
+                    format!("\\begin{{equation}}{text}\\end{{equation}}")
                 }
             },
             Default::default(),
@@ -159,10 +159,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!(
-                "{}{{{}}}\n...\n{}{{{}}}",
-                FILE_BEGIN_MARK, &path, FILE_END_MARK, &path
-            ),
+            format!("{FILE_BEGIN_MARK}{{{path}}}\n...\n{FILE_END_MARK}{{{path}}}"),
             metadata,
         )
     }
@@ -178,7 +175,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\begin{{{}}}\n...\n\\end{{{}}}", name.clone(), name),
+            format!("\\begin{{{name}}}\n...\n\\end{{{name}}}"),
             metadata,
         )
     }
