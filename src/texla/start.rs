@@ -43,6 +43,8 @@ pub async fn start() {
     if let Err(err) = open::that(format!("http://localhost:{}/", PORT)) {
         println!("Could not open browser: {}", err);
         println!("Please open http://localhost:{}/ manually", PORT);
+    } else {
+        println!("Opened TeXLa at http://localhost:{}/", PORT);
     }
 
     start_axum(core).await;
