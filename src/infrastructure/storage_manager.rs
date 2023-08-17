@@ -352,7 +352,6 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         self.vcs_manager.pull();
 
         println!("Pushing at end of worksession...");
-        // TODO: this fails most of the time (not always)
         self.vcs_manager.push();
         println!("Push over");
     }
