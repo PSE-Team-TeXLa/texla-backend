@@ -14,6 +14,7 @@ use ast::texla_constants::*;
 
 use crate::infrastructure::dir_watcher::DirectoryWatcher;
 use crate::infrastructure::errors::InfrastructureError;
+use crate::infrastructure::file_path::FilePath;
 use crate::infrastructure::pull_timer::PullTimerManager;
 use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager, VcsManager};
 use crate::infrastructure::work_session::WorksessionManager;
@@ -46,8 +47,7 @@ where
 {
     pub(super) vcs_manager: V,
     pub(crate) directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
-    // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
-    main_file: String,
+    main_file: FilePath,
     pull_timer_manager: Option<PullTimerManager>,
     pub(crate) pull_interval: u64,
     worksession_manager: Option<WorksessionManager>,
@@ -63,11 +63,10 @@ impl TexlaStorageManager<GitManager> {
 
     pub fn new(
         vcs_manager: GitManager,
-        main_file: String,
+        main_file: FilePath,
         pull_interval: u64,
         worksession_interval: u64,
     ) -> Self {
-        // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
         Self {
             vcs_manager,
             directory_change_handler: None,
@@ -158,23 +157,21 @@ impl TexlaStorageManager<GitManager> {
         .with_extension(Self::LATEX_FILE_EXTENSION);
 
         // get relative and absolute path
-        let main_file_directory = PathBuf::from(&self.main_file)
-            .parent()
-            .expect("Could not find parent directory")
-            .to_path_buf();
         let path_abs_os; // absolute path, platform-dependent slashes
         let path_rel; // relative path, converted to path_rel_latex with forward slashes
 
         if path.is_relative() {
             path_rel = path.clone();
-            path_abs_os = main_file_directory
+            path_abs_os = self
+                .main_file
+                .directory
                 .canonicalize()
                 .expect("Could not create absolute path")
                 .join(path);
         } else {
             path_abs_os = path.clone();
             path_rel = path
-                .strip_prefix(main_file_directory)
+                .strip_prefix(&self.main_file.directory)
                 .expect("Could not create relative path")
                 .to_path_buf();
             // TODO also support paths that are no child of 'main_file_directory'?
@@ -196,14 +193,6 @@ impl TexlaStorageManager<GitManager> {
         };
 
         (path_abs_os, path_rel_latex)
-    }
-
-    // TODO: use this everywhere. Maybe make it even more global
-    pub(crate) fn main_file_directory(&self) -> PathBuf {
-        PathBuf::from(&self.main_file)
-            .parent()
-            .expect("Could not find parent directory")
-            .to_path_buf()
     }
 
     fn pull_timer_manager(&mut self) -> &mut PullTimerManager {
@@ -235,8 +224,9 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError> {
-        let directory_watcher = DirectoryWatcher::new(this.clone())?;
         let mut sm = this.lock().unwrap();
+        let directory_watcher =
+            DirectoryWatcher::new(sm.main_file.directory.clone(), this.clone())?;
         sm.pull_timer_manager = Some(PullTimerManager::new(this.clone()));
         sm.worksession_manager = Some(WorksessionManager::new(
             this.clone(),
@@ -256,7 +246,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     fn multiplex_files(&self) -> Result<String, InfrastructureError> {
         let parser = Self::latex_input_parser();
         let mut latex_single_string =
-            fs::read_to_string(&self.main_file).expect("Could not read file");
+            fs::read_to_string(&self.main_file.path).expect("Could not read file");
 
         loop {
             // TODO use regex instead of chumsky to search inputs
@@ -330,7 +320,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
                 )
             }
 
-            fs::write(&this.lock().unwrap().main_file.clone(), latex_single_string)
+            fs::write(&this.lock().unwrap().main_file.path, latex_single_string)
                 .expect("Could not write file");
         }
 
@@ -373,6 +363,7 @@ mod tests {
     use std::fs;
     use std::sync::{Arc, Mutex};
 
+    use crate::infrastructure::file_path::FilePath;
     use crate::infrastructure::pull_timer::PullTimerManager;
     use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
@@ -384,9 +375,8 @@ mod tests {
 
     #[test]
     fn multiplex_files() {
-        let main_file = "test_resources/latex/with_inputs.tex".to_string();
-        // TODO replace separator?
-        let vcs_manager = GitManager::new(main_file.clone());
+        let main_file = FilePath::from("test_resources/latex/with_inputs.tex");
+        let vcs_manager = GitManager::new(main_file.directory.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
 
         assert_eq!(
@@ -397,9 +387,8 @@ mod tests {
 
     #[test]
     fn multiplex_files_huge() {
-        let main_file = "test_resources/latex/with_inputs_huge.tex".to_string();
-        // TODO replace separator?
-        let vcs_manager = GitManager::new(main_file.clone());
+        let main_file = FilePath::from("test_resources/latex/with_inputs_huge.tex");
+        let vcs_manager = GitManager::new(main_file.directory.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
 
         assert_eq!(
@@ -415,9 +404,8 @@ mod tests {
         fs::create_dir_all("test_resources/latex/out/sections/section2")
             .expect("Could not create directory");
 
-        let main_file = "test_resources/latex/out/with_inputs.tex".to_string();
-        // TODO replace separator?
-        let vcs_manager = GitManager::new(main_file.clone());
+        let main_file = FilePath::from("test_resources/latex/out/with_inputs.tex");
+        let vcs_manager = GitManager::new(main_file.directory.clone());
         let worksession_interval = 5000;
         let storage_manager =
             TexlaStorageManager::new(vcs_manager, main_file, 500, worksession_interval);

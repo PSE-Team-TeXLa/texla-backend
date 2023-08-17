@@ -60,21 +60,12 @@ async fn user_assets_handler(
 ) -> Result<impl IntoResponse, StatusCode> {
     println!("Serving user asset: {path}");
 
-    let main_file_directory = {
-        let main_file = &core.read().unwrap().main_file;
-        let main_file_path = PathBuf::from(main_file)
-            .canonicalize()
-            .expect("Could not find main file directory");
-        main_file_path
-            .parent()
-            .expect("main_file cannot be a root directory")
-            .to_path_buf()
-    };
-
+    let main_file_directory = core.read().unwrap().main_file.directory.clone();
     let file = match tokio::fs::File::open(main_file_directory.join(&path)).await {
         Ok(file) => file,
         Err(_) => return Err(StatusCode::IM_A_TEAPOT),
     };
+
     // convert the `AsyncRead` into a `Stream`
     let stream = tokio_util::io::ReaderStream::new(file);
     // convert the `Stream` into an `axum::body::HttpBody`

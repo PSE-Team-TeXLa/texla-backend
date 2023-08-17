@@ -59,13 +59,8 @@ impl GitManager {
     const GIT_COMMIT: [&'static str; 2] = ["commit", "--message"];
     const GIT_PUSH: [&'static str; 1] = ["push"];
 
-    pub fn new(main_file: String) -> Self {
-        let main_file_directory = PathBuf::from(main_file)
-            .parent()
-            .expect("Could not find parent directory")
-            .to_path_buf();
-
-        // check if main file is inside a git repository
+    pub fn new(main_file_directory: PathBuf) -> Self {
+        // check if main file directory is part of a git repository
         let inside_work_tree =
             Self::git_inside_dir(Self::GIT_IS_INSIDE_WORK_TREE.to_vec(), &main_file_directory)
                 .stdout;

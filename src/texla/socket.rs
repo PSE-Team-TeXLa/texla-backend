@@ -48,7 +48,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     let storage_manager = {
         let core = core.read().unwrap();
 
-        let vcs_manager = GitManager::new(core.main_file.clone());
+        let vcs_manager = GitManager::new(core.main_file.directory.clone());
         TexlaStorageManager::new(
             vcs_manager,
             core.main_file.clone(),
@@ -290,22 +290,31 @@ mod test {
     use ast::options::StringificationOptions;
     use ast::Ast;
 
+    use crate::infrastructure::file_path::FilePath;
     use crate::infrastructure::storage_manager::TexlaStorageManager;
     use crate::infrastructure::vcs_manager::GitManager;
 
     #[test]
     fn pflichtenheft() {
-        let file = "test_resources/latex/pflichtenheft/main.tex".to_string();
-        // TODO replace separator?
-        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file, 500, 5000);
+        let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
+        let sm = TexlaStorageManager::new(
+            GitManager::new(main_file.directory.clone()),
+            main_file,
+            500,
+            5000,
+        );
         assert!(super::parse_ast_from_disk(&sm).is_ok());
     }
 
     #[test]
     fn pflichtenheft_read_save() {
-        let file = "test_resources/latex/pflichtenheft/main.tex".to_string();
-        // TODO replace separator?
-        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file, 500, 5000);
+        let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
+        let sm = TexlaStorageManager::new(
+            GitManager::new(main_file.directory.clone()),
+            main_file,
+            500,
+            5000,
+        );
         let ast = super::parse_ast_from_disk(&sm);
         let ast = ast.unwrap();
 

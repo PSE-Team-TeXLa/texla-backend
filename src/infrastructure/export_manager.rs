@@ -12,23 +12,20 @@ pub trait ExportManager {
 }
 
 pub struct TexlaExportManager {
-    main_file: String,
+    main_file_directory: PathBuf,
 }
 
 impl TexlaExportManager {
-    pub fn new(main_file: String) -> Self {
-        Self { main_file }
+    pub fn new(main_file_directory: PathBuf) -> Self {
+        Self {
+            main_file_directory,
+        }
     }
 }
 
 impl ExportManager for TexlaExportManager {
     fn zip_files(&mut self) -> Result<String, InfrastructureError> {
-        let main_file_directory = PathBuf::from(&self.main_file)
-            .parent()
-            .expect("Could not find parent directory")
-            .to_path_buf();
-
-        let file = File::create(main_file_directory.join("export.zip"))?;
+        let file = File::create(self.main_file_directory.join("export.zip"))?;
 
         let option = FileOptions::default()
             .compression_method(Deflated) // default zip method.
@@ -36,14 +33,14 @@ impl ExportManager for TexlaExportManager {
 
         let mut zip = zip::ZipWriter::new(file);
 
-        let walkdir = walkdir::WalkDir::new(main_file_directory.clone()).into_iter();
+        let walkdir = walkdir::WalkDir::new(self.main_file_directory.clone()).into_iter();
 
         for entry in walkdir {
             let entry = entry.expect("walkdir gave error");
             let path = entry.path();
             if path.is_file() {
                 let name = path
-                    .strip_prefix(&main_file_directory)
+                    .strip_prefix(&self.main_file_directory)
                     .expect("walkdir gave file outside main_file_directory")
                     .to_str()
                     .expect("found non-utf8 file name");
@@ -75,11 +72,14 @@ impl ExportManager for TexlaExportManager {
 // export.zip in test_resources/latex/pflichtenheft is irrelevant
 #[cfg(test)]
 mod tests {
-    use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
     use std::collections::HashSet;
     use std::fs;
     use std::path::Path;
+
     use zip::ZipArchive;
+
+    use crate::infrastructure::export_manager::{ExportManager, TexlaExportManager};
+    use crate::infrastructure::file_path::FilePath;
 
     #[test]
     fn test_zip_files() {
@@ -95,10 +95,10 @@ mod tests {
 
         let created_zip_path = "test_resources/latex/pflichtenheft/export.zip";
         let copied_zip_path = "test_resources/latex/pflichtenheft_zip/export_copy.zip";
-        let main_file = "test_resources/latex/pflichtenheft/main.tex";
+        let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
 
         // create zip of test_resources/latex/pflichtenheft
-        let mut manager = TexlaExportManager::new(main_file.to_string());
+        let mut manager = TexlaExportManager::new(main_file.directory);
         let _path_to_frontend_placeholder = manager.zip_files().unwrap();
 
         // copy zip created by zip_files() function to pflichtenheft_zip directory

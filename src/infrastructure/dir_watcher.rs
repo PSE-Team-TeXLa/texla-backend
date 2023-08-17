@@ -23,19 +23,17 @@ pub(crate) struct DirectoryWatcher {
 
 impl DirectoryWatcher {
     pub(crate) fn new(
+        path: PathBuf,
         storage_manager: Arc<Mutex<TexlaStorageManager<GitManager>>>,
     ) -> Result<Self, notify::Error> {
-        let (path, handler) = {
-            let sm = storage_manager.lock().unwrap();
-            let path = sm.main_file_directory();
-            println!("Starting directory watcher for {path:?}");
-            let handler = sm
-                .directory_change_handler
-                .as_ref()
-                .expect("Starting directory watcher without directory change handler")
-                .clone();
-            (path, handler)
-        };
+        println!("Starting directory watcher for {path:?}");
+        let handler = storage_manager
+            .lock()
+            .unwrap()
+            .directory_change_handler
+            .as_ref()
+            .expect("Starting directory watcher without directory change handler")
+            .clone();
 
         let (tx, rx) = channel(10);
 

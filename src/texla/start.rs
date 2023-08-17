@@ -1,9 +1,9 @@
-use std::path::MAIN_SEPARATOR_STR;
 use std::sync::{Arc, RwLock};
 
 use clap::Parser;
 
 use crate::infrastructure::export_manager::TexlaExportManager;
+use crate::infrastructure::file_path::FilePath;
 use crate::texla::core::TexlaCore;
 use crate::texla::webserver::{start_axum, PORT};
 
@@ -26,14 +26,11 @@ pub async fn start() {
     // argument
     let args = CliArguments::parse();
 
-    // replace separators in path with system-dependent variant
-    let main_file = args.main_file.replace(['/', '\\'], MAIN_SEPARATOR_STR);
-    // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
-
-    println!("Opening file: {main_file}");
+    let main_file = FilePath::from(args.main_file);
+    println!("Opening file: {}", main_file.path.to_str().unwrap());
 
     let core = Arc::new(RwLock::new(TexlaCore {
-        export_manager: TexlaExportManager::new(main_file.clone()),
+        export_manager: TexlaExportManager::new(main_file.directory.clone()),
         main_file,
         pull_interval: args.pull_interval,
         worksession_interval: args.worksession_interval,
