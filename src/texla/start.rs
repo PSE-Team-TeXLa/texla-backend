@@ -39,11 +39,11 @@ pub async fn start() {
         worksession_interval: args.worksession_interval,
     }));
 
-    if let Err(err) = open::that(format!("http://localhost:{PORT}/")) {
+    if let Err(err) = open::that(format!("http://localhost:{}/", PORT)) {
         println!("Could not open browser: {err}");
-        println!("Please open http://localhost:{PORT}/ manually");
+        println!("Please open http://localhost:{}/ manually", PORT);
     } else {
-        println!("Opened TeXLa at http://localhost:{PORT}/");
+        println!("Opened TeXLa at http://localhost:{}/", PORT);
     }
 
     start_axum(core).await;
