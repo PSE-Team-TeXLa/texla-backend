@@ -53,7 +53,7 @@ impl From<Vec<Simple<char>>> for ParseError {
         Self {
             message: value
                 .iter()
-                .map(|error| format!("{:?} {}", error.span(), error.to_string()))
+                .map(|error| format!("{:?} {}", error.span(), error))
                 .collect(),
         }
     }

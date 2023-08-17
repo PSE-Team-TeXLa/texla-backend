@@ -42,7 +42,7 @@ impl Operation<TexlaAst> for MergeNodes {
             NodeType::Leaf {
                 data: LeafData::Text { text },
             } => {
-                text.push_str(&format!("\n{}", latex.as_str()));
+                text.push_str(&format!("\n{latex}"));
             }
             _ => {
                 return Err(OperationError {

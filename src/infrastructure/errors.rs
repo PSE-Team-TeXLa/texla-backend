@@ -54,7 +54,7 @@ impl From<zip::result::ZipError> for InfrastructureError {
 impl From<notify::Error> for InfrastructureError {
     fn from(err: notify::Error) -> Self {
         Self {
-            message: format!("Could not start directory watcher: {}", err),
+            message: format!("Could not start directory watcher: {err}"),
         }
     }
 }

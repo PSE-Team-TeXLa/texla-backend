@@ -137,7 +137,7 @@ impl TexlaStorageManager<GitManager> {
         };
 
         // TODO: this is strict but above is not (e.g. whitespace between MARK and braces)
-        let begin_mark = format!("{}{{{}}}", FILE_BEGIN_MARK, path);
+        let begin_mark = format!("{FILE_BEGIN_MARK}{{{path}}}");
         let begin_start = string[..end_start].rfind(&begin_mark)?;
         let begin_end = begin_start + begin_mark.len();
 
@@ -280,8 +280,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
             latex_single_string.replace_range(
                 path_byte_range,
                 &format!(
-                    "{}{{{}}}\n{}\n{}{{{}}}",
-                    FILE_BEGIN_MARK, path_str, input_text, FILE_END_MARK, path_str
+                    "{FILE_BEGIN_MARK}{{{path_str}}}\n{input_text}\n{FILE_END_MARK}{{{path_str}}}"
                 ),
             );
         }

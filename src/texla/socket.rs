@@ -60,7 +60,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     let ast = match parse_ast_from_disk(&storage_manager) {
         Ok(ast) => ast,
         Err(err) => {
-            println!("Found invalid ast: {}", err);
+            println!("Found invalid ast: {err}");
             send(&socket, "error", err).ok();
             return;
             // this will display the error in the frontend
@@ -114,7 +114,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         let operation = serde_json::from_str::<JsonOperation>(&json)
             .expect("Got invalid operation from frontend")
             .to_trait_obj();
-        println!("{:?}", operation);
+        println!("{operation:?}");
 
         let state = extract_state(&socket).clone();
         match perform_and_check_operation(state.clone(), operation).await {
@@ -122,10 +122,9 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
                 send(&socket, "new_ast", &state.lock().unwrap().ast).ok();
                 println!("Operation was okay");
                 println!("Saved changes");
-                // println!("new_ast {:#?}", &state.ast);
             }
             Err(err) => {
-                println!("Operation was not okay: {}", err);
+                println!("Operation was not okay: {err}");
                 send(&socket, "error", err).ok();
                 // send old ast in order to enable frontend to roll back to it
                 send(&socket, "new_ast", &state.lock().unwrap().ast).ok();
@@ -229,7 +228,7 @@ async fn handle_export(
     options: StringificationOptions,
     core: Arc<RwLock<TexlaCore>>,
 ) {
-    println!("Preparing export with options: {:?}", options);
+    println!("Preparing export with options: {options:?}");
     let state = extract_state(&socket).clone();
 
     let latex_single_string_with_metadata_and_comments = state

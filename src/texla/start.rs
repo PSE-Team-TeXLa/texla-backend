@@ -30,7 +30,7 @@ pub async fn start() {
     let main_file = args.main_file.replace(['/', '\\'], MAIN_SEPARATOR_STR);
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
 
-    println!("Opening file: {}", main_file);
+    println!("Opening file: {main_file}");
 
     let core = Arc::new(RwLock::new(TexlaCore {
         export_manager: TexlaExportManager::new(main_file.clone()),
@@ -39,11 +39,11 @@ pub async fn start() {
         worksession_interval: args.worksession_interval,
     }));
 
-    if let Err(err) = open::that(format!("http://localhost:{}/", PORT)) {
-        println!("Could not open browser: {}", err);
-        println!("Please open http://localhost:{}/ manually", PORT);
+    if let Err(err) = open::that(format!("http://localhost:{PORT}/")) {
+        println!("Could not open browser: {err}");
+        println!("Please open http://localhost:{PORT}/ manually");
     } else {
-        println!("Opened TeXLa at http://localhost:{}/", PORT);
+        println!("Opened TeXLa at http://localhost:{PORT}/");
     }
 
     start_axum(core).await;

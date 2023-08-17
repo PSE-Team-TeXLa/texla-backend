@@ -58,7 +58,7 @@ async fn user_assets_handler(
     Extension(core): Extension<Arc<RwLock<TexlaCore>>>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    println!("Serving user asset: {}", path);
+    println!("Serving user asset: {path}");
 
     let main_file_directory = {
         let main_file = &core.read().unwrap().main_file;
@@ -80,7 +80,7 @@ async fn user_assets_handler(
     // convert the `Stream` into an `axum::body::HttpBody`
     let body = StreamBody::new(stream);
 
-    let content_disposition_header = format!("attachment; filename=\"{}\"", path);
+    let content_disposition_header = format!("attachment; filename=\"{path}\"");
     let headers = [
         (header::CONTENT_TYPE, "text/toml; charset=utf-8"),
         (

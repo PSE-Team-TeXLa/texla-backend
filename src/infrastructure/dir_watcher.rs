@@ -28,7 +28,7 @@ impl DirectoryWatcher {
         let (path, handler) = {
             let sm = storage_manager.lock().unwrap();
             let path = sm.main_file_directory();
-            println!("Starting directory watcher for {:?}", path);
+            println!("Starting directory watcher for {path:?}");
             let handler = sm
                 .directory_change_handler
                 .as_ref()
@@ -55,7 +55,7 @@ impl DirectoryWatcher {
             match res {
                 Ok(event) => Self::is_notify_event_interesting(&sm, event),
                 Err(err) => {
-                    eprintln!("watch error (not propagating): {:?}", err);
+                    eprintln!("watch error (not propagating): {err:?}");
                     false
                 }
             }
