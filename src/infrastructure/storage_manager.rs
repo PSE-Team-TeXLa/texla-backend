@@ -9,6 +9,9 @@ use chumsky::prelude::*;
 use tokio::time::sleep;
 use tracing::debug;
 
+use ast::latex_constants::*;
+use ast::texla_constants::*;
+
 use crate::infrastructure::dir_watcher::DirectoryWatcher;
 use crate::infrastructure::errors::InfrastructureError;
 use crate::infrastructure::pull_timer::PullTimerManager;
@@ -16,7 +19,7 @@ use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager, VcsManager
 use crate::infrastructure::work_session::WorksessionManager;
 
 /// The time notify is allowed to take for picking up our own file changes and reporting them
-const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100);
+const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100); // TODO use CLI argument?
 
 #[async_trait]
 pub trait StorageManager {
@@ -46,7 +49,9 @@ where
     // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
     main_file: String,
     pull_timer_manager: Option<PullTimerManager>,
+    pub(crate) pull_interval: u64,
     worksession_manager: Option<WorksessionManager>,
+    pub(crate) worksession_interval: u64,
     dir_watcher: Option<DirectoryWatcher>,
     // TODO: this may become redundant with the pull_timer being active or not
     pub(crate) writing: bool,
@@ -55,19 +60,22 @@ where
 impl TexlaStorageManager<GitManager> {
     const LATEX_FILE_EXTENSION: &'static str = "tex";
     const LATEX_PATH_SEPARATOR: &'static str = "/";
-    // TODO: shouldn't these start with a newline?
-    const FILE_BEGIN_MARK: &'static str = "% TEXLA FILE BEGIN ";
-    const FILE_END_MARK: &'static str = "% TEXLA FILE END ";
-    const INPUT_COMMAND: &'static str = "\\input";
 
-    pub fn new(vcs_manager: GitManager, main_file: String) -> Self {
+    pub fn new(
+        vcs_manager: GitManager,
+        main_file: String,
+        pull_interval: u64,
+        worksession_interval: u64,
+    ) -> Self {
         // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
         Self {
             vcs_manager,
             directory_change_handler: None,
             main_file,
             pull_timer_manager: None,
+            pull_interval,
             worksession_manager: None,
+            worksession_interval,
             dir_watcher: None,
             writing: false,
         }
@@ -93,7 +101,7 @@ impl TexlaStorageManager<GitManager> {
         start..end
     }
 
-    fn curly_braces_parser() -> BoxedParser<'static, char, String, Simple<char>> {
+    fn curly_brackets_parser() -> BoxedParser<'static, char, String, Simple<char>> {
         none_of::<_, _, Simple<char>>("}")
             .repeated()
             .at_least(1)
@@ -103,12 +111,12 @@ impl TexlaStorageManager<GitManager> {
     }
 
     fn latex_input_parser() -> BoxedParser<'static, char, (String, Range<usize>), Simple<char>> {
-        take_until(just::<_, _, Simple<char>>(Self::INPUT_COMMAND))
+        take_until(just::<_, _, Simple<char>>(INPUT))
             .map_with_span(|_, span| -> usize {
-                span.end() - Self::char_len(Self::INPUT_COMMAND) // = input_start
+                span.end() - Self::char_len(INPUT) // = input_start
             })
             // TODO allow white spaces (but no newlines?) around curly braces?
-            .then(Self::curly_braces_parser())
+            .then(Self::curly_brackets_parser())
             .map_with_span(|(start, path), span| -> (String, Range<usize>) {
                 (path, start..span.end()) // span.end() = input_end
             })
@@ -116,20 +124,20 @@ impl TexlaStorageManager<GitManager> {
     }
 
     fn find_texla_file_marks(string: &str) -> Option<(String, Range<usize>, Range<usize>)> {
-        let end_start = string.find(Self::FILE_END_MARK)?;
+        let end_start = string.find(FILE_END_MARK)?;
         let (path, end_end) = {
-            let string = &string[end_start + Self::FILE_END_MARK.len()..];
+            let string = &string[end_start + FILE_END_MARK.len()..];
             let brace_open = string.find('{')?;
             let brace_close = string[brace_open..].find('}')?;
             let path = string[brace_open..][1..brace_close].to_string();
             (
                 path,
-                end_start + Self::FILE_END_MARK.len() + brace_open + brace_close + 1,
+                end_start + FILE_END_MARK.len() + brace_open + brace_close + 1,
             )
         };
 
         // TODO: this is strict but above is not (e.g. whitespace between MARK and braces)
-        let begin_mark = format!("{}{{{}}}", Self::FILE_BEGIN_MARK, path);
+        let begin_mark = format!("{}{{{}}}", FILE_BEGIN_MARK, path);
         let begin_start = string[..end_start].rfind(&begin_mark)?;
         let begin_end = begin_start + begin_mark.len();
 
@@ -230,7 +238,10 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         let directory_watcher = DirectoryWatcher::new(this.clone())?;
         let mut sm = this.lock().unwrap();
         sm.pull_timer_manager = Some(PullTimerManager::new(this.clone()));
-        sm.worksession_manager = Some(WorksessionManager::new(this.clone()));
+        sm.worksession_manager = Some(WorksessionManager::new(
+            this.clone(),
+            sm.worksession_interval,
+        ));
         sm.dir_watcher = Some(directory_watcher);
 
         sm.pull_timer_manager().activate();
@@ -270,11 +281,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
                 path_byte_range,
                 &format!(
                     "{}{{{}}}\n{}\n{}{{{}}}",
-                    Self::FILE_BEGIN_MARK,
-                    path_str,
-                    input_text,
-                    Self::FILE_END_MARK,
-                    path_str
+                    FILE_BEGIN_MARK, path_str, input_text, FILE_END_MARK, path_str
                 ),
             );
         }
@@ -320,11 +327,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
                 // replace '% TEXLA FILE BEGIN ... % TEXLA FILE END' in string with '\input{...}'
                 latex_single_string.replace_range(
                     input_byte_range,
-                    &format!(
-                        "{}{{{}}}",
-                        Self::INPUT_COMMAND,
-                        path_rel_latex.to_str().unwrap()
-                    ),
+                    &format!("{}{{{}}}", INPUT, path_rel_latex.to_str().unwrap()),
                 )
             }
 
@@ -386,7 +389,7 @@ mod tests {
         let main_file = "test_resources/latex/with_inputs.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
@@ -399,7 +402,7 @@ mod tests {
         let main_file = "test_resources/latex/with_inputs_huge.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
@@ -417,13 +420,18 @@ mod tests {
         let main_file = "test_resources/latex/out/with_inputs.tex".to_string();
         // TODO replace separator?
         let vcs_manager = GitManager::new(main_file.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file);
+        let worksession_interval = 5000;
+        let storage_manager =
+            TexlaStorageManager::new(vcs_manager, main_file, 500, worksession_interval);
         let shared = Arc::new(Mutex::new(storage_manager));
         let latex_single_string =
             lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap());
 
         shared.lock().unwrap().pull_timer_manager = Some(PullTimerManager::new(shared.clone()));
-        shared.lock().unwrap().worksession_manager = Some(WorksessionManager::new(shared.clone()));
+        shared.lock().unwrap().worksession_manager = Some(WorksessionManager::new(
+            shared.clone(),
+            worksession_interval,
+        ));
 
         // this is needed, because we use some blocking calls and you cannot block the main thread
         tokio::spawn(async move {
