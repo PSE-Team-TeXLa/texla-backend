@@ -232,7 +232,7 @@ impl LatexParser {
             .clone()
             .then_ignore(just(COMMENT_PREFIX).padded())
             .then(take_until(choice((
-                newline().then(none_of(COMMENT_PREFIX).rewind()).to("END"),
+                newline().then(none_of(COMMENT_PREFIX).rewind()).to(""),
                 just(TEXLA_COMMENT_PREFIX).rewind(),
             ))))
             .try_map(|(metadata, (comment, _)), span| {
@@ -312,15 +312,15 @@ impl LatexParser {
             .boxed();
 
         let terminator = choice((
-            Self::segment_command_parser().rewind().to("segment"),
+            Self::segment_command_parser().rewind().to(""),
             just(BEGIN).rewind(),
             just(END).rewind(),
             just(COMMENT_PREFIX).rewind(),
-            image.clone().to("image").rewind(),
-            math.clone().to("math").rewind(),
-            caption.clone().to("caption").rewind(),
-            label.clone().to("label").rewind(),
-            newline().then(newline()).to("\n\n"),
+            image.clone().rewind().to(""),
+            math.clone().rewind().to(""),
+            caption.clone().rewind().to(""),
+            label.clone().rewind().to(""),
+            newline().then(newline()).to(""),
             // TODO recognize and consume also more than 2 newlines
         ))
         .boxed();
