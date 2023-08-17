@@ -13,12 +13,6 @@ use crate::texla_ast::TexlaAst;
 use crate::texla_constants::*;
 use crate::uuid_provider::{TexlaUuidProvider, Uuid};
 
-const PARENTHESIS: (&str, &str) = ("(", ")");
-const SQUARE_BRACKETS: (&str, &str) = ("[", "]");
-const CURLY_BRACES: (&str, &str) = ("{", "}");
-
-const METADATA_MARKER: &str = "% TEXLA METADATA";
-
 type NodeParser<'a> = BoxedParser<'a, char, NodeRef, Simple<char>>;
 type NodesParser<'a> = BoxedParser<'a, char, Vec<NodeRef>, Simple<char>>;
 
@@ -64,11 +58,11 @@ impl LatexParser {
     fn build_comment(&self, comment: String, metadata: HashMap<String, String>) -> NodeRef {
         Node::new_leaf(
             LeafData::Comment {
-                comment: format!("% {comment}"),
+                comment: format!("{COMMENT_PREFIX} {comment}"),
             },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("% {comment}"),
+            format!("{COMMENT_PREFIX} {comment}"),
             metadata,
         )
     }
@@ -82,17 +76,17 @@ impl LatexParser {
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
             match kind {
-                MathKind::SquareBrackets => {
-                    format!("\\[{text}\\]")
-                }
                 MathKind::DoubleDollars => {
-                    format!("$${text}$$")
+                    format!("{DOUBLE_DOLLARS}{text}{DOUBLE_DOLLARS}")
+                }
+                MathKind::SquareBrackets => {
+                    format!("{SQUARE_BRACKETS_LEFT}{text}{SQUARE_BRACKETS_RIGHT}")
                 }
                 MathKind::Displaymath => {
-                    format!("\\begin{{displaymath}}{text}\\end{{displaymath}}")
+                    format!("{DISPLAYMATH_BEGIN}{text}{DISPLAYMATH_END}")
                 }
                 MathKind::Equation => {
-                    format!("\\begin{{equation}}{text}\\end{{equation}}")
+                    format!("{EQUATION_BEGIN}{text}{EQUATION_END}")
                 }
             },
             Default::default(),
@@ -114,10 +108,10 @@ impl LatexParser {
             self.portal.borrow_mut().deref_mut(),
             match options {
                 None => {
-                    format!("\\includegraphics{{{path}}}")
+                    format!("{INCLUDEGRAPHICS}{{{path}}}")
                 }
-                Some(option) => {
-                    format!("\\includegraphics[{option}]{{{path}}}")
+                Some(options_str) => {
+                    format!("{INCLUDEGRAPHICS}{OPTIONS_BEGIN}{options_str}{OPTIONS_END}{{{path}}}")
                 }
             },
             metadata,
@@ -131,7 +125,7 @@ impl LatexParser {
             },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\caption{{{caption}}}"),
+            format!("{CAPTION}{{{caption}}}"),
             metadata,
         )
     }
@@ -143,7 +137,7 @@ impl LatexParser {
             },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\label{{{label}}}"),
+            format!("{LABEL}{{{label}}}"),
             metadata,
         )
     }
@@ -159,7 +153,9 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("{FILE_BEGIN_MARK}{{{path}}}\n...\n{FILE_END_MARK}{{{path}}}"),
+            format!(
+                "{FILE_BEGIN_MARK}{{{path}}}\n{SKIPPED_CONTENT_MARK}\n{FILE_END_MARK}{{{path}}}"
+            ),
             metadata,
         )
     }
@@ -175,7 +171,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("\\begin{{{name}}}\n...\n\\end{{{name}}}"),
+            format!("{BEGIN}{{{name}}}\n{SKIPPED_CONTENT_MARK}\n{END}{{{name}}}"),
             metadata,
         )
     }
@@ -193,7 +189,7 @@ impl LatexParser {
             children,
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
-            format!("{raw}\n..."),
+            format!("{raw}\n{SKIPPED_CONTENT_MARK}"),
             metadata,
         )
     }
@@ -234,14 +230,14 @@ impl LatexParser {
 
         let comment = metadata
             .clone()
-            .then_ignore(just("%").padded())
+            .then_ignore(just(COMMENT_PREFIX).padded())
             .then(take_until(choice((
-                newline().then(none_of("%").rewind()).to("END"),
-                just("% TEXLA").rewind(),
+                newline().then(none_of(COMMENT_PREFIX).rewind()).to("END"),
+                just(TEXLA_COMMENT_PREFIX).rewind(),
             ))))
             .try_map(|(metadata, (comment, _)), span| {
                 let string: String = comment.iter().collect();
-                if string.starts_with("TEXLA") {
+                if string.starts_with(TEXLA) {
                     Err(Simple::custom(
                         span,
                         "found TeXLa metadata instead of regular comment",
@@ -253,24 +249,24 @@ impl LatexParser {
             .padded()
             .boxed();
 
-        let curly_braces = Self::argument_surrounded_by(CURLY_BRACES);
+        let curly_brackets = Self::argument_surrounded_by(BLOCK_DELIMITERS);
 
-        let options = just("[")
-            .ignore_then(none_of("]").repeated())
-            .then_ignore(just("]"))
+        let options = just(OPTIONS_BEGIN)
+            .ignore_then(none_of(OPTIONS_END).repeated())
+            .then_ignore(just(OPTIONS_END))
             .collect()
             .boxed();
 
         let image = metadata
             .clone()
-            .then_ignore(just("\\includegraphics"))
+            .then_ignore(just(INCLUDEGRAPHICS))
             .then(options.or_not())
             .then(
-                none_of("}")
+                none_of(BLOCK_END)
                     .repeated()
                     .at_least(1)
                     .collect::<String>()
-                    .delimited_by(just("{"), just("}")),
+                    .delimited_by(just(BLOCK_BEGIN), just(BLOCK_END)),
             )
             .padded()
             .map(|((metadata, options), path)| {
@@ -278,47 +274,48 @@ impl LatexParser {
             })
             .boxed();
 
-        let math_double_dollars = self.math_delimited_by("$$", "$$", MathKind::DoubleDollars);
-        let math_square_brackets = self.math_delimited_by("\\[", "\\]", MathKind::SquareBrackets);
-        let math_equation =
-            self.math_delimited_by("\\begin{equation}", "\\end{equation}", MathKind::Equation);
-        let math_displaymath = self.math_delimited_by(
-            "\\begin{displaymath}",
-            "\\end{displaymath}",
-            MathKind::Displaymath,
+        let math_double_dollars =
+            self.math_delimited_by(DOUBLE_DOLLARS, DOUBLE_DOLLARS, MathKind::DoubleDollars);
+        let math_square_brackets = self.math_delimited_by(
+            SQUARE_BRACKETS_LEFT,
+            SQUARE_BRACKETS_RIGHT,
+            MathKind::SquareBrackets,
         );
+        let math_displaymath =
+            self.math_delimited_by(DISPLAYMATH_BEGIN, DISPLAYMATH_END, MathKind::Displaymath);
+        let math_equation =
+            self.math_delimited_by(EQUATION_BEGIN, EQUATION_END, MathKind::Equation);
 
         let math = choice((
             math_double_dollars,
             math_square_brackets,
-            math_equation,
             math_displaymath,
+            math_equation,
         ))
         .padded()
         .boxed();
 
         let caption = metadata
             .clone()
-            .then_ignore(just("\\caption"))
-            .then(curly_braces.clone())
+            .then_ignore(just(CAPTION))
+            .then(curly_brackets.clone())
             .map(|(metadata, text)| self.build_caption(text, metadata))
             .padded()
             .boxed();
 
         let label = metadata
             .clone()
-            .then_ignore(just("\\label"))
-            .then(curly_braces.clone())
+            .then_ignore(just(LABEL))
+            .then(curly_brackets.clone())
             .map(|(metadata, text)| self.build_label(text, metadata))
             .padded()
             .boxed();
 
         let terminator = choice((
             Self::segment_command_parser().rewind().to("segment"),
-            just("\\begin").rewind(),
-            just("\\end").rewind(),
-            just("\\end{document}").rewind(), // TODO remove this line?
-            just("%").rewind(),
+            just(BEGIN).rewind(),
+            just(END).rewind(),
+            just(COMMENT_PREFIX).rewind(),
             image.clone().to("image").rewind(),
             math.clone().to("math").rewind(),
             caption.clone().to("caption").rewind(),
@@ -360,11 +357,11 @@ impl LatexParser {
         let environment = recursive(|environment| {
             metadata
                 .clone()
-                .then_ignore(just("\\begin"))
-                .then(curly_braces.clone())
+                .then_ignore(just(BEGIN))
+                .then(curly_brackets.clone())
                 .padded()
                 .then(leaf.clone().or(environment).repeated())
-                .then(just("\\end").ignore_then(curly_braces.clone()).padded())
+                .then(just(END).ignore_then(curly_brackets.clone()).padded())
                 .try_map(|(((metadata, name_begin), children), name_end), span| {
                     if name_begin != name_end {
                         Err(Simple::custom(span, "Environment not closed correctly"))
@@ -381,7 +378,7 @@ impl LatexParser {
         let preludes_in_inputs = prelude_in_inputs.clone().repeated();
 
         let subparagraph = self.segment(
-            "subparagraph",
+            SUBPARAGRAPH,
             prelude_in_inputs.clone(),
             prelude_in_inputs.clone(),
         );
@@ -419,7 +416,7 @@ impl LatexParser {
             )
             .boxed();
 
-        let preamble = take_until(just("\\begin{document}").rewind())
+        let preamble = take_until(just(DOCUMENT_BEGIN).rewind())
             .map(|(preamble, _)| preamble.iter().collect())
             .boxed();
 
@@ -428,9 +425,9 @@ impl LatexParser {
             .clone()
             .or_not()
             .then(metadata.clone())
-            .then_ignore(just::<_, _, Simple<char>>("\\begin{document}").padded())
+            .then_ignore(just::<_, _, Simple<char>>(DOCUMENT_BEGIN).padded())
             .then(root_children.clone())
-            .then_ignore(just("\\end{document}"))
+            .then_ignore(just(DOCUMENT_END))
             .map(|((preamble, metadata), (mut leaves, mut segments))| {
                 self.build_document(
                     preamble.unwrap_or(String::new()),
@@ -460,19 +457,22 @@ impl LatexParser {
 
     fn metadata() -> BoxedParser<'static, char, HashMap<String, String>, Simple<char>> {
         let key_value_pair = text::ident()
-            .then_ignore(just(":"))
+            .then_ignore(just(METADATA_SEPARATOR_KEY_VALUE))
             // TODO: this prevents leading or trailing spaces in values. Do we want that?
             .then(text::ident().padded())
             .map(|(key, value)| (key, value))
             .boxed();
 
-        just(METADATA_MARKER)
+        just(METADATA_MARK)
             .padded()
             .ignore_then(
                 key_value_pair
-                    .separated_by(just(","))
+                    .separated_by(just(METADATA_SEPARATOR_VALUES))
                     .allow_trailing()
-                    .delimited_by(just("("), just(")")),
+                    .delimited_by(
+                        just(METADATA_DELIMITER_LEFT),
+                        just(METADATA_DELIMITER_RIGHT),
+                    ),
             )
             .padded()
             .or_not()
@@ -491,9 +491,9 @@ impl LatexParser {
     ) -> BoxedParser<'a, char, NodeRef, Simple<char>> {
         // TODO: prevent \sectioning etc. from parsing (using keyword?)
         Self::metadata()
-            .then_ignore(just("\\").then(just(keyword)))
+            .then_ignore(just(KEYWORD_PREFIX).then(just(keyword)))
             .then(just(UNCOUNTED_SEGMENT_MARKER).or_not())
-            .then(Self::argument_surrounded_by(CURLY_BRACES))
+            .then(Self::argument_surrounded_by(BLOCK_DELIMITERS))
             .then_ignore(newline().or_not())
             .then(prelude.repeated().padded())
             .then(next_level.repeated())
@@ -503,7 +503,7 @@ impl LatexParser {
                     self.build_segment(
                         heading.clone(),
                         blocks,
-                        format!("\\{keyword}{{{heading}}}"), // TODO: newline?
+                        format!("{KEYWORD_PREFIX}{keyword}{{{heading}}}"), // TODO: newline?
                         star.is_none(),
                         metadata,
                     )
@@ -523,11 +523,11 @@ impl LatexParser {
         recursive(|things_in_inputs| {
             Self::metadata()
                 .then_ignore(just(FILE_BEGIN_MARK))
-                .then(Self::argument_surrounded_by(CURLY_BRACES).padded())
+                .then(Self::argument_surrounded_by(BLOCK_DELIMITERS).padded())
                 .then(prelude.repeated())
                 .then(things_in_inputs.or(thing.clone()).repeated())
                 .then_ignore(just(FILE_END_MARK).padded())
-                .then(Self::argument_surrounded_by(CURLY_BRACES).padded())
+                .then(Self::argument_surrounded_by(BLOCK_DELIMITERS).padded())
                 .try_map(
                     |((((metadata, path), mut prelude), mut children), path_end), span| {
                         if path == path_end {
@@ -565,7 +565,7 @@ impl LatexParser {
     fn segment_command_parser() -> impl Parser<char, i8, Error = Simple<char>> + 'static {
         // TODO find way to ignore \sectioning (use keyword?)
         choice(SEGMENT_LEVELS.map(|(level, keyword)| {
-            just::<char, &str, Simple<char>>("\\")
+            just::<char, &str, Simple<char>>(KEYWORD_PREFIX)
                 .ignore_then(just(keyword))
                 .to(level)
         }))

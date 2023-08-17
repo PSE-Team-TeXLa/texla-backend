@@ -101,7 +101,7 @@ impl TexlaStorageManager<GitManager> {
         start..end
     }
 
-    fn curly_braces_parser() -> BoxedParser<'static, char, String, Simple<char>> {
+    fn curly_brackets_parser() -> BoxedParser<'static, char, String, Simple<char>> {
         none_of::<_, _, Simple<char>>("}")
             .repeated()
             .at_least(1)
@@ -116,7 +116,7 @@ impl TexlaStorageManager<GitManager> {
                 span.end() - Self::char_len(INPUT) // = input_start
             })
             // TODO allow white spaces (but no newlines?) around curly braces?
-            .then(Self::curly_braces_parser())
+            .then(Self::curly_brackets_parser())
             .map_with_span(|(start, path), span| -> (String, Range<usize>) {
                 (path, start..span.end()) // span.end() = input_end
             })

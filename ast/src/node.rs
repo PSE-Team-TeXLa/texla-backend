@@ -33,7 +33,8 @@ impl Node {
     ) -> Result<String, StringificationError> {
         if options.include_metadata && !self.meta_data.data.is_empty() {
             Ok(format!(
-                "% TEXLA METADATA {}\n{}",
+                "{}{}\n{}",
+                METADATA_MARK,
                 self.meta_data,
                 self.node_type.to_latex(level, options)?
             ))
@@ -141,7 +142,9 @@ impl NodeType {
                             .ok_or(StringificationError {
                                 message: format!("Invalid nesting level: {level}"),
                             })?;
-                        Ok(format!("\\{keyword}{count}{{{heading}}}\n{children}"))
+                        Ok(format!(
+                            "{KEYWORD_PREFIX}{keyword}{count}{{{heading}}}\n{children}"
+                        ))
                     }
                     ExpandableData::Document {
                         preamble,
@@ -149,8 +152,7 @@ impl NodeType {
                     } => {
                         let children = self.children_to_latex(level, options)?;
                         Ok(format!(
-                            "{preamble}\\begin{{document}}\n{children}\\end{{document}}\n\
-                            {postamble}"
+                            "{preamble}{DOCUMENT_BEGIN}\n{children}{DOCUMENT_END}\n{postamble}"
                         ))
                     }
                     ExpandableData::File { path } => {
@@ -162,7 +164,7 @@ impl NodeType {
                     }
                     ExpandableData::Environment { name } => {
                         let children = self.children_to_latex(level, options)?;
-                        Ok(format!("\\begin{{{name}}}\n{children}\\end{{{name}}}\n"))
+                        Ok(format!("{BEGIN}{{{name}}}\n{children}{END}{{{name}}}\n"))
                     }
                     ExpandableData::Dummy {
                         before_children,
@@ -231,19 +233,23 @@ impl LeafData {
         match self {
             LeafData::Text { text } => format!("{text}\n\n"),
             LeafData::Image { path, options } => match options {
-                None => format!("\\includegraphics{{{path}}}\n"),
-                Some(option) => format!("\\includegraphics[{option}]{{{path}}}\n"),
+                None => format!("{INCLUDEGRAPHICS}{{{path}}}\n"),
+                Some(options_str) => format!(
+                    "{INCLUDEGRAPHICS}{OPTIONS_BEGIN}{options_str}{OPTIONS_END}{{{path}}}\n"
+                ),
             },
-            LeafData::Label { label } => format!("\\label{{{label}}}\n"),
-            LeafData::Caption { caption } => format!("\\caption{{{caption}}}\n"),
+            LeafData::Label { label } => format!("{LABEL}{{{label}}}\n"),
+            LeafData::Caption { caption } => format!("{CAPTION}{{{caption}}}\n"),
             LeafData::Math { kind, content } => match kind {
-                MathKind::SquareBrackets => format!("\\[{content}\\]\n"),
-                MathKind::DoubleDollars => format!("$${content}$$\n"),
+                MathKind::DoubleDollars => format!("{DOUBLE_DOLLARS}{content}{DOUBLE_DOLLARS}\n"),
+                MathKind::SquareBrackets => {
+                    format!("{SQUARE_BRACKETS_LEFT}{content}{SQUARE_BRACKETS_RIGHT}\n")
+                }
                 MathKind::Displaymath => {
-                    format!("\\begin{{displaymath}}{content}\\end{{displaymath}}\n")
+                    format!("{DISPLAYMATH_BEGIN}{content}{DISPLAYMATH_END}\n")
                 }
                 MathKind::Equation => {
-                    format!("\\begin{{equation}}{content}\\end{{equation}}\n")
+                    format!("{EQUATION_BEGIN}{content}{EQUATION_END}\n")
                 }
             },
             LeafData::Comment { comment } => {
@@ -263,8 +269,8 @@ impl LeafData {
 
 #[derive(Debug, Serialize, Clone)]
 pub(crate) enum MathKind {
-    SquareBrackets,
     DoubleDollars,
+    SquareBrackets,
     Displaymath,
     Equation,
 }
