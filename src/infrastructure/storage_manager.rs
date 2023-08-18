@@ -224,9 +224,10 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError> {
+        let directory = this.lock().unwrap().main_file.directory.clone();
+        let directory_watcher = DirectoryWatcher::new(directory, this.clone())?;
+
         let mut sm = this.lock().unwrap();
-        let directory_watcher =
-            DirectoryWatcher::new(sm.main_file.directory.clone(), this.clone())?;
         sm.pull_timer_manager = Some(PullTimerManager::new(this.clone()));
         sm.worksession_manager = Some(WorksessionManager::new(
             this.clone(),
