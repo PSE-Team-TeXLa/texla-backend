@@ -341,7 +341,7 @@ mod test {
         let ast = ast.unwrap();
 
         let latex_single_string = ast.to_latex(StringificationOptions::default());
-        let latex_single_string = latex_single_string.unwrap();
+        let _latex_single_string = latex_single_string.unwrap();
 
         let rt = Runtime::new().unwrap();
         rt.spawn(async move {

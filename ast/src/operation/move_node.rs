@@ -42,7 +42,7 @@ mod tests {
         let subsection_to_be_moved_to_content = "\\subsection{Subtitle}";
         let section_to_be_moved_from_content = "\\section{Title1}";
         let subsection_first_child_content = "another Block of text\naaaaa";
-        let subsection_second_child_content = "jhhgghjg";
+        let _subsection_second_child_content = "jhhgghjg";
         let leaf_to_be_moved_content = "Something";
 
         let original_latex_single_string =

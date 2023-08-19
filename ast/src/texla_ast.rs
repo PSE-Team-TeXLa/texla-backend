@@ -1,13 +1,13 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use serde::Serialize;
 
 use crate::errors::AstError;
-use crate::node::{Node, NodeRef, NodeRefWeak, NodeType};
+use crate::node::{NodeRef, NodeRefWeak, NodeType};
 use crate::operation::{Operation, Position};
 use crate::options::StringificationOptions;
-use crate::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
+use crate::uuid_provider::{TexlaUuidProvider, Uuid};
 use crate::{parser, Ast};
 
 #[derive(Debug, Serialize, Clone)]
@@ -66,7 +66,7 @@ impl TexlaAst {
         };
         let index = parent_children
             .iter()
-            .position(|child_ref| Arc::ptr_eq(child_ref, &node_ref))
+            .position(|child_ref| Arc::ptr_eq(child_ref, node_ref))
             .expect("target is not child of parent");
         parent_children.remove(index);
         self.portal.remove(&node.uuid);

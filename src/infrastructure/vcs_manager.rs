@@ -153,17 +153,13 @@ impl VcsManager for GitManager {
             return;
         }
 
-        let message = {
-            if let Some(_) = custom_message {
-                custom_message.unwrap()
-            } else {
-                format!(
-                    "{}{}",
-                    Self::DEFAULT_COMMIT_MESSAGE_PREFIX,
-                    Local::now().format(Self::DEFAULT_COMMIT_MESSAGE_TIME_FORMAT)
-                )
-            }
-        };
+        let message = custom_message.unwrap_or_else(|| {
+            format!(
+                "{}{}",
+                Self::DEFAULT_COMMIT_MESSAGE_PREFIX,
+                Local::now().format(Self::DEFAULT_COMMIT_MESSAGE_TIME_FORMAT)
+            )
+        });
 
         println!("Committing...");
         let add_output = self.git(Self::GIT_ADD.to_vec());
