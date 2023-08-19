@@ -22,23 +22,6 @@ pub struct TexlaAst {
 }
 
 impl TexlaAst {
-    pub(crate) fn new(mut root: Node) -> Self {
-        let mut portal: HashMap<Uuid, NodeRefWeak> = HashMap::new();
-        let mut uuid_provider = TexlaUuidProvider::new();
-        root.uuid = uuid_provider.new_uuid();
-        let root_ref = Arc::new(Mutex::new(root));
-        portal.insert(
-            root_ref.lock().unwrap().uuid,
-            Arc::downgrade(&root_ref.clone()),
-        );
-        TexlaAst {
-            portal,
-            root: root_ref,
-            uuid_provider,
-            highest_level: 0,
-        }
-    }
-
     pub(crate) fn get_node(&self, uuid: Uuid) -> NodeRef {
         self.portal
             .get(&uuid)
