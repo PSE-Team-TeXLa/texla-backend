@@ -79,7 +79,9 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         let mut core = core.write().unwrap();
 
         if let Some(old_socket) = core.socket.clone() {
-            let err = TexlaError::from("This frontend is replaced by another one");
+            let err = TexlaError::from(
+                "This frontend is replaced by another one. Click the TeXLa logo to regain control.",
+            );
             send(&old_socket, "error", err).ok();
             send(&old_socket, "quit", "quit").ok();
 
