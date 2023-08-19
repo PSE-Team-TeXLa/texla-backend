@@ -187,10 +187,12 @@ pub fn parse_ast_from_disk(
 ) -> Result<TexlaAst, TexlaError> {
     let latex_single_string = storage_manager.multiplex_files()?;
     let ast = TexlaAst::from_latex(latex_single_string)?;
-    // verify the ast by converting it to latex again
-    // TODO: the reparsing should be temporary.
-    // It should never happen, that our output cannot be parsed
-    TexlaAst::from_latex(ast.to_latex(Default::default())?)?;
+
+    // Verify the ast by converting it to latex again.
+    // (It should never happen, that our output cannot be parsed.)
+    // If operations return ParseErrors even though they should be legal, check this
+    // TexlaAst::from_latex(ast.to_latex(Default::default())?)?;
+
     Ok(ast)
 }
 
