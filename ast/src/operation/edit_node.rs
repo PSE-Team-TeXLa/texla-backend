@@ -8,7 +8,6 @@ use crate::node::{ExpandableData, Node, NodeType};
 use crate::operation::Operation;
 use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
-use crate::Ast;
 
 #[derive(Deserialize, Debug)]
 pub struct EditNode {
@@ -71,6 +70,7 @@ mod tests {
 
     use crate::operation::test::find_uuid_by_content;
     use crate::parser::parse_latex;
+    use crate::Ast;
 
     use super::*;
 

@@ -8,7 +8,6 @@ use crate::node::{ExpandableData, Node, NodeType};
 use crate::operation::{Operation, Position};
 use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::UuidProvider;
-use crate::Ast;
 
 /// Tries to add a node represented by `raw_latex` into the [Ast] at the given [Position].
 #[derive(Deserialize, Debug)]
@@ -51,6 +50,7 @@ mod tests {
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
     use crate::parser::parse_latex;
+    use crate::Ast;
 
     use super::*;
 

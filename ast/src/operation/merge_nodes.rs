@@ -5,7 +5,6 @@ use crate::node::{LeafData, NodeType};
 use crate::operation::Operation;
 use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
-use crate::Ast;
 
 #[derive(Deserialize, Debug)]
 pub struct MergeNodes {
@@ -62,6 +61,7 @@ mod tests {
     use crate::operation::test::find_uuid_by_content;
     use crate::operation::test::get_node_and_count_children;
     use crate::parser::parse_latex;
+    use crate::Ast;
 
     use super::*;
 
