@@ -18,7 +18,7 @@ impl Operation<TexlaAst> for EditMetadata {
     fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), OperationError> {
         let node_ref = ast.get_node(self.target);
         let mut node = node_ref.lock().unwrap();
-        node.meta_data.data.extend(self.new.clone());
+        node.meta_data.edit(self.new.clone());
 
         Ok(())
     }
