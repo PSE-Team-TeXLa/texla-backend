@@ -79,10 +79,9 @@ impl DirectoryWatcher {
         sm: &Arc<Mutex<TexlaStorageManager<GitManager>>>,
         event: &Event,
     ) -> bool {
-        // TODO: we also want to ignore changes, when the frontend is currently active
-
-        if sm.lock().unwrap().writing {
+        if sm.lock().unwrap().writing || sm.lock().unwrap().waiting_for_frontend {
             // this is our own change => ignore it
+            // or we are still waiting for the frontend to finish its operation => ignore it
             false
         } else {
             let only_git_files = event

@@ -33,6 +33,7 @@ pub trait StorageManager {
     fn remote_url(&self) -> Option<&String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
     fn wait_for_frontend(&mut self);
+    fn frontend_aborted(&mut self);
     async fn save(
         this: Arc<Mutex<Self>>,
         latex_single_string: String,
@@ -53,8 +54,8 @@ where
     worksession_manager: Option<WorksessionManager>,
     pub(crate) worksession_interval: u64,
     dir_watcher: Option<DirectoryWatcher>,
-    // TODO: this may become redundant with the pull_timer being active or not
     pub(crate) writing: bool,
+    pub(crate) waiting_for_frontend: bool,
 }
 
 impl TexlaStorageManager<GitManager> {
@@ -77,6 +78,7 @@ impl TexlaStorageManager<GitManager> {
             worksession_interval,
             dir_watcher: None,
             writing: false,
+            waiting_for_frontend: false,
         }
 
         // TODO: integrate start here?
@@ -280,8 +282,14 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn wait_for_frontend(&mut self) {
+        self.waiting_for_frontend = true;
         self.pull_timer_manager().deactivate();
         self.worksession_manager().pause();
+    }
+
+    fn frontend_aborted(&mut self) {
+        self.waiting_for_frontend = false;
+        self.pull_timer_manager().activate();
     }
 
     // TODO: problem: this storage manager could be used to perform multiple saves simultaneously

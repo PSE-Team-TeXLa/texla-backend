@@ -212,7 +212,9 @@ async fn perform_and_check_operation(
             Ok(())
         }
         Err(err) => {
-            state.lock().unwrap().ast = TexlaAst::from_latex(backup_latex)?;
+            let mut state = state.lock().unwrap();
+            state.ast = TexlaAst::from_latex(backup_latex)?;
+            state.storage_manager.lock().unwrap().frontend_aborted();
             Err(err)
         }
     }
