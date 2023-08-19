@@ -23,7 +23,7 @@ use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
 use crate::texla::state::{SharedTexlaState, TexlaState};
 
-const QUIT_DELAY: Duration = Duration::from_secs(1); // TODO use CLI argument?
+const QUIT_DELAY: Duration = Duration::from_secs(1);
 
 pub type TexlaSocket = Arc<Socket<LocalAdapter>>;
 

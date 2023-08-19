@@ -11,7 +11,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 
-const WORKSESSION_EVENT_BUFFER_SIZE: usize = 10; // TODO use CLI argument?
+const WORKSESSION_EVENT_BUFFER_SIZE: usize = 10;
 
 pub(crate) enum WorksessionMessage {
     /// Keep the worksession alive for another worksession interval
