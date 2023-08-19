@@ -75,6 +75,24 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     };
     socket.extensions.insert(Arc::new(Mutex::new(state)));
 
+    {
+        let mut core = core.write().unwrap();
+
+        if let Some(old_socket) = core.socket.clone() {
+            let err = TexlaError::from("This frontend is replaced by another one");
+            send(&old_socket, "error", err).ok();
+            send(&old_socket, "quit", "quit").ok();
+
+            let state = extract_state(&old_socket);
+            let state = state.lock().unwrap();
+            let mut sm = state.storage_manager.lock().unwrap();
+            sm.disassemble();
+            println!("Disconnected old socket");
+        }
+
+        core.socket = Some(socket.clone());
+    }
+
     let storage_manager_handle = {
         let state_ref = extract_state(&socket);
         let state = state_ref.lock().unwrap();

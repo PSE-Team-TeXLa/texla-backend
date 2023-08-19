@@ -31,9 +31,10 @@ pub async fn start() {
 
     let core = Arc::new(RwLock::new(TexlaCore {
         export_manager: TexlaExportManager::new(main_file.directory.clone()),
-        main_file,
         pull_interval: args.pull_interval,
         worksession_interval: args.worksession_interval,
+        main_file,
+        socket: None,
     }));
 
     if let Err(err) = open::that(format!("http://localhost:{}/", PORT)) {

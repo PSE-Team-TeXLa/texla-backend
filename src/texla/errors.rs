@@ -39,3 +39,11 @@ impl From<VcsError> for TexlaError {
         }
     }
 }
+
+impl From<&str> for TexlaError {
+    fn from(value: &str) -> Self {
+        Self {
+            message: value.to_string(),
+        }
+    }
+}
