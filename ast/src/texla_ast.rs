@@ -8,13 +8,13 @@ use crate::node::{NodeRef, NodeRefWeak, NodeType};
 use crate::operation::Operation;
 use crate::options::StringificationOptions;
 use crate::uuid_provider::{Position, TexlaUuidProvider, Uuid};
-use crate::{Ast, parser};
+use crate::{parser, Ast};
 
 #[derive(Debug, Serialize, Clone)]
 pub struct TexlaAst {
+    // by reparsing after each operation all weak references in this hashmap are always valid
     #[serde(skip_serializing)]
     pub(crate) portal: HashMap<Uuid, NodeRefWeak>,
-    // TODO can we safely call '.upgrade().unwrap()' on any weak pointer from the portal?
     pub(crate) root: NodeRef,
     #[serde(skip_serializing)]
     pub(crate) uuid_provider: TexlaUuidProvider,
