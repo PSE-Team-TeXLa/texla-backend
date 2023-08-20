@@ -346,12 +346,10 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     fn end_worksession(&mut self) {
         // don't call save() here since all changes are already saved at end of worksession
 
+        println!("End of worksession");
         self.vcs_manager.commit(None);
         self.vcs_manager.pull();
-
-        println!("Pushing at end of worksession...");
         self.vcs_manager.push();
-        println!("Push over");
     }
 
     fn disassemble(&mut self) {

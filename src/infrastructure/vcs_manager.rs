@@ -191,7 +191,6 @@ impl VcsManager for GitManager {
 
         println!("Committing...");
         let add_output = self.git(Self::GIT_ADD.to_vec());
-        println!("Commit over");
 
         if !add_output.status.success() {
             println!("Git error on 'add':\n{}", add_output.out_err_formatted());
@@ -207,7 +206,9 @@ impl VcsManager for GitManager {
 
         let mut command = Self::GIT_COMMIT.to_vec();
         command.append(&mut vec![&message]);
+
         let commit_output = self.git(command);
+        println!("Commit over");
 
         if !commit_output.status.success() {
             println!(
@@ -230,7 +231,9 @@ impl VcsManager for GitManager {
             return;
         }
 
+        println!("Pushing...");
         let push_output = self.git(Self::GIT_PUSH.to_vec());
+        println!("Push over");
 
         if !push_output.status.success() {
             println!("Git error on 'push':\n{}", push_output.out_err_formatted());
