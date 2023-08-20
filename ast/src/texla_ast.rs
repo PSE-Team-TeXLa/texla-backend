@@ -5,10 +5,10 @@ use serde::Serialize;
 
 use crate::errors::AstError;
 use crate::node::{NodeRef, NodeRefWeak, NodeType};
-use crate::operation::{Operation, Position};
+use crate::operation::Operation;
 use crate::options::StringificationOptions;
-use crate::uuid_provider::{TexlaUuidProvider, Uuid};
-use crate::{parser, Ast};
+use crate::uuid_provider::{Position, TexlaUuidProvider, Uuid};
+use crate::{Ast, parser};
 
 #[derive(Debug, Serialize, Clone)]
 pub struct TexlaAst {

@@ -543,8 +543,7 @@ impl LatexParser {
                             Err(Simple::custom(
                                 span,
                                 format!(
-                                    // TODO change error message
-                                    "File opened: {path} but not closing tag was for {path_end}"
+                                    "Mismatched file specifiers: begin: {path} ; end: {path_end}"
                                 ),
                             ))
                         }

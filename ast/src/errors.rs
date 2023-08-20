@@ -36,7 +36,6 @@ impl From<OperationError> for AstError {
     }
 }
 
-//TODO Decide on Chumsky Error Strategy, then make this nicer (after VS)
 #[derive(Debug, PartialEq)]
 pub(crate) struct ParseError {
     pub(crate) message: String,

@@ -16,7 +16,6 @@ pub mod texla_constants;
 mod uuid_provider;
 
 pub trait Ast: Sized + Send + Sync + Serialize {
-    // TODO: we probably want to un-elide lifetimes here
     fn from_latex(latex_single_string: String) -> Result<Self, AstError>;
 
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError>;

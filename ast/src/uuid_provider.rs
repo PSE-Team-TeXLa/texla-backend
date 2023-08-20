@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub(crate) type Uuid = u64;
 
@@ -10,7 +10,6 @@ static mut HIGHEST_UUID: Uuid = 0;
 
 pub(crate) trait UuidProvider {
     fn new_uuid(&mut self) -> Uuid;
-    // TODO use Option<Uuid> as return type as in spec?
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -32,4 +31,10 @@ impl TexlaUuidProvider {
     pub(crate) fn new() -> Self {
         TexlaUuidProvider { highest_uuid: 0 }
     }
+}
+
+#[derive(Deserialize, Debug, Clone, Copy)]
+pub struct Position {
+    pub parent: Uuid,
+    pub after_sibling: Option<Uuid>,
 }

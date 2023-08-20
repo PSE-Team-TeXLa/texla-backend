@@ -4,7 +4,6 @@ use serde::Deserialize;
 
 use crate::errors::OperationError;
 use crate::texla_ast::TexlaAst;
-use crate::uuid_provider::Uuid;
 use crate::Ast;
 
 pub mod add_node;
@@ -15,11 +14,11 @@ pub mod edit_node;
 pub mod merge_nodes;
 pub mod move_node;
 
-// TODO: if struggling with lifetimes, let execute_on consume self
 pub trait Operation<A>: Send + Sync + Debug
 where
     A: Ast,
 {
+    // if struggling with lifetimes, let execute_on consume self
     fn execute_on(&self, ast: &mut A) -> Result<(), OperationError>;
 }
 
@@ -78,17 +77,11 @@ impl JsonOperation {
     }
 }
 
-// TODO move into uuid_provider?
-#[derive(Deserialize, Debug, Clone, Copy)]
-pub struct Position {
-    pub parent: Uuid,
-    pub after_sibling: Option<Uuid>,
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::node::{NodeRef, NodeType};
+    use crate::uuid_provider::Uuid;
 
     #[test]
     fn from_json() {

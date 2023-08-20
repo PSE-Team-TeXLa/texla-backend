@@ -5,9 +5,9 @@ use serde::Deserialize;
 use crate::errors::OperationError;
 use crate::meta_data::MetaData;
 use crate::node::{ExpandableData, Node, NodeType};
-use crate::operation::{Operation, Position};
+use crate::operation::Operation;
 use crate::texla_ast::TexlaAst;
-use crate::uuid_provider::UuidProvider;
+use crate::uuid_provider::{Position, UuidProvider};
 
 /// Tries to add a node represented by `raw_latex` into the [Ast] at the given [Position].
 #[derive(Deserialize, Debug)]
