@@ -29,6 +29,34 @@ impl StringOutput {
             .trim_end_matches('\n')
             .to_string()
     }
+
+    fn format_lines(value: &str) -> String {
+        if value.is_empty() {
+            return " (empty)".to_string();
+        }
+
+        const INDENT: &str = "\n    | ";
+
+        format!(
+            "{}{}",
+            INDENT,
+            value.replace("\r\n", "\n").replace("\n", INDENT)
+        )
+        .to_string()
+    }
+
+    fn out_err_formatted(&self) -> String {
+        const INDENT: &str = "  > ";
+
+        format!(
+            "{}stdout{}\n{}stderr{}",
+            INDENT,
+            Self::format_lines(&self.stdout),
+            INDENT,
+            Self::format_lines(&self.stderr)
+        )
+        .to_string()
+    }
 }
 
 pub trait VcsManager: Send + Sync {
@@ -136,7 +164,7 @@ impl VcsManager for GitManager {
         println!("Pull over");
 
         if !pull_output.status.success() {
-            println!("Git error on 'pull': {}", pull_output.stderr);
+            println!("Git error on 'pull':\n{}", pull_output.out_err_formatted());
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
@@ -166,7 +194,7 @@ impl VcsManager for GitManager {
         println!("Commit over");
 
         if !add_output.status.success() {
-            println!("Git error on 'add': {}", add_output.stderr);
+            println!("Git error on 'add':\n{}", add_output.out_err_formatted());
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
@@ -182,7 +210,10 @@ impl VcsManager for GitManager {
         let commit_output = self.git(command);
 
         if !commit_output.status.success() {
-            println!("Git error on 'commit': {}", commit_output.stderr);
+            println!(
+                "Git error on 'commit':\n{}",
+                commit_output.out_err_formatted()
+            );
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
@@ -202,7 +233,7 @@ impl VcsManager for GitManager {
         let push_output = self.git(Self::GIT_PUSH.to_vec());
 
         if !push_output.status.success() {
-            println!("Git error on 'push': {}", push_output.stderr);
+            println!("Git error on 'push':\n{}", push_output.out_err_formatted());
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
