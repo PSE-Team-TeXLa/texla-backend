@@ -99,7 +99,7 @@ mod tests {
 
         // create zip of test_resources/latex/pflichtenheft
         let mut manager = TexlaExportManager::new(main_file.directory);
-        let _path_to_frontend_placeholder = manager.zip_files().unwrap();
+        manager.zip_files().unwrap();
 
         // copy zip created by zip_files() function to pflichtenheft_zip directory
         fs::copy(created_zip_path, copied_zip_path).unwrap();

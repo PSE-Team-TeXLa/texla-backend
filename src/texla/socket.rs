@@ -344,6 +344,7 @@ mod test {
 
         let latex_single_string = ast.to_latex(StringificationOptions::default());
         let _latex_single_string = latex_single_string.unwrap();
+        // TODO uncomment code below or remove underscored variable
 
         let rt = Runtime::new().unwrap();
         rt.spawn(async move {
