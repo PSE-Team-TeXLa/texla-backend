@@ -163,7 +163,7 @@ impl VcsManager for GitManager {
 
         println!("Pulling...");
         let pull_output = self.git(Self::GIT_PULL.to_vec());
-        println!("Pull over");
+        println!("> Pull over");
 
         if !pull_output.status.success() {
             println!("Git error on 'pull':\n{}", pull_output.out_err_formatted());
@@ -210,7 +210,7 @@ impl VcsManager for GitManager {
         command.append(&mut vec![&message]);
 
         let commit_output = self.git(command);
-        println!("Commit over");
+        println!("> Commit over");
 
         if !commit_output.status.success() {
             println!(
@@ -235,7 +235,7 @@ impl VcsManager for GitManager {
 
         println!("Pushing...");
         let push_output = self.git(Self::GIT_PUSH.to_vec());
-        println!("Push over");
+        println!("> Push over");
 
         if !push_output.status.success() {
             println!("Git error on 'push':\n{}", push_output.out_err_formatted());

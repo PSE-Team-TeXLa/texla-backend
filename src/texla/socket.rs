@@ -132,7 +132,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     });
 
     socket.on("operation", |socket, json: String, _, _| async move {
-        print!("Received operation:");
+        print!("Received operation: ");
 
         let operation = serde_json::from_str::<JsonOperation>(&json)
             .expect("Got invalid operation from frontend")
