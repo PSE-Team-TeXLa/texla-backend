@@ -36,7 +36,6 @@ impl DirectoryChangeHandler for TexlaState {
                 send(&self.socket, "new_ast", self.ast.clone()).ok();
             }
             Err(err) => {
-                // TODO: prepend information that files were changed on disk/remote?
                 send(&self.socket, "error", err).ok();
             }
         };
