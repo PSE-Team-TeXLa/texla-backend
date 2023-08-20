@@ -110,8 +110,8 @@ impl GitManager {
         } else {
             let first_remote = {
                 if remotes.contains('\n') {
+                    // there is no sensible way to choose a remote other than just taking any
                     remotes.split_once('\n').unwrap().0
-                    // TODO is it okay to take the first remote when there are multiple ones?
                 } else {
                     &remotes
                 }

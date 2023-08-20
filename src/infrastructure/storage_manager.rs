@@ -80,8 +80,6 @@ impl TexlaStorageManager<GitManager> {
             waiting_for_frontend: false,
             notify_delay,
         }
-
-        // TODO: integrate start here?
     }
 
     fn lf(s: String) -> String {
@@ -253,7 +251,7 @@ impl StorageManager for TexlaStorageManager<GitManager> {
 
         loop {
             // TODO use regex instead of chumsky to search inputs
-            // TODO replace inputs recursively
+            // TODO replace inputs recursively (what for?)
             let parse_res = parser.parse(latex_single_string.clone());
             if parse_res.is_err() {
                 break;

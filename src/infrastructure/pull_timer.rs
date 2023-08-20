@@ -39,7 +39,6 @@ async fn pull_repeatedly<V: VcsManager>(storage_manager: Arc<Mutex<TexlaStorageM
     let duration = Duration::from_millis(storage_manager.lock().unwrap().pull_interval);
 
     loop {
-        // TODO: this locks the storage_manager for too much time, operations are getting slow
         storage_manager.lock().unwrap().vcs_manager.pull();
 
         sleep(duration).await;
