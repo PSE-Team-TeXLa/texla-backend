@@ -7,7 +7,7 @@ use ast::errors::AstError;
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct TexlaError {
-    message: String,
+    pub(crate) message: String,
 }
 
 impl Display for TexlaError {
@@ -34,14 +34,6 @@ impl From<InfrastructureError> for TexlaError {
 
 impl From<VcsError> for TexlaError {
     fn from(value: VcsError) -> Self {
-        Self {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<&str> for TexlaError {
-    fn from(value: &str) -> Self {
         Self {
             message: value.to_string(),
         }
