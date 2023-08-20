@@ -22,6 +22,11 @@ struct CliArguments {
     /// The minimum time between the last change and the according commit (in milliseconds)
     #[arg(short, long, default_value = "5000")]
     worksession_interval: u64,
+
+    /// The time notify is allowed to take for picking up our own file changes and reporting them
+    /// (in milliseconds)
+    #[arg(short, long, default_value = "100")]
+    notify_delay: u64,
 }
 
 pub async fn start() {
@@ -38,6 +43,7 @@ pub async fn start() {
         export_manager: TexlaExportManager::new(main_file.directory.clone()),
         pull_interval: args.pull_interval,
         worksession_interval: args.worksession_interval,
+        notify_delay: args.notify_delay,
         main_file,
         socket: None,
     }));

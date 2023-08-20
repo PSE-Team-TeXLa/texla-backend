@@ -19,9 +19,6 @@ use crate::infrastructure::pull_timer::PullTimerManager;
 use crate::infrastructure::vcs_manager::{GitErrorHandler, GitManager, VcsManager};
 use crate::infrastructure::work_session::WorksessionManager;
 
-/// The time notify is allowed to take for picking up our own file changes and reporting them
-const NOTIFY_DELAY_TOLERANCE: Duration = Duration::from_millis(100); // TODO use CLI argument?
-
 #[async_trait]
 pub trait StorageManager {
     fn attach_handlers(
@@ -56,6 +53,7 @@ where
     dir_watcher: Option<DirectoryWatcher>,
     pub(crate) writing: bool,
     pub(crate) waiting_for_frontend: bool,
+    notify_delay: u64,
 }
 
 impl TexlaStorageManager<GitManager> {
@@ -67,6 +65,7 @@ impl TexlaStorageManager<GitManager> {
         main_file: FilePath,
         pull_interval: u64,
         worksession_interval: u64,
+        notify_delay: u64,
     ) -> Self {
         Self {
             vcs_manager,
@@ -79,6 +78,7 @@ impl TexlaStorageManager<GitManager> {
             dir_watcher: None,
             writing: false,
             waiting_for_frontend: false,
+            notify_delay,
         }
 
         // TODO: integrate start here?
@@ -334,7 +334,8 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         }
 
         // this is frankly needed, because notify does not pick up all changes immediately
-        sleep(NOTIFY_DELAY_TOLERANCE).await;
+        let duration = Duration::from_millis(this.lock().unwrap().notify_delay);
+        sleep(duration).await;
         this.lock().unwrap().writing = false;
 
         let mut sm = this.lock().unwrap();
@@ -386,7 +387,7 @@ mod tests {
     fn multiplex_files() {
         let main_file = FilePath::from("test_resources/latex/with_inputs.tex");
         let vcs_manager = GitManager::new(main_file.directory.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000, 100);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
@@ -398,7 +399,7 @@ mod tests {
     fn multiplex_files_huge() {
         let main_file = FilePath::from("test_resources/latex/with_inputs_huge.tex");
         let vcs_manager = GitManager::new(main_file.directory.clone());
-        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000);
+        let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000, 100);
 
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
@@ -417,7 +418,7 @@ mod tests {
         let vcs_manager = GitManager::new(main_file.directory.clone());
         let worksession_interval = 5000;
         let storage_manager =
-            TexlaStorageManager::new(vcs_manager, main_file, 500, worksession_interval);
+            TexlaStorageManager::new(vcs_manager, main_file, 500, worksession_interval, 100);
         let shared = Arc::new(Mutex::new(storage_manager));
         let latex_single_string =
             lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap());

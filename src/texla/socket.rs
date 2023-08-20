@@ -54,6 +54,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
             core.main_file.clone(),
             core.pull_interval,
             core.worksession_interval,
+            core.notify_delay,
         )
     };
 
@@ -326,6 +327,7 @@ mod test {
             main_file,
             500,
             5000,
+            100,
         );
         assert!(super::parse_ast_from_disk(&sm).is_ok());
     }
@@ -338,6 +340,7 @@ mod test {
             main_file,
             500,
             5000,
+            100,
         );
         let ast = super::parse_ast_from_disk(&sm);
         let ast = ast.unwrap();

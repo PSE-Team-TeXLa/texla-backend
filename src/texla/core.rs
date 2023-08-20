@@ -6,6 +6,7 @@ pub struct TexlaCore {
     pub(crate) export_manager: TexlaExportManager,
     pub(crate) pull_interval: u64,
     pub(crate) worksession_interval: u64,
+    pub(crate) notify_delay: u64,
 
     // only needed for offline version
     // (in online version the main_file would be passed from the frontend)
