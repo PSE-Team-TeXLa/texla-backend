@@ -233,8 +233,14 @@ async fn perform_operation(
         let latex_single_string = locked.ast.to_latex(Default::default())?;
         TexlaAst::from_latex(latex_single_string)?
     };
-    // TODO: this should be done in parallel
-    stringify_and_save(state, Default::default()).await?;
+    tokio::spawn(async move {
+        if let Err(err) = stringify_and_save(state.clone(), Default::default()).await {
+            println!("Error while saving: {err}");
+            let state = state.lock().unwrap();
+            let socket = &state.socket;
+            send(socket, "error", err).ok();
+        }
+    });
     Ok(reparsed_ast)
 }
 
