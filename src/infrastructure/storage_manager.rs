@@ -347,9 +347,14 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         // don't call save() here since all changes are already saved at end of worksession
 
         println!("End of worksession");
-        self.vcs_manager.commit(None);
-        self.vcs_manager.pull();
-        self.vcs_manager.push();
+
+        if self.vcs_manager.has_local_changes() {
+            self.vcs_manager.commit(None);
+            self.vcs_manager.pull();
+            self.vcs_manager.push();
+        } else {
+            println!("Nothing to commit");
+        }
     }
 
     fn disassemble(&mut self) {

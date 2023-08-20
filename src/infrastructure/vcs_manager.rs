@@ -64,6 +64,7 @@ pub trait VcsManager: Send + Sync {
     fn pull(&self);
     fn commit(&self, message: Option<String>);
     fn push(&self);
+    fn has_local_changes(&self) -> bool;
 }
 
 pub struct GitManager {
@@ -83,6 +84,7 @@ impl GitManager {
     const GIT_LIST_REMOTES: [&'static str; 1] = ["remote"];
     const GIT_GET_REMOTE_URL: [&'static str; 2] = ["remote", "get-url"];
     const GIT_PULL: [&'static str; 3] = ["pull", "--rebase", "--autostash"];
+    const GIT_STATUS: [&'static str; 2] = ["status", "--porcelain"];
     const GIT_ADD: [&'static str; 2] = ["add", "--all"];
     const GIT_COMMIT: [&'static str; 2] = ["commit", "--message"];
     const GIT_PUSH: [&'static str; 1] = ["push"];
@@ -246,6 +248,12 @@ impl VcsManager for GitManager {
                     message: "unable to push local changes".to_string(),
                 });
         }
+    }
+
+    fn has_local_changes(&self) -> bool {
+        let status_output = self.git(Self::GIT_STATUS.to_vec());
+        !status_output.stdout.is_empty()
+        // if output from 'git status --porcelain' is empty, there are no local changes
     }
 }
 
