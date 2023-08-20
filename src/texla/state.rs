@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use ast::texla_ast::TexlaAst;
 use ast::Ast;
@@ -12,8 +12,7 @@ use crate::texla::errors::TexlaError;
 use crate::texla::socket::{parse_ast_from_disk, send, TexlaSocket};
 
 pub type TexlaState = State<TexlaAst, TexlaStorageManager<GitManager>>;
-// TODO: maybe Mutex is not needed (if it is, use RwLock instead)
-pub type SharedTexlaState = Arc<Mutex<TexlaState>>;
+pub type SharedTexlaState = Arc<RwLock<TexlaState>>;
 
 pub struct State<A, SM>
 where

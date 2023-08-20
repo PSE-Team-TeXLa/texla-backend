@@ -64,7 +64,7 @@ impl DirectoryWatcher {
         let passer_join_handle = tokio::spawn(async move {
             while let Some(_event) = debounced.next().await {
                 println!("Detected foreign change (debounced)");
-                handler.lock().unwrap().handle_directory_change();
+                handler.write().unwrap().handle_directory_change();
             }
         });
 

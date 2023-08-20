@@ -1,7 +1,7 @@
 use std::fs;
 use std::ops::Range;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -23,8 +23,8 @@ use crate::infrastructure::work_session::WorksessionManager;
 pub trait StorageManager {
     fn attach_handlers(
         &mut self,
-        dc_handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
-        ge_handler: Arc<Mutex<dyn GitErrorHandler>>,
+        dc_handler: Arc<RwLock<dyn DirectoryChangeHandler>>,
+        ge_handler: Arc<RwLock<dyn GitErrorHandler>>,
     );
     async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError>;
     fn remote_url(&self) -> Option<&String>;
@@ -44,7 +44,7 @@ where
     V: VcsManager,
 {
     pub(super) vcs_manager: V,
-    pub(crate) directory_change_handler: Option<Arc<Mutex<dyn DirectoryChangeHandler>>>,
+    pub(crate) directory_change_handler: Option<Arc<RwLock<dyn DirectoryChangeHandler>>>,
     main_file: FilePath,
     pull_timer_manager: Option<PullTimerManager>,
     pub(crate) pull_interval: u64,
@@ -216,8 +216,8 @@ impl TexlaStorageManager<GitManager> {
 impl StorageManager for TexlaStorageManager<GitManager> {
     fn attach_handlers(
         &mut self,
-        dc_handler: Arc<Mutex<dyn DirectoryChangeHandler>>,
-        ge_handler: Arc<Mutex<dyn GitErrorHandler>>,
+        dc_handler: Arc<RwLock<dyn DirectoryChangeHandler>>,
+        ge_handler: Arc<RwLock<dyn GitErrorHandler>>,
     ) {
         self.directory_change_handler = Some(dc_handler);
         self.vcs_manager.attach_handler(ge_handler);

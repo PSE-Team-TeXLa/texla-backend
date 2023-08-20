@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Output};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use chrono::Local;
 
@@ -60,7 +60,7 @@ impl StringOutput {
 }
 
 pub trait VcsManager: Send + Sync {
-    fn attach_handler(&mut self, ge_handler: Arc<Mutex<dyn GitErrorHandler>>);
+    fn attach_handler(&mut self, ge_handler: Arc<RwLock<dyn GitErrorHandler>>);
     fn pull(&self);
     fn commit(&self, message: Option<String>);
     fn push(&self);
@@ -70,7 +70,7 @@ pub struct GitManager {
     active: bool,
     main_file_directory: PathBuf,
     remote_url: Option<String>,
-    git_error_handler: Option<Arc<Mutex<dyn GitErrorHandler>>>,
+    git_error_handler: Option<Arc<RwLock<dyn GitErrorHandler>>>,
 }
 
 impl GitManager {
@@ -150,7 +150,7 @@ impl GitManager {
 }
 
 impl VcsManager for GitManager {
-    fn attach_handler(&mut self, ge_handler: Arc<Mutex<dyn GitErrorHandler>>) {
+    fn attach_handler(&mut self, ge_handler: Arc<RwLock<dyn GitErrorHandler>>) {
         self.git_error_handler = Some(ge_handler);
     }
 
@@ -168,7 +168,7 @@ impl VcsManager for GitManager {
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
-                .lock()
+                .read()
                 .unwrap()
                 .handle_git_error(VcsError {
                     message: "unable to pull remote changes".to_string(),
@@ -198,7 +198,7 @@ impl VcsManager for GitManager {
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
-                .lock()
+                .read()
                 .unwrap()
                 .handle_git_error(VcsError {
                     message: "unable to add local files to staging area".to_string(),
@@ -217,7 +217,7 @@ impl VcsManager for GitManager {
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
-                .lock()
+                .read()
                 .unwrap()
                 .handle_git_error(VcsError {
                     message: "unable to commit local changes to repository".to_string(),
@@ -237,7 +237,7 @@ impl VcsManager for GitManager {
             self.git_error_handler
                 .as_ref()
                 .expect("No git error handler present")
-                .lock()
+                .read()
                 .unwrap()
                 .handle_git_error(VcsError {
                     message: "unable to push local changes".to_string(),
