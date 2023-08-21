@@ -2,7 +2,7 @@
 name = "backend"
 version = "0.1.0"
 edition = "2021"
-description = "A graphical LaTeX-editor"
+description = "TeXLa - a graphical LaTeX editor"
 # TODO: authors
 
 [package.metadata.bundle]

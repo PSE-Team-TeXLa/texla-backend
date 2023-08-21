@@ -9,23 +9,23 @@ use crate::texla::webserver::{start_axum, PORT};
 
 // the rustdocs are put into the help message of the CLI
 #[derive(Parser, Debug)]
-#[clap(name = "TeXLa", about = "A graphical LaTeX editor", version)]
+#[clap(name = "TeXLa", about = "TeXLa - a graphical LaTeX editor", version)]
 struct CliArguments {
     /// The root file of your LaTeX project
-    #[arg(short, long)]
+    #[arg(value_names = ["path"], short, long)]
     main_file: String,
 
     /// The time between two subsequent pulls from the git remote (in milliseconds)
-    #[arg(short, long, default_value = "500")]
+    #[arg(value_names = ["duration in ms"], short, long, default_value = "500")]
     pull_interval: u64,
 
     /// The minimum time between the last change and the according commit (in milliseconds)
-    #[arg(short, long, default_value = "5000")]
+    #[arg(value_names = ["duration in ms"], short, long, default_value = "5000")]
     worksession_interval: u64,
 
-    /// The time notify is allowed to take for picking up our own file changes and reporting them
+    /// The time 'notify' is allowed to take for picking up our own file changes and reporting them
     /// (in milliseconds)
-    #[arg(short, long, default_value = "100")]
+    #[arg(value_names = ["duration in ms"], short, long, default_value = "100")]
     notify_delay: u64,
 }
 
