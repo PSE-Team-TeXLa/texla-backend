@@ -6,6 +6,7 @@ static JS_MAX_SAFE_INTEGER: Uuid = 2u64.pow(53);
 static MAX_UUID: Uuid = JS_MAX_SAFE_INTEGER;
 
 // TODO: subject to change (unsafe!)
+// -> https://stackoverflow.com/questions/27791532/how-do-i-create-a-global-mutable-singleton
 static mut HIGHEST_UUID: Uuid = 0;
 
 pub(crate) trait UuidProvider {

@@ -14,7 +14,6 @@ pub mod edit_node;
 pub mod merge_nodes;
 pub mod move_node;
 
-// TODO: if struggling with lifetimes, let execute_on consume self
 /// Structs that implement this Trait can modify an [Ast] in some way.
 /// This specifies the Operation Interface in the Strategy pattern.
 pub trait Operation<A>: Send + Sync + Debug
