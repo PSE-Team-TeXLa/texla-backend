@@ -163,7 +163,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     });
 
     socket.on("quit", |socket, _: String, _, _| async move {
-        println!("Ending worksession...");
+        println!("Received quit");
         {
             let storage_manager = {
                 let state_ref = extract_state(&socket);
@@ -172,6 +172,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
             };
             let mut storage_manager = storage_manager.lock().unwrap();
             storage_manager.end_worksession();
+            storage_manager.disassemble();
         };
         println!("Quitting...");
         send(&socket, "quit", "ok").ok();
