@@ -33,6 +33,8 @@ impl TexlaUuidProvider {
     }
 }
 
+/// Represents a Position in an [Ast]. The Position points between to nodes or behind a node in order to allow specifying positions which are not currently occupied.
+/// As a result this can not be used to specify the position of a node that is already in the Ast.
 #[derive(Deserialize, Debug, Clone, Copy)]
 pub struct Position {
     pub parent: Uuid,
