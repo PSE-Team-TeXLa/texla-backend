@@ -241,7 +241,6 @@ pub(crate) enum LeafData {
 }
 
 impl LeafData {
-    // This does not consume the node
     fn to_latex(&self, options: &StringificationOptions) -> String {
         match self {
             LeafData::Text { text } => format!("{text}\n\n"),
@@ -267,11 +266,7 @@ impl LeafData {
             },
             LeafData::Comment { comment } => {
                 if options.include_comments {
-                    // TODO: is this just to replace new lines?
-                    comment.lines().fold(String::new(), |mut acc, line| {
-                        acc.push_str(format!("{line}\n").as_str());
-                        acc
-                    }) + "\n"
+                    comment.to_string() + "\n"
                 } else {
                     String::new()
                 }
