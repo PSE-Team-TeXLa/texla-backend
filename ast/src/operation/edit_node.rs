@@ -10,6 +10,10 @@ use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
 use crate::Ast;
 
+/// Modifies some existing Node.
+/// The Node is specified by its `target` Uuid.
+/// The new state of the Node is specified through the `raw_latex` LaTeX String.
+/// This Struct is a Strategy. It can be created explicitly and should be used on an Ast via the `execute_on()` method.
 #[derive(Deserialize, Debug)]
 pub struct EditNode {
     pub target: Uuid,

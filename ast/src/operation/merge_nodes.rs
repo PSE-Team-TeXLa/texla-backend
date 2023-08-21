@@ -7,6 +7,10 @@ use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
 use crate::Ast;
 
+/// Merge two text blocks together.
+/// Only the second node is specified through its uuid.
+/// The first node precedes implicitly.
+/// This Struct is a Strategy. It can be created explicitly and should be used on an Ast via the `execute_on()` method.
 #[derive(Deserialize, Debug)]
 pub struct MergeNodes {
     pub second_node: Uuid,

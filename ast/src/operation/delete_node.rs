@@ -6,6 +6,9 @@ use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
 use crate::Ast;
 
+/// Delete some Node from the [Ast].
+/// The Node is specified by its `target` Uuid.
+/// This Struct is a Strategy. It can be created explicitly and should be used on an Ast via the `execute_on()` method.
 #[derive(Deserialize, Debug)]
 pub struct DeleteNode {
     pub target: Uuid,

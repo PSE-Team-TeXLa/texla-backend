@@ -16,13 +16,18 @@ pub mod merge_nodes;
 pub mod move_node;
 
 // TODO: if struggling with lifetimes, let execute_on consume self
+/// Structs that implement this Trait can modify an [Ast] in some way.
+/// This specifies the Operation Interface in the Strategy pattern.
 pub trait Operation<A>: Send + Sync + Debug
 where
     A: Ast,
 {
+    /// Execute this Operation on some [Ast].
     fn execute_on(&self, ast: &mut A) -> Result<(), OperationError>;
 }
 
+/// Enum to represent the different Operations.
+/// This Representation is used since rust currently doesn't support serialization of trait objects directly.
 #[derive(Deserialize)]
 #[serde(tag = "type")]
 pub enum JsonOperation {
@@ -51,6 +56,8 @@ pub enum JsonOperation {
 
 // we do this, just because serde_traitobject requires nightly
 impl JsonOperation {
+    /// This maps the `JsonOperation` to the equivalent Trait Object. The return type is guaranteed to be an [Operation].
+    /// This conversion is used since rust currently doesn't support serialization of trait objects directly.
     pub fn to_trait_obj(self) -> Box<dyn Operation<TexlaAst>> {
         match self {
             JsonOperation::EditNode {
@@ -79,6 +86,8 @@ impl JsonOperation {
 }
 
 // TODO move into uuid_provider?
+/// Represents a Position in an [Ast]. The Position points between to nodes or behind a node in order to allow specifying positions which are not currently occupied.
+/// As a result this can not be used to specify the position of a node that is already in the Ast.
 #[derive(Deserialize, Debug, Clone, Copy)]
 pub struct Position {
     pub parent: Uuid,

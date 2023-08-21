@@ -11,6 +11,7 @@ use crate::uuid_provider::UuidProvider;
 use crate::Ast;
 
 /// Tries to add a node represented by `raw_latex` into the [Ast] at the given [Position].
+/// This Struct is a Strategy. It can be created explicitly and should be used on an Ast via the `execute_on()` method.
 #[derive(Deserialize, Debug)]
 pub struct AddNode {
     pub destination: Position,
