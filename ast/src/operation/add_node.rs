@@ -20,7 +20,6 @@ pub struct AddNode {
 impl Operation<TexlaAst> for AddNode {
     fn execute_on(&self, ast: &mut TexlaAst) -> Result<(), OperationError> {
         // create new node
-        // TODO: maybe outsource node creation later
         let uuid = ast.uuid_provider.new_uuid();
 
         let new_node_ref = Arc::new(Mutex::new(Node {
