@@ -7,8 +7,6 @@ use tokio::time::sleep;
 use crate::infrastructure::storage_manager::TexlaStorageManager;
 use crate::infrastructure::vcs_manager::{GitManager, VcsManager};
 
-const PULL_INTERVAL: Duration = Duration::from_millis(500);
-
 pub(crate) struct PullTimerManager {
     storage_manager: Arc<Mutex<TexlaStorageManager<GitManager>>>,
     join_handle: Option<JoinHandle<()>>,
@@ -38,14 +36,11 @@ impl PullTimerManager {
 }
 
 async fn pull_repeatedly<V: VcsManager>(storage_manager: Arc<Mutex<TexlaStorageManager<V>>>) {
-    loop {
-        // TODO: this locks the storage_manager for too much time, operations are getting slow
-        let pull_result = storage_manager.lock().unwrap().vcs_manager.pull();
-        if pull_result.is_err() {
-            // TODO in case of merge conflict, inform user
-            // TODO in case of other error (how to differentiate?), repeat pull only? (*)
-        }
+    let duration = Duration::from_millis(storage_manager.lock().unwrap().pull_interval);
 
-        sleep(PULL_INTERVAL).await;
+    loop {
+        storage_manager.lock().unwrap().vcs_manager.pull();
+
+        sleep(duration).await;
     }
 }

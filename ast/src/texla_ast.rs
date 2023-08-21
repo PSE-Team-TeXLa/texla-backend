@@ -1,20 +1,20 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use serde::Serialize;
 
 use crate::errors::AstError;
-use crate::node::{Node, NodeRef, NodeRefWeak, NodeType};
-use crate::operation::{Operation, Position};
+use crate::node::{NodeRef, NodeRefWeak, NodeType};
+use crate::operation::Operation;
 use crate::options::StringificationOptions;
-use crate::uuid_provider::{TexlaUuidProvider, Uuid, UuidProvider};
+use crate::uuid_provider::{Position, TexlaUuidProvider, Uuid};
 use crate::{parser, Ast};
 
 #[derive(Debug, Serialize, Clone)]
 pub struct TexlaAst {
+    // by reparsing after each operation all weak references in this hashmap are always valid
     #[serde(skip_serializing)]
     pub(crate) portal: HashMap<Uuid, NodeRefWeak>,
-    // TODO can we safely call '.upgrade().unwrap()' on any weak pointer from the portal?
     pub(crate) root: NodeRef,
     #[serde(skip_serializing)]
     pub(crate) uuid_provider: TexlaUuidProvider,
@@ -22,23 +22,6 @@ pub struct TexlaAst {
 }
 
 impl TexlaAst {
-    pub(crate) fn new(mut root: Node) -> Self {
-        let mut portal: HashMap<Uuid, NodeRefWeak> = HashMap::new();
-        let mut uuid_provider = TexlaUuidProvider::new();
-        root.uuid = uuid_provider.new_uuid();
-        let root_ref = Arc::new(Mutex::new(root));
-        portal.insert(
-            root_ref.lock().unwrap().uuid,
-            Arc::downgrade(&root_ref.clone()),
-        );
-        TexlaAst {
-            portal,
-            root: root_ref,
-            uuid_provider,
-            highest_level: 0,
-        }
-    }
-
     pub(crate) fn get_node(&self, uuid: Uuid) -> NodeRef {
         self.portal
             .get(&uuid)
@@ -83,7 +66,7 @@ impl TexlaAst {
         };
         let index = parent_children
             .iter()
-            .position(|child_ref| Arc::ptr_eq(child_ref, &node_ref))
+            .position(|child_ref| Arc::ptr_eq(child_ref, node_ref))
             .expect("target is not child of parent");
         parent_children.remove(index);
         self.portal.remove(&node.uuid);

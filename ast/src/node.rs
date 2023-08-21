@@ -8,6 +8,7 @@ use crate::errors::StringificationError;
 use crate::latex_constants::*;
 use crate::meta_data::MetaData;
 use crate::options::StringificationOptions;
+use crate::texla_constants::*;
 use crate::uuid_provider::{Uuid, UuidProvider};
 
 pub(crate) type NodeRef = Arc<Mutex<Node>>;
@@ -32,7 +33,8 @@ impl Node {
     ) -> Result<String, StringificationError> {
         if options.include_metadata && !self.meta_data.data.is_empty() {
             Ok(format!(
-                "% TEXLA METADATA {}\n{}",
+                "{}{}\n{}",
+                METADATA_MARK,
                 self.meta_data,
                 self.node_type.to_latex(level, options)?
             ))
@@ -133,33 +135,36 @@ impl NodeType {
                             false => String::from(UNCOUNTED_SEGMENT_MARKER),
                             true => String::new(),
                         };
-                        let keyword = LEVELS
+                        let keyword = SEGMENT_LEVELS
                             .iter()
                             .find(|(lvl, _)| *lvl == level)
                             .map(|(_, keyword)| keyword)
                             .ok_or(StringificationError {
-                                message: format!("Invalid nesting level: {}", level),
+                                message: format!("Invalid nesting level: {level}"),
                             })?;
-                        Ok(format!("\\{keyword}{count}{{{heading}}}\n{children}"))
+                        Ok(format!(
+                            "{KEYWORD_PREFIX}{keyword}{count}{{{heading}}}\n{children}"
+                        ))
                     }
                     ExpandableData::Document {
                         preamble,
                         postamble,
                     } => {
                         let children = self.children_to_latex(level, options)?;
-                        Ok(format!("{preamble}\\begin{{document}}\n{children}\\end{{document}}\n{postamble}"
-                    ))
+                        Ok(format!(
+                            "{preamble}{DOCUMENT_BEGIN}\n{children}{DOCUMENT_END}\n{postamble}"
+                        ))
                     }
                     ExpandableData::File { path } => {
                         let children = self.children_to_latex(level, options)?; //Dont increase the
                                                                                 // nesting level since file is not in hierarchy
                         Ok(format!(
-                            "% TEXLA FILE BEGIN {{{path}}}\n{children}% TEXLA FILE END {{{path}}}\n"
+                            "{FILE_BEGIN_MARK}{{{path}}}\n{children}{FILE_END_MARK}{{{path}}}\n"
                         ))
                     }
                     ExpandableData::Environment { name } => {
                         let children = self.children_to_latex(level, options)?;
-                        Ok(format!("\\begin{{{name}}}\n{children}\\end{{{name}}}\n"))
+                        Ok(format!("{BEGIN}{{{name}}}\n{children}{END}{{{name}}}\n"))
                     }
                     ExpandableData::Dummy {
                         before_children,
@@ -228,19 +233,23 @@ impl LeafData {
         match self {
             LeafData::Text { text } => format!("{text}\n\n"),
             LeafData::Image { path, options } => match options {
-                None => format!("\\includegraphics{{{path}}}\n"),
-                Some(option) => format!("\\includegraphics[{option}]{{{path}}}\n"),
+                None => format!("{INCLUDEGRAPHICS}{{{path}}}\n"),
+                Some(options_str) => format!(
+                    "{INCLUDEGRAPHICS}{OPTIONS_BEGIN}{options_str}{OPTIONS_END}{{{path}}}\n"
+                ),
             },
-            LeafData::Label { label } => format!("\\label{{{label}}}\n"),
-            LeafData::Caption { caption } => format!("\\caption{{{caption}}}\n"),
+            LeafData::Label { label } => format!("{LABEL}{{{label}}}\n"),
+            LeafData::Caption { caption } => format!("{CAPTION}{{{caption}}}\n"),
             LeafData::Math { kind, content } => match kind {
-                MathKind::SquareBrackets => format!("\\[{content}\\]\n"),
-                MathKind::DoubleDollars => format!("$${content}$$\n"),
+                MathKind::DoubleDollars => format!("{DOUBLE_DOLLARS}{content}{DOUBLE_DOLLARS}\n"),
+                MathKind::SquareBrackets => {
+                    format!("{SQUARE_BRACKETS_LEFT}{content}{SQUARE_BRACKETS_RIGHT}\n")
+                }
                 MathKind::Displaymath => {
-                    format!("\\begin{{displaymath}}{content}\\end{{displaymath}}\n")
+                    format!("{DISPLAYMATH_BEGIN}{content}{DISPLAYMATH_END}\n")
                 }
                 MathKind::Equation => {
-                    format!("\\begin{{equation}}{content}\\end{{equation}}\n")
+                    format!("{EQUATION_BEGIN}{content}{EQUATION_END}\n")
                 }
             },
             LeafData::Comment { comment } => {
@@ -260,8 +269,8 @@ impl LeafData {
 
 #[derive(Debug, Serialize, Clone)]
 pub(crate) enum MathKind {
-    SquareBrackets,
     DoubleDollars,
+    SquareBrackets,
     Displaymath,
     Equation,
 }

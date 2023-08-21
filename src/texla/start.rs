@@ -1,44 +1,59 @@
-use std::path::MAIN_SEPARATOR_STR;
 use std::sync::{Arc, RwLock};
 
 use clap::Parser;
 
 use crate::infrastructure::export_manager::TexlaExportManager;
+use crate::infrastructure::file_path::FilePath;
 use crate::texla::core::TexlaCore;
-use crate::texla::webserver::start_axum;
+use crate::texla::webserver::{start_axum, PORT};
 
+// the rustdocs are put into the help message of the CLI
 #[derive(Parser, Debug)]
+#[clap(name = "TeXLa", about = "TeXLa - a graphical LaTeX editor", version)]
 struct CliArguments {
-    #[arg(short, long)]
+    /// The root file of your LaTeX project
+    #[arg(value_names = ["path"], short, long)]
     main_file: String,
 
-    // TODO how do we pass the following values to TexlaStorageManager?
-    #[arg(short, long, default_value = "500")] // in milliseconds
+    /// The time between two subsequent pulls from the git remote (in milliseconds)
+    #[arg(value_names = ["duration in ms"], short, long, default_value = "500")]
     pull_interval: u64,
 
-    #[arg(short, long, default_value = "5000")] // in milliseconds
+    /// The minimum time between the last change and the according commit (in milliseconds)
+    #[arg(value_names = ["duration in ms"], short, long, default_value = "5000")]
     worksession_interval: u64,
+
+    /// The time 'notify' is allowed to take for picking up our own file changes and reporting them
+    /// (in milliseconds)
+    #[arg(value_names = ["duration in ms"], short, long, default_value = "100")]
+    notify_delay: u64,
 }
 
 pub async fn start() {
-    println!("Starting TeXLa...");
-
     // append `-- --main-file main.tex` to your run command in CLion to provide the necessary CLI
     // argument
     let args = CliArguments::parse();
 
-    // replace separators in path with system-dependent variant
-    let main_file = args.main_file.replace(['/', '\\'], MAIN_SEPARATOR_STR);
-    // TODO use tuple (directory: PathBuf, filename: PathBuf) instead of String for main_file
+    println!("Starting TeXLa...");
 
-    println!("Opening file: {}", main_file);
+    let main_file = FilePath::from(args.main_file);
+    println!("Opening file: {}", main_file.path.to_str().unwrap());
 
-    let core = TexlaCore {
-        export_manager: TexlaExportManager::new(main_file.clone()),
+    let core = Arc::new(RwLock::new(TexlaCore {
+        export_manager: TexlaExportManager::new(main_file.directory.clone()),
+        pull_interval: args.pull_interval,
+        worksession_interval: args.worksession_interval,
+        notify_delay: args.notify_delay,
         main_file,
-    };
+        socket: None,
+    }));
 
-    let core = Arc::new(RwLock::new(core));
+    if let Err(err) = open::that(format!("http://localhost:{}/", PORT)) {
+        println!("Could not open browser: {err}");
+        println!("Please open http://localhost:{}/ manually", PORT);
+    } else {
+        println!("Opened TeXLa at http://localhost:{}/", PORT);
+    }
 
     start_axum(core).await;
 }

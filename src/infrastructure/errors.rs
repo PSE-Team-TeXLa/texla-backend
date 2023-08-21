@@ -27,22 +27,6 @@ impl From<VcsError> for InfrastructureError {
     }
 }
 
-impl From<PushRejectionError> for InfrastructureError {
-    fn from(value: PushRejectionError) -> Self {
-        Self {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<MergeConflictError> for InfrastructureError {
-    fn from(value: MergeConflictError) -> Self {
-        Self {
-            message: value.to_string(),
-        }
-    }
-}
-
 impl From<ExportZipError> for InfrastructureError {
     fn from(value: ExportZipError) -> Self {
         Self {
@@ -70,7 +54,7 @@ impl From<zip::result::ZipError> for InfrastructureError {
 impl From<notify::Error> for InfrastructureError {
     fn from(err: notify::Error) -> Self {
         Self {
-            message: format!("Could not start directory watcher: {}", err),
+            message: format!("Could not start directory watcher: {err}"),
         }
     }
 }
@@ -94,46 +78,6 @@ pub struct VcsError {
 impl Display for VcsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Could not perform VCS operation: {}", self.message)
-    }
-}
-
-impl From<PushRejectionError> for VcsError {
-    fn from(value: PushRejectionError) -> Self {
-        Self {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<MergeConflictError> for VcsError {
-    fn from(value: MergeConflictError) -> Self {
-        Self {
-            message: value.to_string(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct PushRejectionError;
-
-impl Display for PushRejectionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Could not push changes: remote changes need to be pulled first"
-        )
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct MergeConflictError;
-
-impl Display for MergeConflictError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Could not merge changes: conflicts need to be solved manually"
-        )
     }
 }
 

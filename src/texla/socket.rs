@@ -1,5 +1,6 @@
 use std::process::exit;
 use std::sync::{Arc, Mutex, RwLock};
+use std::time::Duration;
 
 use serde::Serialize;
 use socketioxide::adapter::LocalAdapter;
@@ -10,16 +11,19 @@ use tower::layer::util::{Identity, Stack};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
+use ast::operation::{JsonOperation, Operation};
+use ast::options::StringificationOptions;
+use ast::texla_ast::TexlaAst;
+use ast::Ast;
+
 use crate::infrastructure::export_manager::ExportManager;
 use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
 use crate::infrastructure::vcs_manager::GitManager;
 use crate::texla::core::TexlaCore;
 use crate::texla::errors::TexlaError;
 use crate::texla::state::{SharedTexlaState, TexlaState};
-use ast::operation::{JsonOperation, Operation};
-use ast::options::StringificationOptions;
-use ast::texla_ast::TexlaAst;
-use ast::Ast;
+
+const QUIT_DELAY: Duration = Duration::from_secs(1);
 
 pub type TexlaSocket = Arc<Socket<LocalAdapter>>;
 
@@ -44,14 +48,20 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     let storage_manager = {
         let core = core.read().unwrap();
 
-        let vcs_manager = GitManager::new(core.main_file.clone());
-        TexlaStorageManager::new(vcs_manager, core.main_file.clone())
+        let vcs_manager = GitManager::new(core.main_file.directory.clone());
+        TexlaStorageManager::new(
+            vcs_manager,
+            core.main_file.clone(),
+            core.pull_interval,
+            core.worksession_interval,
+            core.notify_delay,
+        )
     };
 
     let ast = match parse_ast_from_disk(&storage_manager) {
         Ok(ast) => ast,
         Err(err) => {
-            println!("Found invalid ast: {}", err);
+            println!("Found invalid ast: {err}");
             send(&socket, "error", err).ok();
             return;
             // this will display the error in the frontend
@@ -64,11 +74,33 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         storage_manager: Arc::new(Mutex::new(storage_manager)),
         ast,
     };
-    socket.extensions.insert(Arc::new(Mutex::new(state)));
+    socket.extensions.insert(Arc::new(RwLock::new(state)));
+
+    {
+        let mut core = core.write().unwrap();
+
+        if let Some(old_socket) = core.socket.clone() {
+            let err = TexlaError {
+                message: "This frontend is replaced by another one. \
+                Click the TeXLa logo to regain control."
+                    .to_string(),
+            };
+            send(&old_socket, "error", err).ok();
+            send(&old_socket, "quit", "quit").ok();
+
+            let state = extract_state(&old_socket);
+            let state = state.read().unwrap();
+            let mut sm = state.storage_manager.lock().unwrap();
+            sm.disassemble();
+            println!("Disconnected old socket");
+        }
+
+        core.socket = Some(socket.clone());
+    }
 
     let storage_manager_handle = {
         let state_ref = extract_state(&socket);
-        let state = state_ref.lock().unwrap();
+        let state = state_ref.read().unwrap();
 
         state
             .storage_manager
@@ -80,7 +112,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
 
     {
         let state_ref = extract_state(&socket);
-        let state = state_ref.lock().unwrap();
+        let state = state_ref.read().unwrap();
         let remote_url = {
             let storage_manager = state.storage_manager.lock().unwrap();
             storage_manager.remote_url().map(|url| url.to_string())
@@ -93,33 +125,32 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
 
     socket.on("active", |socket, _: String, _, _| async move {
         let state_ref = extract_state(&socket);
-        let state = state_ref.lock().unwrap();
+        let state = state_ref.read().unwrap();
         // stop synchronization in order to prevent losing changes
         state.storage_manager.lock().unwrap().wait_for_frontend();
         println!("Waiting for frontend to finalize operation...");
     });
 
     socket.on("operation", |socket, json: String, _, _| async move {
-        print!("Received operation:");
+        print!("Received operation: ");
 
         let operation = serde_json::from_str::<JsonOperation>(&json)
             .expect("Got invalid operation from frontend")
             .to_trait_obj();
-        println!("{:?}", operation);
+        println!("{operation:?}");
 
         let state = extract_state(&socket).clone();
         match perform_and_check_operation(state.clone(), operation).await {
             Ok(()) => {
-                send(&socket, "new_ast", &state.lock().unwrap().ast).ok();
+                send(&socket, "new_ast", &state.read().unwrap().ast).ok();
                 println!("Operation was okay");
                 println!("Saved changes");
-                // println!("new_ast {:#?}", &state.ast);
             }
             Err(err) => {
-                println!("Operation was not okay: {}", err);
+                println!("Operation was not okay: {err}");
                 send(&socket, "error", err).ok();
                 // send old ast in order to enable frontend to roll back to it
-                send(&socket, "new_ast", &state.lock().unwrap().ast).ok();
+                send(&socket, "new_ast", &state.read().unwrap().ast).ok();
             }
         }
     });
@@ -132,25 +163,22 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     });
 
     socket.on("quit", |socket, _: String, _, _| async move {
-        println!("Saving Changes...");
-        let result = {
-            let state_ref = extract_state(&socket);
-            let state = state_ref.lock().unwrap();
-            let mut storage_manager = state.storage_manager.lock().unwrap();
-            storage_manager.end_worksession()
+        println!("Received quit");
+        {
+            let storage_manager = {
+                let state_ref = extract_state(&socket);
+                let state = state_ref.read().unwrap();
+                state.storage_manager.clone()
+            };
+            let mut storage_manager = storage_manager.lock().unwrap();
+            storage_manager.end_worksession();
+            storage_manager.disassemble();
         };
-        match result {
-            Ok(_) => {
-                println!("Quitting...");
-                send(&socket, "quit", "ok").ok();
-                sleep(std::time::Duration::from_secs(1)).await;
-                socket.disconnect().ok();
-                exit(0);
-            }
-            Err(err) => {
-                send(&socket, "error", TexlaError::from(err)).ok();
-            }
-        };
+        println!("Quitting...");
+        send(&socket, "quit", "ok").ok();
+        sleep(QUIT_DELAY).await;
+        socket.disconnect().ok();
+        exit(0);
     });
 
     if let Err(err) = storage_manager_handle.await {
@@ -163,10 +191,12 @@ pub fn parse_ast_from_disk(
 ) -> Result<TexlaAst, TexlaError> {
     let latex_single_string = storage_manager.multiplex_files()?;
     let ast = TexlaAst::from_latex(latex_single_string)?;
-    // verify the ast by converting it to latex again
-    // TODO: the reparsing should be temporary.
-    // It should never happen, that our output cannot be parsed
-    TexlaAst::from_latex(ast.to_latex(Default::default())?)?;
+
+    // Verify the ast by converting it to latex again.
+    // (It should never happen, that our output cannot be parsed.)
+    // If operations return ParseErrors even though they should be legal, check this
+    // TexlaAst::from_latex(ast.to_latex(Default::default())?)?;
+
     Ok(ast)
 }
 
@@ -175,43 +205,52 @@ fn extract_state(socket: &TexlaSocket) -> Ref<SharedTexlaState> {
 }
 
 async fn perform_and_check_operation(
-    state: Arc<Mutex<TexlaState>>,
+    state: SharedTexlaState,
     operation: Box<dyn Operation<TexlaAst>>,
 ) -> Result<(), TexlaError> {
-    let backup_latex = state.lock().unwrap().ast.to_latex(Default::default())?;
+    let backup_latex = state.read().unwrap().ast.to_latex(Default::default())?;
 
     match perform_operation(state.clone(), operation).await {
         Ok(new_ast) => {
-            state.lock().unwrap().ast = new_ast;
+            state.write().unwrap().ast = new_ast;
             Ok(())
         }
         Err(err) => {
-            state.lock().unwrap().ast = TexlaAst::from_latex(backup_latex)?;
+            let mut state = state.write().unwrap();
+            state.ast = TexlaAst::from_latex(backup_latex)?;
+            state.storage_manager.lock().unwrap().frontend_aborted();
             Err(err)
         }
     }
 }
 
 async fn perform_operation(
-    state: Arc<Mutex<TexlaState>>,
+    state: SharedTexlaState,
     operation: Box<dyn Operation<TexlaAst>>,
 ) -> Result<TexlaAst, TexlaError> {
     let reparsed_ast = {
-        let mut locked = state.lock().unwrap();
+        let mut locked = state.write().unwrap();
         locked.ast.execute(operation)?;
         let latex_single_string = locked.ast.to_latex(Default::default())?;
         TexlaAst::from_latex(latex_single_string)?
     };
-    stringify_and_save(state, Default::default()).await?;
+    tokio::spawn(async move {
+        if let Err(err) = stringify_and_save(state.clone(), Default::default()).await {
+            println!("Error while saving: {err}");
+            let state = state.read().unwrap();
+            let socket = &state.socket;
+            send(socket, "error", err).ok();
+        }
+    });
     Ok(reparsed_ast)
 }
 
 async fn stringify_and_save(
-    state: Arc<Mutex<TexlaState>>,
+    state: SharedTexlaState,
     options: StringificationOptions,
 ) -> Result<(), TexlaError> {
-    let latex_single_string = state.lock().unwrap().ast.to_latex(options)?;
-    let storage_manager = state.lock().unwrap().storage_manager.clone();
+    let latex_single_string = state.read().unwrap().ast.to_latex(options)?;
+    let storage_manager = state.read().unwrap().storage_manager.clone();
     StorageManager::save(storage_manager, latex_single_string).await?;
 
     Ok(())
@@ -223,20 +262,33 @@ async fn handle_export(
     options: StringificationOptions,
     core: Arc<RwLock<TexlaCore>>,
 ) {
-    println!("Preparing export with options: {:?}", options);
+    println!("Preparing export with options: {options:?}");
     let state = extract_state(&socket).clone();
+
+    let latex_single_string_with_metadata_and_comments = state
+        .read()
+        .unwrap()
+        .ast
+        .to_latex(Default::default())
+        .unwrap();
 
     if let Err(err) = stringify_and_save(state, options).await {
         send(&socket, "error", err).ok();
         return;
     }
 
-    // TODO: save original files again
+    let state_after_export = extract_state(&socket).clone();
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
+            state_after_export.write().unwrap().ast =
+                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
+                    .expect("Should be valid as it comes from working ast");
             send(&socket, "export_ready", url).ok();
         }
         Err(err) => {
+            state_after_export.write().unwrap().ast =
+                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
+                    .expect("Should be valid as it comes from working ast");
             send(&socket, "error", TexlaError::from(err)).ok();
         }
     }
@@ -250,13 +302,13 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
         Ok(_) => {
             println!("Successfully sent {} to {}", event, socket.sid)
         }
-        Err(_err) => {
+        Err(_) => {
             println!("Detected a closed socket: {}", socket.sid);
             // make sure locks are released before doing this
             let socket = socket.clone();
             tokio::spawn(async move {
                 let state = extract_state(&socket);
-                let state = state.lock().unwrap();
+                let state = state.read().unwrap();
                 let mut sm = state.storage_manager.lock().unwrap();
                 sm.disassemble();
             });
@@ -267,14 +319,52 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
 
 #[cfg(test)]
 mod test {
+    use tokio::runtime::Runtime;
+
+    use ast::options::StringificationOptions;
+    use ast::Ast;
+
+    use crate::infrastructure::file_path::FilePath;
     use crate::infrastructure::storage_manager::TexlaStorageManager;
     use crate::infrastructure::vcs_manager::GitManager;
 
     #[test]
     fn pflichtenheft() {
-        let file = "test_resources/latex/pflichtenheft/main.tex".to_string();
-        // TODO replace separator?
-        let sm = TexlaStorageManager::new(GitManager::new(file.clone()), file);
+        let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
+        let sm = TexlaStorageManager::new(
+            GitManager::new(main_file.directory.clone()),
+            main_file,
+            500,
+            5000,
+            100,
+        );
         assert!(super::parse_ast_from_disk(&sm).is_ok());
+    }
+
+    #[test]
+    fn pflichtenheft_read_save() {
+        let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
+        let sm = TexlaStorageManager::new(
+            GitManager::new(main_file.directory.clone()),
+            main_file,
+            500,
+            5000,
+            100,
+        );
+        let ast = super::parse_ast_from_disk(&sm);
+        let ast = ast.unwrap();
+
+        let latex_single_string = ast.to_latex(StringificationOptions::default());
+        let _latex_single_string = latex_single_string.unwrap();
+        // TODO uncomment code below or remove underscored variable
+
+        let rt = Runtime::new().unwrap();
+        rt.spawn(async move {
+            // StorageManager::save(Arc::new(Mutex::new(sm)), latex_single_string)
+            //     .await
+            //     .ok();
+        });
+
+        // TODO: check that there are no changes
     }
 }

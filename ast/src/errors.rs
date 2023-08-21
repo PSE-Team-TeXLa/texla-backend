@@ -36,7 +36,6 @@ impl From<OperationError> for AstError {
     }
 }
 
-//TODO Decide on Chumsky Error Strategy, then make this nicer (after VS)
 #[derive(Debug, PartialEq)]
 pub(crate) struct ParseError {
     pub(crate) message: String,
@@ -53,7 +52,7 @@ impl From<Vec<Simple<char>>> for ParseError {
         Self {
             message: value
                 .iter()
-                .map(|error| format!("{:?} {}", error.span(), error.to_string()))
+                .map(|error| format!("{:?} {}", error.span(), error))
                 .collect(),
         }
     }

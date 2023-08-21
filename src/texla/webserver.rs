@@ -7,13 +7,13 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{Extension, Server};
 use tower_http::services::{ServeDir, ServeFile};
-
 use tower_http::trace::TraceLayer;
 
 use crate::texla::core::TexlaCore;
 use crate::texla::socket::socket_service;
 
-const PORT: u16 = 13814;
+const LOCALHOST_IP: [u8; 4] = [127, 0, 0, 1];
+pub const PORT: u16 = 13814;
 const FRONTEND_SUBDIR: &str = "frontend";
 
 pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
@@ -26,7 +26,7 @@ pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
         .layer(socket_service(core.clone()))
         .layer(Extension(core.clone()));
 
-    let res = Server::bind(&([127, 0, 0, 1], PORT).into())
+    let res = Server::bind(&(LOCALHOST_IP, PORT).into())
         .serve(app.into_make_service())
         .await;
 
@@ -34,7 +34,6 @@ pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
 }
 
 fn static_files() -> ServeDir<ServeFile> {
-    // TODO: write build script, that includes the dir
     // (https://stackoverflow.com/questions/57535794/how-do-i-include-a-folder-in-the-building-process)
     let frontend_path = std::env::current_exe()
         .expect("os error")
@@ -45,7 +44,6 @@ fn static_files() -> ServeDir<ServeFile> {
         .expect("Could not find frontend path");
     println!("Serving static files from: {}", frontend_path.display());
 
-    // TODO: is index.html really the root of our svelte app?
     ServeDir::new(frontend_path.as_path()).fallback(ServeFile::new(
         frontend_path
             .join(PathBuf::from("index.html"))
@@ -58,29 +56,20 @@ async fn user_assets_handler(
     Extension(core): Extension<Arc<RwLock<TexlaCore>>>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    println!("Serving user asset: {}", path);
+    println!("Serving user asset: {path}");
 
-    let main_file_directory = {
-        let main_file = &core.read().unwrap().main_file;
-        let main_file_path = PathBuf::from(main_file)
-            .canonicalize()
-            .expect("Could not find main file directory");
-        main_file_path
-            .parent()
-            .expect("main_file cannot be a root directory")
-            .to_path_buf()
-    };
-
+    let main_file_directory = core.read().unwrap().main_file.directory.clone();
     let file = match tokio::fs::File::open(main_file_directory.join(&path)).await {
         Ok(file) => file,
-        Err(_err) => return Err(StatusCode::IM_A_TEAPOT),
+        Err(_) => return Err(StatusCode::IM_A_TEAPOT),
     };
+
     // convert the `AsyncRead` into a `Stream`
     let stream = tokio_util::io::ReaderStream::new(file);
     // convert the `Stream` into an `axum::body::HttpBody`
     let body = StreamBody::new(stream);
 
-    let content_disposition_header = format!("attachment; filename=\"{}\"", path);
+    let content_disposition_header = format!("attachment; filename=\"{path}\"");
     let headers = [
         (header::CONTENT_TYPE, "text/toml; charset=utf-8"),
         (

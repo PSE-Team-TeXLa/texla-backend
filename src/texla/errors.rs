@@ -7,7 +7,7 @@ use ast::errors::AstError;
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct TexlaError {
-    message: String,
+    pub(crate) message: String,
 }
 
 impl Display for TexlaError {

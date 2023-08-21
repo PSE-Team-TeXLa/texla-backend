@@ -5,7 +5,7 @@ use std::{
 
 // this build script is strongly inspired by https://stackoverflow.com/questions/57535794/
 
-const COPY_DIR: &'static str = "frontend";
+const COPY_DIR: &str = "frontend";
 
 /// A helper function for recursively copying a directory.
 fn copy_dir<P, Q>(from: P, to: Q)

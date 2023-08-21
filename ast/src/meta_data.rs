@@ -4,7 +4,9 @@ use std::string::String;
 
 use serde::Serialize;
 
-// TODO: by now, this is a nitwit wrapper around a HashMap. Consider removing it.
+/// A wrapper around a [HashMap<String, String>].
+/// Empty string values are the same as not having this key value pair at all.
+/// The normal form is not having it, resulting in non-empty values.
 #[derive(Debug, Serialize)]
 pub(crate) struct MetaData {
     #[serde(rename = "meta_data")]
@@ -13,9 +15,20 @@ pub(crate) struct MetaData {
 
 impl MetaData {
     pub(crate) fn new() -> Self {
-        Self {
+        let mut this = Self {
             data: HashMap::new(),
-        }
+        };
+        this.normalize();
+        this
+    }
+
+    pub(crate) fn normalize(&mut self) {
+        self.data.retain(|_, value| !value.is_empty());
+    }
+
+    pub(crate) fn edit(&mut self, new_data: HashMap<String, String>) {
+        self.data.extend(new_data);
+        self.normalize();
     }
 }
 impl Display for MetaData {

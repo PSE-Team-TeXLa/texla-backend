@@ -23,19 +23,17 @@ pub(crate) struct DirectoryWatcher {
 
 impl DirectoryWatcher {
     pub(crate) fn new(
+        path: PathBuf,
         storage_manager: Arc<Mutex<TexlaStorageManager<GitManager>>>,
     ) -> Result<Self, notify::Error> {
-        let (path, handler) = {
-            let sm = storage_manager.lock().unwrap();
-            let path = sm.main_file_directory();
-            println!("Starting directory watcher for {:?}", path);
-            let handler = sm
-                .directory_change_handler
-                .as_ref()
-                .expect("Starting directory watcher without directory change handler")
-                .clone();
-            (path, handler)
-        };
+        println!("Starting directory watcher for {path:?}");
+        let handler = storage_manager
+            .lock()
+            .unwrap()
+            .directory_change_handler
+            .as_ref()
+            .expect("Starting directory watcher without directory change handler")
+            .clone();
 
         let (tx, rx) = channel(10);
 
@@ -55,7 +53,7 @@ impl DirectoryWatcher {
             match res {
                 Ok(event) => Self::is_notify_event_interesting(&sm, event),
                 Err(err) => {
-                    eprintln!("watch error (not propagating): {:?}", err);
+                    eprintln!("watch error (not propagating): {err:?}");
                     false
                 }
             }
@@ -66,7 +64,7 @@ impl DirectoryWatcher {
         let passer_join_handle = tokio::spawn(async move {
             while let Some(_event) = debounced.next().await {
                 println!("Detected foreign change (debounced)");
-                handler.lock().unwrap().handle_directory_change();
+                handler.write().unwrap().handle_directory_change();
             }
         });
 
@@ -81,16 +79,15 @@ impl DirectoryWatcher {
         sm: &Arc<Mutex<TexlaStorageManager<GitManager>>>,
         event: &Event,
     ) -> bool {
-        // TODO: we also want to ignore changes, when the frontend is currently active
-
-        if sm.lock().unwrap().writing {
+        if sm.lock().unwrap().writing || sm.lock().unwrap().waiting_for_frontend {
             // this is our own change => ignore it
+            // or we are still waiting for the frontend to finish its operation => ignore it
             false
         } else {
             let only_git_files = event
                 .paths
                 .iter()
-                .all(|p| p.to_str().expect("non UTF-8 path").contains(".git"));
+                .all(|p| p.components().any(|c| c.as_os_str() == ".git"));
 
             !only_git_files
         }

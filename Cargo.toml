@@ -2,8 +2,13 @@
 name = "backend"
 version = "0.1.0"
 edition = "2021"
+description = "TeXLa - a graphical LaTeX editor"
+# TODO: authors
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.bundle]
+name = "TeXLa"
+identifier = "edu.kit.pse.texla"
+resources = ["frontend/**"]
 
 [workspace]
 members = ["ast"]
@@ -32,3 +37,4 @@ walkdir = "2"
 debounced = "0.1.0"
 futures = "0.3.28"
 tokio-stream = "0.1.14"
+open = "5.0.0"
