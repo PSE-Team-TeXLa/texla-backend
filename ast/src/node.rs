@@ -125,55 +125,13 @@ impl NodeType {
     ) -> Result<String, StringificationError> {
         match self {
             NodeType::Leaf { data } => Ok(data.to_latex(options)),
-            // TODO: this should be in NodeType::Expandable just as with the leaves
             NodeType::Expandable { data, .. } => {
-                match data {
-                    ExpandableData::Segment { heading, counted } => {
-                        // under a segment the expected next level is increased by one
-                        let children = self.children_to_latex(level + 1, options)?;
-                        let count = match counted {
-                            false => String::from(UNCOUNTED_SEGMENT_MARKER),
-                            true => String::new(),
-                        };
-                        let keyword = SEGMENT_LEVELS
-                            .iter()
-                            .find(|(lvl, _)| *lvl == level)
-                            .map(|(_, keyword)| keyword)
-                            .ok_or(StringificationError {
-                                message: format!("Invalid nesting level: {level}"),
-                            })?;
-                        Ok(format!(
-                            "{KEYWORD_PREFIX}{keyword}{count}{{{heading}}}\n{children}"
-                        ))
-                    }
-                    ExpandableData::Document {
-                        preamble,
-                        postamble,
-                    } => {
-                        let children = self.children_to_latex(level, options)?;
-                        Ok(format!(
-                            "{preamble}{DOCUMENT_BEGIN}\n{children}{DOCUMENT_END}\n{postamble}"
-                        ))
-                    }
-                    ExpandableData::File { path } => {
-                        let children = self.children_to_latex(level, options)?; //Dont increase the
-                                                                                // nesting level since file is not in hierarchy
-                        Ok(format!(
-                            "{FILE_BEGIN_MARK}{{{path}}}\n{children}{FILE_END_MARK}{{{path}}}\n"
-                        ))
-                    }
-                    ExpandableData::Environment { name } => {
-                        let children = self.children_to_latex(level, options)?;
-                        Ok(format!("{BEGIN}{{{name}}}\n{children}{END}{{{name}}}\n"))
-                    }
-                    ExpandableData::Dummy {
-                        before_children,
-                        after_children,
-                    } => {
-                        let children = self.children_to_latex(level, options)?;
-                        Ok(format!("{before_children}\n{children}{after_children}\n"))
-                    }
-                }
+                let children_level = level + data.increases_level() as i8;
+                data.to_latex(
+                    level,
+                    options,
+                    self.children_to_latex(children_level, options)?,
+                )
             }
         }
     }
@@ -200,6 +158,61 @@ pub(crate) enum ExpandableData {
         before_children: String,
         after_children: String,
     },
+}
+
+impl ExpandableData {
+    fn to_latex(
+        &self,
+        level: i8,
+        _options: &StringificationOptions,
+        children_latex: String,
+    ) -> Result<String, StringificationError> {
+        Ok(match self {
+            ExpandableData::Segment { heading, counted } => {
+                // under a segment the expected next level is increased by one
+                let children = children_latex;
+                let count = match counted {
+                    false => String::from(UNCOUNTED_SEGMENT_MARKER),
+                    true => String::new(),
+                };
+                let keyword = SEGMENT_LEVELS
+                    .iter()
+                    .find(|(lvl, _)| *lvl == level)
+                    .map(|(_, keyword)| keyword)
+                    .ok_or(StringificationError {
+                        message: format!("Invalid nesting level: {level}"),
+                    })?;
+                format!("{KEYWORD_PREFIX}{keyword}{count}{{{heading}}}\n{children}")
+            }
+            ExpandableData::Document {
+                preamble,
+                postamble,
+            } => {
+                let children = children_latex;
+                format!("{preamble}{DOCUMENT_BEGIN}\n{children}{DOCUMENT_END}\n{postamble}")
+            }
+            ExpandableData::File { path } => {
+                let children = children_latex; //Dont increase the
+                                               // nesting level since file is not in hierarchy
+                format!("{FILE_BEGIN_MARK}{{{path}}}\n{children}{FILE_END_MARK}{{{path}}}\n")
+            }
+            ExpandableData::Environment { name } => {
+                let children = children_latex;
+                format!("{BEGIN}{{{name}}}\n{children}{END}{{{name}}}\n")
+            }
+            ExpandableData::Dummy {
+                before_children,
+                after_children,
+            } => {
+                let children = children_latex;
+                format!("{before_children}\n{children}{after_children}\n")
+            }
+        })
+    }
+
+    fn increases_level(&self) -> bool {
+        matches!(self, ExpandableData::Segment { .. })
+    }
 }
 
 #[derive(Debug, Serialize)]
