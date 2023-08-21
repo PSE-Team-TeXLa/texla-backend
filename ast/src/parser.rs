@@ -542,9 +542,7 @@ impl LatexParser {
                         } else {
                             Err(Simple::custom(
                                 span,
-                                format!(
-                                    "Mismatched file specifiers: begin: {path} ; end: {path_end}"
-                                ),
+                                format!("Mismatched file specifiers: {path} and {path_end}"),
                             ))
                         }
                     },
