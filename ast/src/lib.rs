@@ -3,7 +3,6 @@ use serde::Serialize;
 use errors::AstError;
 use operation::Operation;
 use options::StringificationOptions;
-use uuid_provider::Uuid;
 
 pub mod errors;
 pub mod latex_constants;

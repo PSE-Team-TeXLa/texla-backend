@@ -4,7 +4,6 @@ use crate::errors::OperationError;
 use crate::operation::Operation;
 use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
-use crate::Ast;
 
 /// Tries to delete a key-value pair from the Metadata Hashmap of some Node.
 /// The Node is specified by its `target` Uuid, the key value pair is specified by its `key`.

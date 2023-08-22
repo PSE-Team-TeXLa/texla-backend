@@ -6,7 +6,6 @@ use crate::errors::OperationError;
 use crate::operation::Operation;
 use crate::texla_ast::TexlaAst;
 use crate::uuid_provider::Uuid;
-use crate::Ast;
 
 /// Modify the Metadata Hashmap of some Node.
 /// The Node is specified by its `target` Uuid.
