@@ -8,6 +8,19 @@ pub struct FilePath {
     pub filename: String,
 }
 
+impl FilePath {
+    pub fn exists(&self) -> bool {
+        self.path.exists()
+    }
+
+    pub fn has_extension(&self, extension: &str) -> bool {
+        return match self.path.extension() {
+            None => extension.is_empty(),
+            Some(extension_found) => extension_found.to_str().unwrap() == extension,
+        };
+    }
+}
+
 impl From<&str> for FilePath {
     fn from(value: &str) -> Self {
         // replace separators in path with system-dependent variant and create PathBuf

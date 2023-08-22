@@ -33,14 +33,31 @@ struct CliArguments {
     no_git: bool,
 }
 
+fn verify_main_file(main_file: &FilePath) -> bool {
+    if !main_file.exists() {
+        println!("Cannot start TeXLa. Path for --main-file is invalid.");
+        return false;
+    }
+
+    if !main_file.has_extension("tex") {
+        println!("Cannot start TeXLa. Path for --main-file is no LaTeX file.");
+        return false;
+    }
+
+    true
+}
+
 pub async fn start() {
     // append `-- --main-file main.tex` to your run command in CLion to provide the necessary CLI
     // argument
     let args = CliArguments::parse();
 
-    println!("Starting TeXLa...");
-
     let main_file = FilePath::from(args.main_file);
+    if !verify_main_file(&main_file) {
+        return;
+    }
+
+    println!("Starting TeXLa...");
     println!("Opening file: {}", main_file.path.to_str().unwrap());
 
     let core = Arc::new(RwLock::new(TexlaCore {
