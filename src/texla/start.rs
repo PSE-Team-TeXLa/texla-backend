@@ -27,6 +27,10 @@ struct CliArguments {
     /// (in milliseconds)
     #[arg(value_names = ["duration in ms"], short, long, default_value = "100")]
     notify_delay: u64,
+
+    /// Disables all git actions (commit, pull, push)
+    #[arg(long)]
+    no_git: bool,
 }
 
 pub async fn start() {
@@ -44,6 +48,7 @@ pub async fn start() {
         pull_interval: args.pull_interval,
         worksession_interval: args.worksession_interval,
         notify_delay: args.notify_delay,
+        vcs_enabled: !args.no_git, // argument is inverted!
         main_file,
         socket: None,
     }));

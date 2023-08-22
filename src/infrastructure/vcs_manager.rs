@@ -89,19 +89,29 @@ impl GitManager {
     const GIT_COMMIT: [&'static str; 2] = ["commit", "--message"];
     const GIT_PUSH: [&'static str; 1] = ["push"];
 
-    pub fn new(main_file_directory: PathBuf) -> Self {
+    pub fn new(enabled: bool, main_file_directory: PathBuf) -> Self {
+        fn inactive(main_file_directory: PathBuf) -> GitManager {
+            GitManager {
+                active: false,
+                main_file_directory,
+                remote_url: None,
+                git_error_handler: None,
+            }
+        }
+
+        if !enabled {
+            println!("Git actions disabled (--no-git passed)");
+            return inactive(main_file_directory);
+        }
+
         // check if main file directory is part of a git repository
         let inside_work_tree =
             Self::git_inside_dir(Self::GIT_IS_INSIDE_WORK_TREE.to_vec(), &main_file_directory)
                 .stdout;
 
         if inside_work_tree != "true" {
-            return Self {
-                active: false,
-                main_file_directory,
-                remote_url: None,
-                git_error_handler: None,
-            };
+            println!("Git actions disabled (no repository found)");
+            return inactive(main_file_directory);
         }
 
         // get remote repository url if present
@@ -123,6 +133,8 @@ impl GitManager {
             command.append(&mut vec![first_remote]);
             Some(Self::git_inside_dir(command, &main_file_directory).stdout)
         };
+
+        println!("Git actions enabled");
 
         Self {
             active: true,

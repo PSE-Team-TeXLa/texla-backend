@@ -48,7 +48,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     let storage_manager = {
         let core = core.read().unwrap();
 
-        let vcs_manager = GitManager::new(core.main_file.directory.clone());
+        let vcs_manager = GitManager::new(core.vcs_enabled, core.main_file.directory.clone());
         TexlaStorageManager::new(
             vcs_manager,
             core.main_file.clone(),
@@ -332,7 +332,7 @@ mod test {
     fn pflichtenheft() {
         let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
         let sm = TexlaStorageManager::new(
-            GitManager::new(main_file.directory.clone()),
+            GitManager::new(true, main_file.directory.clone()),
             main_file,
             500,
             5000,
@@ -345,7 +345,7 @@ mod test {
     fn pflichtenheft_read_save() {
         let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
         let sm = TexlaStorageManager::new(
-            GitManager::new(main_file.directory.clone()),
+            GitManager::new(true, main_file.directory.clone()),
             main_file,
             500,
             5000,

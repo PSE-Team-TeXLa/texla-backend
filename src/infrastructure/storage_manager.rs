@@ -387,7 +387,7 @@ mod tests {
     #[test]
     fn multiplex_files() {
         let main_file = FilePath::from("test_resources/latex/with_inputs.tex");
-        let vcs_manager = GitManager::new(main_file.directory.clone());
+        let vcs_manager = GitManager::new(true, main_file.directory.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000, 100);
 
         assert_eq!(
@@ -399,7 +399,7 @@ mod tests {
     #[test]
     fn multiplex_files_huge() {
         let main_file = FilePath::from("test_resources/latex/with_inputs_huge.tex");
-        let vcs_manager = GitManager::new(main_file.directory.clone());
+        let vcs_manager = GitManager::new(true, main_file.directory.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000, 100);
 
         assert_eq!(
@@ -416,7 +416,7 @@ mod tests {
             .expect("Could not create directory");
 
         let main_file = FilePath::from("test_resources/latex/out/with_inputs.tex");
-        let vcs_manager = GitManager::new(main_file.directory.clone());
+        let vcs_manager = GitManager::new(true, main_file.directory.clone());
         let worksession_interval = 5000;
         let storage_manager =
             TexlaStorageManager::new(vcs_manager, main_file, 500, worksession_interval, 100);
