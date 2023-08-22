@@ -1,7 +1,6 @@
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
-
-use serde::Serialize;
 
 use crate::errors::AstError;
 use crate::node::{NodeRef, NodeRefWeak, NodeType};
@@ -10,6 +9,7 @@ use crate::options::StringificationOptions;
 use crate::uuid_provider::{Position, TexlaUuidProvider, Uuid};
 use crate::{parser, Ast};
 
+/// `TexlaAst` Implements [Ast] and can represent LaTex Documents which follow a number of specifications in the Pflichtenheft Document.
 #[derive(Debug, Serialize, Clone)]
 pub struct TexlaAst {
     // by reparsing after each operation all weak references in this hashmap are always valid
