@@ -12,20 +12,20 @@ use crate::texla::webserver::{start_axum, PORT};
 #[clap(name = "TeXLa", about = "TeXLa - a graphical LaTeX editor", version)]
 struct CliArguments {
     /// The root file of your LaTeX project
-    #[arg(value_names = ["path"], short, long)]
+    #[arg(short, long, value_names = ["path"])]
     main_file: String,
 
     /// The time between two subsequent pulls from the git remote (in milliseconds)
-    #[arg(value_names = ["duration in ms"], short, long, default_value = "500")]
+    #[arg(short, long, value_name = "duration in ms", default_value = "500")]
     pull_interval: u64,
 
     /// The minimum time between the last change and the according commit (in milliseconds)
-    #[arg(value_names = ["duration in ms"], short, long, default_value = "5000")]
+    #[arg(short, long, value_name = "duration in ms", default_value = "5000")]
     worksession_interval: u64,
 
     /// The time 'notify' is allowed to take for picking up our own file changes and reporting them
     /// (in milliseconds)
-    #[arg(value_names = ["duration in ms"], short, long, default_value = "100")]
+    #[arg(short, long, value_name = "duration in ms", default_value = "100")]
     notify_delay: u64,
 
     /// Disables all git actions (commit, pull, push)
