@@ -110,59 +110,43 @@ mod tests {
         s.replace("\r\n", "\n")
     }
 
-    #[test]
-    fn simple_latex_identical() {
-        let latex = fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+    fn test_for_identity_after_parse_and_stringify(latex: String) {
         let ast = parse_latex(latex.clone()).expect("Valid Latex");
         assert!(ast.to_latex(Default::default()).is_ok());
         assert_eq!(
             lf(ast.to_latex(Default::default()).unwrap()),
             lf(latex.clone())
         );
+    }
+
+    #[test]
+    fn simple_latex_identical() {
+        let latex = fs::read_to_string("../test_resources/latex/simple.tex").unwrap();
+        test_for_identity_after_parse_and_stringify(latex);
     }
 
     #[test]
     fn empty_document_identical() {
         let latex = fs::read_to_string("../test_resources/latex/empty_document.tex").unwrap();
-        let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(
-            lf(ast.to_latex(Default::default()).unwrap()),
-            lf(latex.clone())
-        );
+        test_for_identity_after_parse_and_stringify(latex);
     }
 
     #[test]
     fn only_subsection_identical() {
         let latex = fs::read_to_string("../test_resources/latex/only_subsection.tex").unwrap();
-        let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(
-            lf(ast.to_latex(Default::default()).unwrap()),
-            lf(latex.clone())
-        );
+        test_for_identity_after_parse_and_stringify(latex);
     }
 
     #[test]
     fn large_latex_identical() {
         let latex = fs::read_to_string("../test_resources/latex/large.tex").unwrap();
-        let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(
-            lf(ast.to_latex(Default::default()).unwrap()),
-            lf(latex.clone())
-        );
+        test_for_identity_after_parse_and_stringify(latex);
     }
 
     #[test]
     fn lots_identical() {
         let latex = fs::read_to_string("../test_resources/latex/lots_of_features.tex").unwrap();
-        let ast = parse_latex(latex.clone()).expect("Valid Latex");
-        assert!(ast.to_latex(Default::default()).is_ok());
-        assert_eq!(
-            lf(ast.to_latex(Default::default()).unwrap()),
-            lf(latex.clone())
-        );
+        test_for_identity_after_parse_and_stringify(latex);
     }
 
     #[test]
