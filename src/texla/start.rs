@@ -2,6 +2,8 @@ use std::sync::{Arc, RwLock};
 
 use clap::Parser;
 
+use ast::latex_constants::LATEX_FILE_EXTENSION;
+
 use crate::infrastructure::export_manager::TexlaExportManager;
 use crate::infrastructure::file_path::FilePath;
 use crate::texla::core::TexlaCore;
@@ -39,7 +41,7 @@ fn verify_main_file(main_file: &FilePath) -> bool {
         return false;
     }
 
-    if !main_file.has_extension("tex") {
+    if !main_file.has_extension(LATEX_FILE_EXTENSION) {
         println!("Cannot start TeXLa. Path for --main-file is no LaTeX file.");
         return false;
     }

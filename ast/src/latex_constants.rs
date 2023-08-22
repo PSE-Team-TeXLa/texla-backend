@@ -1,3 +1,7 @@
+// LaTeX files and paths
+pub const LATEX_FILE_EXTENSION: &str = "tex";
+pub const LATEX_PATH_SEPARATOR: &str = "/";
+
 // commands
 pub(crate) const BEGIN: &str = "\\begin";
 pub(crate) const END: &str = "\\end";

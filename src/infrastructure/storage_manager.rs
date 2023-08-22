@@ -57,9 +57,6 @@ where
 }
 
 impl TexlaStorageManager<GitManager> {
-    const LATEX_FILE_EXTENSION: &'static str = "tex";
-    const LATEX_PATH_SEPARATOR: &'static str = "/";
-
     pub fn new(
         vcs_manager: GitManager,
         main_file: FilePath,
@@ -148,13 +145,13 @@ impl TexlaStorageManager<GitManager> {
         // replace separators in path (LaTeX und Unix use forward slashes, Windows uses backslashes)
         // and set file extension (optional in LaTeX)
         let path = PathBuf::from({
-            if MAIN_SEPARATOR_STR == Self::LATEX_PATH_SEPARATOR {
+            if MAIN_SEPARATOR_STR == LATEX_PATH_SEPARATOR {
                 input_path
             } else {
-                input_path.replace(Self::LATEX_PATH_SEPARATOR, MAIN_SEPARATOR_STR)
+                input_path.replace(LATEX_PATH_SEPARATOR, MAIN_SEPARATOR_STR)
             }
         })
-        .with_extension(Self::LATEX_FILE_EXTENSION);
+        .with_extension(LATEX_FILE_EXTENSION);
 
         // get relative and absolute path
         let path_abs_os; // absolute path, platform-dependent slashes
@@ -179,7 +176,7 @@ impl TexlaStorageManager<GitManager> {
 
         // replace separators in path and remove file extension again
         let path_rel_latex = {
-            if MAIN_SEPARATOR_STR == Self::LATEX_PATH_SEPARATOR {
+            if MAIN_SEPARATOR_STR == LATEX_PATH_SEPARATOR {
                 path_rel.with_extension("")
             } else {
                 PathBuf::from(
@@ -187,7 +184,7 @@ impl TexlaStorageManager<GitManager> {
                         .with_extension("")
                         .to_str()
                         .unwrap()
-                        .replace(MAIN_SEPARATOR_STR, Self::LATEX_PATH_SEPARATOR),
+                        .replace(MAIN_SEPARATOR_STR, LATEX_PATH_SEPARATOR),
                 )
             }
         };
