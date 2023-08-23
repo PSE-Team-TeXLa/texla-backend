@@ -7,6 +7,7 @@ use crate::meta_data::MetaData;
 use crate::node::{ExpandableData, Node, NodeType};
 use crate::operation::Operation;
 use crate::texla_ast::TexlaAst;
+use crate::texla_constants::SKIPPED_CONTENT_MARK;
 use crate::uuid_provider::Uuid;
 
 /// Modifies some existing Node.
@@ -29,7 +30,7 @@ impl Operation<TexlaAst> for EditNode {
             let node_meta_data_map = &node.meta_data.data;
             let node_parent = &node.parent;
 
-            let mut parts = self.raw_latex.split("...");
+            let mut parts = self.raw_latex.split(SKIPPED_CONTENT_MARK);
             let before_children = parts.next().unwrap_or("").to_string();
             let after_children = parts.next().unwrap_or("").to_string();
 

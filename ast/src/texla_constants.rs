@@ -13,4 +13,4 @@ pub(crate) const METADATA_DELIMITER_RIGHT: char = ')';
 pub(crate) const METADATA_SEPARATOR_KEY_VALUE: char = ':';
 pub(crate) const METADATA_SEPARATOR_VALUES: char = ',';
 
-pub(crate) const SKIPPED_CONTENT_MARK: &str = "...";
+pub(crate) const SKIPPED_CONTENT_MARK: &str = "…";
