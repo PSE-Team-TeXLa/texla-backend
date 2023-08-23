@@ -37,10 +37,13 @@ impl PullTimerManager {
 
 async fn pull_repeatedly<V: VcsManager>(storage_manager: Arc<Mutex<TexlaStorageManager<V>>>) {
     let duration = Duration::from_millis(storage_manager.lock().unwrap().pull_interval);
+    let waiting = !duration.is_zero();
 
     loop {
         storage_manager.lock().unwrap().vcs_manager.pull();
 
-        sleep(duration).await;
+        if waiting {
+            sleep(duration).await;
+        }
     }
 }
