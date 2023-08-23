@@ -40,8 +40,9 @@ pub fn socket_service(
         .layer(SocketIoLayer::new(ns))
 }
 
-// TODO: a bit of reorganization, maybe split into multiple functions
-// (in more files, some into state)
+// This is a fairly long function, but its complexity is low and its control flow is very linear.
+// All actions belong here, as they handle the basics of communication.
+// Thus, it would be artificial and useless to split it up into multiple functions.
 async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
     println!("Socket connected with id: {}", socket.sid);
 
@@ -256,7 +257,7 @@ async fn stringify_and_save(
     Ok(())
 }
 
-// TODO: move into export handler?
+// this function is correctly placed here, because it contains coordination and communication
 async fn handle_export(
     socket: TexlaSocket,
     options: StringificationOptions,
