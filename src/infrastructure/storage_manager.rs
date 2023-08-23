@@ -111,7 +111,6 @@ impl TexlaStorageManager<GitManager> {
             .map_with_span(|_, span| -> usize {
                 span.end() - Self::char_len(INPUT) // = input_start
             })
-            // TODO allow white spaces (but no newlines?) around curly braces?
             .then(Self::curly_brackets_parser())
             .map_with_span(|(start, path), span| -> (String, Range<usize>) {
                 (path, start..span.end()) // span.end() = input_end
@@ -123,21 +122,21 @@ impl TexlaStorageManager<GitManager> {
         let end_start = string.find(FILE_END_MARK)?;
         let (path, end_end) = {
             let string = &string[end_start + FILE_END_MARK.len()..];
-            let brace_open = string.find('{')?;
-            let brace_close = string[brace_open..].find('}')?;
-            let path = string[brace_open..][1..brace_close].to_string();
-            (
-                path,
-                end_start + FILE_END_MARK.len() + brace_open + brace_close + 1,
-            )
+            if string.starts_with('{') {
+                return None;
+            }
+            let string = &string[1..];
+            let brace_close = string.find('}')?;
+            let path = string[1..brace_close].to_string();
+            (path, end_start + FILE_END_MARK.len() + 1 + brace_close + 1)
         };
 
-        // TODO: this is strict but above is not (e.g. whitespace between MARK and braces)
         let begin_mark = format!("{FILE_BEGIN_MARK}{{{path}}}");
         let begin_start = string[..end_start].rfind(&begin_mark)?;
         let begin_end = begin_start + begin_mark.len();
 
-        // TODO: this assumes newline placement (which is okay, but we should think about it)
+        // This assumes newlines between markers and content, which is okay, because we only
+        // process our own stringification results here.
         Some((path, begin_start..end_end, begin_end + 1..end_start))
     }
 
