@@ -75,6 +75,8 @@ impl LatexParser {
             },
             self.uuid_provider.borrow_mut().deref_mut(),
             self.portal.borrow_mut().deref_mut(),
+            // this is not completely redundant to [LeafData::to_latex], because we can
+            // normalize the input before displaying it here.
             match kind {
                 MathKind::DoubleDollars => {
                     format!("{DOUBLE_DOLLARS}{text}{DOUBLE_DOLLARS}")
