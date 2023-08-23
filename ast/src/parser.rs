@@ -37,7 +37,6 @@ pub(crate) fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
 }
 
 impl LatexParser {
-    // TODO Indentation Support
     fn new() -> Self {
         LatexParser {
             uuid_provider: RefCell::new(TexlaUuidProvider::new()),
@@ -327,8 +326,7 @@ impl LatexParser {
             math.clone().rewind().to(""),
             caption.clone().rewind().to(""),
             label.clone().rewind().to(""),
-            newline().then(newline()).to(""),
-            // TODO recognize and consume also more than 2 newlines
+            newline().repeated().at_least(2).to(""),
         ))
         .boxed();
 
@@ -465,8 +463,11 @@ impl LatexParser {
     fn metadata() -> BoxedParser<'static, char, HashMap<String, String>, Simple<char>> {
         let key_value_pair = text::ident()
             .then_ignore(just(METADATA_SEPARATOR_KEY_VALUE))
-            // TODO: this prevents leading or trailing spaces in values. Do we want that?
-            .then(text::ident().padded())
+            .then(
+                none_of(vec![METADATA_DELIMITER_RIGHT, METADATA_SEPARATOR_VALUES])
+                    .repeated()
+                    .collect::<String>(),
+            )
             .map(|(key, value)| (key, value))
             .boxed();
 
@@ -496,9 +497,8 @@ impl LatexParser {
         next_level: NodeParser<'a>,
         prelude: NodeParser<'a>,
     ) -> BoxedParser<'a, char, NodeRef, Simple<char>> {
-        // TODO: prevent \sectioning etc. from parsing (using keyword?)
         Self::metadata()
-            .then_ignore(just(KEYWORD_PREFIX).then(just(keyword)))
+            .then_ignore(just(KEYWORD_PREFIX).then(text::keyword(keyword)))
             .then(just(UNCOUNTED_SEGMENT_MARKER).or_not())
             .then(Self::argument_surrounded_by(BLOCK_DELIMITERS))
             .then_ignore(newline().or_not())
@@ -510,7 +510,7 @@ impl LatexParser {
                     self.build_segment(
                         heading.clone(),
                         blocks,
-                        format!("{KEYWORD_PREFIX}{keyword}{{{heading}}}"), // TODO: newline?
+                        format!("{KEYWORD_PREFIX}{keyword}{{{heading}}}"),
                         star.is_none(),
                         metadata,
                     )
@@ -567,10 +567,9 @@ impl LatexParser {
     }
 
     fn segment_command_parser() -> impl Parser<char, i8, Error = Simple<char>> + 'static {
-        // TODO find way to ignore \sectioning (use keyword?)
         choice(SEGMENT_LEVELS.map(|(level, keyword)| {
             just::<char, &str, Simple<char>>(KEYWORD_PREFIX)
-                .ignore_then(just(keyword))
+                .ignore_then(text::keyword(keyword))
                 .to(level)
         }))
         .boxed()

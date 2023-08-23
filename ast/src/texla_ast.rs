@@ -21,6 +21,11 @@ pub struct TexlaAst {
     pub(crate) highest_level: i8,
 }
 
+/// The methods here shall be atomar, which is why they panic instead of returning errors.
+/// They assert the validity of certain invariants, namely:
+/// - A parent weak reference must valid and must be an Expandable Node.
+/// - A portal weak reference must be valid.
+/// - No non-existing UUIDs are queried.
 impl TexlaAst {
     pub(crate) fn get_node(&self, uuid: Uuid) -> NodeRef {
         self.portal
@@ -30,7 +35,6 @@ impl TexlaAst {
             .expect("portal should never contain invalid weak pointers when an operation comes")
     }
 
-    // TODO: maybe replace unwraps by expect or error returning
     pub(crate) fn insert_node_at_position(&mut self, node_ref: NodeRef, position: Position) {
         let parent_ref = self.get_node(position.parent);
         let mut parent = parent_ref.lock().unwrap();
@@ -58,7 +62,7 @@ impl TexlaAst {
     pub(crate) fn remove_node(&mut self, node_ref: &NodeRef) -> Position {
         let node = node_ref.lock().unwrap();
         let parent_ref_weak = &node.parent.as_ref().expect("root cannot be removed");
-        let parent_ref = parent_ref_weak.upgrade().unwrap();
+        let parent_ref = parent_ref_weak.upgrade().expect("parent ref is invalid");
         let mut parent = parent_ref.lock().unwrap();
         let parent_children = match &mut parent.node_type {
             NodeType::Expandable { children, .. } => children,
@@ -152,6 +156,12 @@ mod tests {
     #[test]
     fn align_identical() {
         let latex = fs::read_to_string("../test_resources/latex/align.tex").unwrap();
+        test_for_identity_after_parse_and_stringify(latex);
+    }
+
+    #[test]
+    fn sectioning() {
+        let latex = fs::read_to_string("../test_resources/latex/sectioning.tex").unwrap();
         test_for_identity_after_parse_and_stringify(latex);
     }
 

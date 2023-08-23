@@ -37,7 +37,7 @@ impl Display for MetaData {
             .data
             .iter()
             .fold(String::new(), |mut string, (key, value)| {
-                string.push_str(&format!("{key}: {value},"));
+                string.push_str(&format!("{key}:{value},"));
                 string
             });
         write!(f, "({})", string)
