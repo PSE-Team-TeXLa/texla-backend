@@ -264,34 +264,48 @@ async fn handle_export(
     core: Arc<RwLock<TexlaCore>>,
 ) {
     println!("Preparing export with options: {options:?}");
-    let state = extract_state(&socket).clone();
+    let state_ref = extract_state(&socket).clone();
 
-    let latex_single_string_with_metadata_and_comments = state
-        .read()
-        .unwrap()
-        .ast
-        .to_latex(Default::default())
-        .unwrap();
+    // copy of ast with enabled StringifyOptions
+    let ast_copy = {
+        let state = state_ref.read().unwrap();
+        // freezing pulling and pushing until the original ast is reverted
+        state.storage_manager.lock().unwrap().wait_for_frontend();
+        state_ref.read().unwrap().ast.clone()
+    };
 
-    if let Err(err) = stringify_and_save(state, options).await {
+    if let Err(err) = stringify_and_save(state_ref.clone(), options).await {
         send(&socket, "error", err).ok();
         return;
     }
 
-    let state_after_export = extract_state(&socket).clone();
+    let state_ref_after_stringify = extract_state(&socket).clone();
+
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
-            state_after_export.write().unwrap().ast =
-                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
-                    .expect("Should be valid as it comes from working ast");
+            // reversing internal ast to one with enabled StringifyOptions
+            state_ref_after_stringify.write().unwrap().ast = ast_copy;
             send(&socket, "export_ready", url).ok();
         }
         Err(err) => {
-            state_after_export.write().unwrap().ast =
-                TexlaAst::from_latex(latex_single_string_with_metadata_and_comments)
-                    .expect("Should be valid as it comes from working ast");
+            state_ref_after_stringify.write().unwrap().ast = ast_copy;
             send(&socket, "error", TexlaError::from(err)).ok();
         }
+    }
+
+    // unfreezing pulling and pushing
+    let state_ref = extract_state(&socket).clone();
+    state_ref
+        .read()
+        .unwrap()
+        .storage_manager
+        .lock()
+        .unwrap()
+        .frontend_aborted();
+
+    // saving ast to local files again
+    if let Err(err) = stringify_and_save(state_ref.clone(), Default::default()).await {
+        send(&socket, "error", err).ok();
     }
 }
 
