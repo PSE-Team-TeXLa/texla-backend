@@ -150,6 +150,12 @@ mod tests {
     }
 
     #[test]
+    fn align_identical() {
+        let latex = fs::read_to_string("../test_resources/latex/align.tex").unwrap();
+        test_for_identity_after_parse_and_stringify(latex);
+    }
+
+    #[test]
     fn parse_and_to_json() {
         let latex = fs::read_to_string("../test_resources/latex/lots_of_features.tex").unwrap();
         let ast = parse_latex(latex.clone()).expect("Valid Latex");

@@ -18,6 +18,8 @@ pub(crate) const DISPLAYMATH_BEGIN: &str = "\\begin{displaymath}";
 pub(crate) const DISPLAYMATH_END: &str = "\\end{displaymath}";
 pub(crate) const EQUATION_BEGIN: &str = "\\begin{equation}";
 pub(crate) const EQUATION_END: &str = "\\end{equation}";
+pub(crate) const ALIGN_BEGIN: &str = "\\begin{align}";
+pub(crate) const ALIGN_END: &str = "\\end{align}";
 // joining '\begin' resp. '\end' with the environment name using format strings is not possible in
 // every context where these constants are needed
 

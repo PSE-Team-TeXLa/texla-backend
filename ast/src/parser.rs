@@ -90,6 +90,9 @@ impl LatexParser {
                 MathKind::Equation => {
                     format!("{EQUATION_BEGIN}{text}{EQUATION_END}")
                 }
+                MathKind::Align => {
+                    format!("{ALIGN_BEGIN}{text}{ALIGN_END}\n")
+                }
             },
             Default::default(),
         )
@@ -287,12 +290,14 @@ impl LatexParser {
             self.math_delimited_by(DISPLAYMATH_BEGIN, DISPLAYMATH_END, MathKind::Displaymath);
         let math_equation =
             self.math_delimited_by(EQUATION_BEGIN, EQUATION_END, MathKind::Equation);
+        let math_align = self.math_delimited_by(ALIGN_BEGIN, ALIGN_END, MathKind::Align);
 
         let math = choice((
             math_double_dollars,
             math_square_brackets,
             math_displaymath,
             math_equation,
+            math_align,
         ))
         .padded()
         .boxed();

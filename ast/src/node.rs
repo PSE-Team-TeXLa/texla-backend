@@ -263,6 +263,9 @@ impl LeafData {
                 MathKind::Equation => {
                     format!("{EQUATION_BEGIN}{content}{EQUATION_END}\n")
                 }
+                MathKind::Align => {
+                    format!("{ALIGN_BEGIN}{content}{ALIGN_END}\n")
+                }
             },
             LeafData::Comment { comment } => {
                 if options.include_comments {
@@ -281,6 +284,7 @@ pub(crate) enum MathKind {
     SquareBrackets,
     Displaymath,
     Equation,
+    Align,
 }
 
 #[cfg(test)]
