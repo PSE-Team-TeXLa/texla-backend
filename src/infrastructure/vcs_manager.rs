@@ -40,9 +40,8 @@ impl StringOutput {
         format!(
             "{}{}",
             INDENT,
-            value.replace("\r\n", "\n").replace("\n", INDENT)
+            value.replace("\r\n", "\n").replace('\n', INDENT)
         )
-        .to_string()
     }
 
     fn out_err_formatted(&self) -> String {
@@ -55,7 +54,6 @@ impl StringOutput {
             INDENT,
             Self::format_lines(&self.stderr)
         )
-        .to_string()
     }
 }
 
