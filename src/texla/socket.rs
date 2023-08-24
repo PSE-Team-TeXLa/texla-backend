@@ -334,14 +334,22 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
 
 #[cfg(test)]
 mod test {
+    use std::sync::{Arc, Mutex};
     use tokio::runtime::Runtime;
 
     use ast::options::StringificationOptions;
     use ast::Ast;
 
     use crate::infrastructure::file_path::FilePath;
-    use crate::infrastructure::storage_manager::TexlaStorageManager;
+    use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
+    use std::fs;
+    use std::io::Read;
+    use std::path::Path;
+    use walkdir::WalkDir;
+    extern crate fs_extra;
+    use fs_extra::dir::*;
+    use fs_extra::error::*;
 
     #[test]
     fn parse_pflichtenheft_from_disk() {
@@ -359,6 +367,14 @@ mod test {
     #[test]
     fn pflichtenheft_read_save() {
         let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
+
+        let main_file_directory = "test_resources/latex/pflichtenheft";
+        let copy_main_file_directory = "test_resources/latex/pflichtenheft_copy";
+        if Path::new(copy_main_file_directory).is_dir() {
+            fs::remove_dir_all(copy_main_file_directory).unwrap();
+        }
+        fs::create_dir(copy_main_file_directory).unwrap();
+
         let sm = TexlaStorageManager::new(
             GitManager::new(true, main_file.directory.clone()),
             main_file,
@@ -366,20 +382,62 @@ mod test {
             5000,
             100,
         );
-        let ast = super::parse_ast_from_disk(&sm);
-        let ast = ast.unwrap();
+        let ast = super::parse_ast_from_disk(&sm).unwrap();
 
-        let latex_single_string = ast.to_latex(StringificationOptions::default());
-        let _latex_single_string = latex_single_string.unwrap();
-        // TODO uncomment code below or remove underscored variable
+        let latex_single_string = ast.to_latex(StringificationOptions::default()).unwrap();
 
         let rt = Runtime::new().unwrap();
         rt.spawn(async move {
-            // StorageManager::save(Arc::new(Mutex::new(sm)), latex_single_string)
-            //     .await
-            //     .ok();
+            StorageManager::save(Arc::new(Mutex::new(sm)), latex_single_string)
+                .await
+                .ok();
         });
 
-        // TODO: check that there are no changes
+        let mut options = CopyOptions::new();
+        options.overwrite = true;
+        copy(main_file_directory, copy_main_file_directory, &options).unwrap();
+
+        let path_to_copied_directory = "test_resources/latex/pflichtenheft_copy/pflichtenheft";
+
+        let are_directories_equal =
+            compare_directories(main_file_directory, path_to_copied_directory);
+
+        assert!(
+            are_directories_equal.unwrap(),
+            "Directories have differences"
+        );
+
+        fs::remove_dir_all(copy_main_file_directory).unwrap();
+    }
+
+    fn compare_directories(dir1: &str, dir2: &str) -> Result<bool> {
+        let walker1 = WalkDir::new(dir1).into_iter();
+        let walker2 = WalkDir::new(dir2).into_iter();
+
+        // merge iterators into one
+        for (entry1, entry2) in walker1.zip(walker2) {
+            let entry1 = entry1.expect("should be a valid entry");
+            let entry2 = entry2.expect("should be a valid entry");
+
+            if entry1.file_type().is_file() && entry2.file_type().is_file() {
+                let mut file1 = fs::File::open(entry1.path())?;
+                let mut file2 = fs::File::open(entry2.path())?;
+
+                let mut contents1 = Vec::new();
+                let mut contents2 = Vec::new();
+
+                file1.read_to_end(&mut contents1)?;
+                file2.read_to_end(&mut contents2)?;
+
+                if contents1 != contents2 {
+                    return Ok(false);
+                }
+            } else if entry1.file_type().is_dir() && entry2.file_type().is_dir() {
+                continue;
+            } else {
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 }
