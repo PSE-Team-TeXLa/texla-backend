@@ -122,13 +122,12 @@ impl TexlaStorageManager<GitManager> {
         let end_start = string.find(FILE_END_MARK)?;
         let (path, end_end) = {
             let string = &string[end_start + FILE_END_MARK.len()..];
-            if string.starts_with('{') {
+            if !string.starts_with('{') {
                 return None;
             }
-            let string = &string[1..];
             let brace_close = string.find('}')?;
             let path = string[1..brace_close].to_string();
-            (path, end_start + FILE_END_MARK.len() + 1 + brace_close + 1)
+            (path, end_start + FILE_END_MARK.len() + brace_close + 1)
         };
 
         let begin_mark = format!("{FILE_BEGIN_MARK}{{{path}}}");
@@ -137,7 +136,7 @@ impl TexlaStorageManager<GitManager> {
 
         // This assumes newlines between markers and content, which is okay, because we only
         // process our own stringification results here.
-        Some((path, begin_start..end_end, begin_end + 1..end_start))
+        Some((path, begin_start..end_end, (begin_end + 1)..end_start))
     }
 
     fn get_paths(&self, input_path: String) -> (PathBuf, PathBuf) {
