@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fmt::format;
 use std::ops::DerefMut;
 
 use chumsky::prelude::*;
