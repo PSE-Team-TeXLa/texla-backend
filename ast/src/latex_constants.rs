@@ -1,3 +1,4 @@
+//! `latex_constants` defines some tokens used in Latex to as delimiters or keywords.
 // LaTeX files and paths
 pub const LATEX_FILE_EXTENSION: &str = "tex";
 pub const LATEX_PATH_SEPARATOR: &str = "/";

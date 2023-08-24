@@ -1,7 +1,9 @@
+//! Errors specific to working with `TEXLA`
 use std::fmt::{Debug, Display, Formatter};
 
 use chumsky::error::Simple;
 
+/// Error specific to Ast creation conversion
 #[derive(Debug, PartialEq)]
 pub struct AstError {
     message: String,
@@ -76,6 +78,7 @@ impl From<serde_json::Error> for StringificationError {
     }
 }
 
+/// Error specific to [super::Ast] Operations. This will be created when Operations on the Ast fail.
 #[derive(Debug, PartialEq)]
 pub struct OperationError {
     pub(crate) message: String,

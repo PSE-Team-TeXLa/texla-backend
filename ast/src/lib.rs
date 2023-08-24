@@ -1,12 +1,14 @@
+//! The `ast` create is used by **TEXLA** to manage state. It provides an [Ast] representation of LaTeX Documents as well as operations which can modify said state.
+use serde::Serialize;
+
 use errors::AstError;
 use operation::Operation;
 use options::StringificationOptions;
-use serde::Serialize;
 
 pub mod errors;
 pub mod latex_constants;
 mod meta_data;
-pub mod node;
+pub(crate) mod node;
 pub mod operation;
 pub mod options;
 mod parser;
@@ -28,7 +30,7 @@ mod uuid_provider;
 pub trait Ast: Sized + Send + Sync + Serialize {
     /// Generates an Ast representation of the provided `latex_single_string`.
     fn from_latex(latex_single_string: String) -> Result<Self, AstError>;
-    /// Generates LaTeX Source code from this Ast.
+    /// Generates LaTeX Source code from this Ast according to the [options::StringificationOptions].
     fn to_latex(&self, options: StringificationOptions) -> Result<String, AstError>;
     /// Modifies this Ast by applying the provided `Operation`.
     /// [Operation] is a Strategy template. To implement this, `execute_on()` should be called on the operation and this Ast should be passed.

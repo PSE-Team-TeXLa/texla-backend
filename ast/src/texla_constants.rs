@@ -1,3 +1,4 @@
+//! `texla_constants` defines some tokens used by TEXLA to save special attributes in LaTeX Files.
 pub(crate) const TEXLA: &str = "TEXLA";
 pub(crate) const TEXLA_COMMENT_PREFIX: &str = "% TEXLA";
 // joining '% ' with TEXLA using format strings is not possible in every context where these
