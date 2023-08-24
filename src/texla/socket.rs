@@ -344,7 +344,7 @@ mod test {
     use crate::infrastructure::vcs_manager::GitManager;
 
     #[test]
-    fn pflichtenheft() {
+    fn parse_pflichtenheft_from_disk() {
         let main_file = FilePath::from("test_resources/latex/pflichtenheft/main.tex");
         let sm = TexlaStorageManager::new(
             GitManager::new(true, main_file.directory.clone()),
