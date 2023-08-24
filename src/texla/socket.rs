@@ -266,7 +266,7 @@ async fn handle_export(
     println!("Preparing export with options: {options:?}");
     let state_ref = extract_state(&socket).clone();
 
-    // copy of ast with enabled StringifyOptions
+    // copy of ast with enabled StringificationOptions
     let ast_copy = {
         let state = state_ref.read().unwrap();
         // freezing pulling and pushing until the original ast is reverted
@@ -283,7 +283,7 @@ async fn handle_export(
 
     match core.write().unwrap().export_manager.zip_files() {
         Ok(url) => {
-            // reversing internal ast to one with enabled StringifyOptions
+            // reset internal ast to one with enabled StringificationOptions
             state_ref_after_stringify.write().unwrap().ast = ast_copy;
             send(&socket, "export_ready", url).ok();
         }
@@ -293,7 +293,7 @@ async fn handle_export(
         }
     }
 
-    // unfreezing pulling and pushing
+    // unfreeze pulling and pushing
     let state_ref = extract_state(&socket).clone();
     state_ref
         .read()
@@ -303,7 +303,7 @@ async fn handle_export(
         .unwrap()
         .frontend_aborted();
 
-    // saving ast to local files again
+    // save ast to local files again
     if let Err(err) = stringify_and_save(state_ref.clone(), Default::default()).await {
         send(&socket, "error", err).ok();
     }
@@ -312,7 +312,7 @@ async fn handle_export(
 pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> Result<(), ()> {
     // this only works with a modified main branch of socketioxide (see Cargo.toml)
     // with the upcoming release (after 0.3.0) you could relax this check and instead free
-    // resources in a on_disconnect handler (see https://github.com/Totodore/socketioxide/pull/41).
+    // resources in an on_disconnect handler (see https://github.com/Totodore/socketioxide/pull/41).
     match socket.emit(event, data) {
         Ok(_) => {
             println!("Successfully sent {} to {}", event, socket.sid)

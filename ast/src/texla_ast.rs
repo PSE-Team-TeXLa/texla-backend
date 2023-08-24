@@ -1,6 +1,7 @@
-use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
+
+use serde::Serialize;
 
 use crate::errors::AstError;
 use crate::node::{NodeRef, NodeRefWeak, NodeType};
@@ -23,7 +24,7 @@ pub struct TexlaAst {
 
 /// The methods here shall be atomar, which is why they panic instead of returning errors.
 /// They assert the validity of certain invariants, namely:
-/// - A parent weak reference must valid and must be an Expandable Node.
+/// - A parent weak reference must be valid and must be an Expandable Node.
 /// - A portal weak reference must be valid.
 /// - No non-existing UUIDs are queried.
 impl TexlaAst {
