@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt::format;
 use std::ops::DerefMut;
 
 use chumsky::prelude::*;
@@ -221,12 +222,20 @@ impl LatexParser {
     fn argument_surrounded_by(
         (start, end): (&'static str, &'static str),
     ) -> BoxedParser<char, String, Simple<char>> {
-        none_of(end)
+        recursive(|in_delimiter| {
+            choice((
+                just(start)
+                    .then(in_delimiter)
+                    .then(just(end))
+                    .map(|((start, inside), end)| format!("{}{}{}", start, inside, end)),
+                none_of(format!("{}{}", end, start)).map(|x: char| x.to_string()),
+            ))
             .repeated()
             .at_least(1)
-            .delimited_by(just(start), just(end))
             .collect::<String>()
-            .boxed()
+        })
+        .delimited_by(just(start), just(end))
+        .boxed()
     }
 
     fn parser(&self) -> impl Parser<char, NodeRef, Error = Simple<char>> + '_ {
