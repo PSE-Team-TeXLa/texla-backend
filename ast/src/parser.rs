@@ -230,7 +230,6 @@ impl LatexParser {
                 none_of(format!("{}{}", end, start)).map(|x: char| x.to_string()),
             ))
             .repeated()
-            .at_least(1)
             .collect::<String>()
         })
         .delimited_by(just(start), just(end))
