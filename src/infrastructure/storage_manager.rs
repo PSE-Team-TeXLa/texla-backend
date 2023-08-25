@@ -136,7 +136,7 @@ impl TexlaStorageManager<GitManager> {
 
         // This assumes newlines between markers and content, which is okay, because we only
         // process our own stringification results here.
-        Some((path, begin_start..end_end, (begin_end + 1)..end_start))
+        Some((path, begin_start..end_end, begin_end + 1..end_start))
     }
 
     fn get_paths(&self, input_path: String) -> (PathBuf, PathBuf) {
