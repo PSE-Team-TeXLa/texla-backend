@@ -7,7 +7,6 @@ pub const LATEX_PATH_SEPARATOR: &str = "/";
 pub(crate) const BEGIN: &str = "\\begin";
 pub(crate) const END: &str = "\\end";
 pub const INPUT: &str = "\\input";
-// pub' instead of 'pub(crate)' used since it's needed in the other crate
 pub(crate) const INCLUDEGRAPHICS: &str = "\\includegraphics";
 pub(crate) const CAPTION: &str = "\\caption";
 pub(crate) const LABEL: &str = "\\label";

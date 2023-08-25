@@ -8,7 +8,6 @@ pub const TEXLA_COMMENT_DELIMITER_RIGHT: char = '}';
 
 pub const FILE_BEGIN_MARK: &str = "% TEXLA FILE BEGIN ";
 pub const FILE_END_MARK: &str = "% TEXLA FILE END ";
-// 'pub' instead of 'pub(crate)' used since it's needed in the other crate
 
 pub(crate) const METADATA_MARK: &str = "% TEXLA METADATA ";
 pub(crate) const METADATA_DELIMITER_LEFT: char = '(';
