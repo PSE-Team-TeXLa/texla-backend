@@ -135,6 +135,13 @@ impl NodeType {
             }
         }
     }
+
+    pub(crate) fn increases_level(&self) -> bool {
+        match self {
+            NodeType::Expandable { data, .. } => data.increases_level(),
+            NodeType::Leaf { .. } => false,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -157,6 +164,7 @@ pub(crate) enum ExpandableData {
     Dummy {
         before_children: String,
         after_children: String,
+        increases_level: bool,
     },
 }
 
@@ -203,6 +211,7 @@ impl ExpandableData {
             ExpandableData::Dummy {
                 before_children,
                 after_children,
+                ..
             } => {
                 let children = children_latex;
                 format!("{before_children}\n{children}{after_children}\n")
@@ -211,7 +220,13 @@ impl ExpandableData {
     }
 
     fn increases_level(&self) -> bool {
-        matches!(self, ExpandableData::Segment { .. })
+        match self {
+            ExpandableData::Segment { .. } => true,
+            ExpandableData::Dummy {
+                increases_level, ..
+            } => *increases_level,
+            _ => false,
+        }
     }
 }
 

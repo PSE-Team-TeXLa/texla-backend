@@ -28,6 +28,7 @@ impl Operation<TexlaAst> for AddNode {
                 data: ExpandableData::Dummy {
                     before_children: self.raw_latex.clone(),
                     after_children: "".to_string(),
+                    increases_level: false,
                 },
                 children: vec![],
             },

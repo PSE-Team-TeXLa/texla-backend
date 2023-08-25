@@ -40,6 +40,7 @@ impl Operation<TexlaAst> for EditNode {
                     data: ExpandableData::Dummy {
                         before_children,
                         after_children,
+                        increases_level: node.node_type.increases_level(),
                     },
                     children: match &node.node_type {
                         NodeType::Expandable { children, .. } => children.clone(), // copies children from old node
