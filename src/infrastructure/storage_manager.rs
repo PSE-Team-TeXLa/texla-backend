@@ -151,35 +151,27 @@ impl TexlaStorageManager<GitManager> {
         })
         .with_extension(LATEX_FILE_EXTENSION);
 
-        // get relative and absolute path
-        let path_abs_os; // absolute path, platform-dependent slashes
-        let path_rel; // relative path, converted to path_rel_latex with forward slashes
-
-        if path.is_relative() {
-            path_rel = path.clone();
-            path_abs_os = self
-                .main_file
+        // get absolute path for OS and transform path for LaTeX
+        let path_abs_os = if path.is_relative() {
+            self.main_file
                 .directory
-                .canonicalize()
+                .canonicalize() // this will use platform-dependent slashes
                 .expect("Could not create absolute path")
-                .join(path);
+                .join(path.clone())
         } else {
-            path_abs_os = path.clone();
-            path_rel = path
-                .strip_prefix(&self.main_file.directory)
-                .expect("Could not create relative path")
-                .to_path_buf();
-            // TODO also support paths that are no child of 'main_file_directory'?
-        }
+            path.clone()
+        };
 
-        // replace separators in path and remove file extension again
-        let path_rel_latex = {
+        // We normally want relative paths in LaTeX but we don't convert given absolute paths to
+        // relative ones as this might be unintended by the user. Though, 'path_latex' is just a
+        // copy of 'path' with replaced path separators and no file extension.
+
+        let path_latex = {
             if MAIN_SEPARATOR_STR == LATEX_PATH_SEPARATOR {
-                path_rel.with_extension("")
+                path.with_extension("")
             } else {
                 PathBuf::from(
-                    path_rel
-                        .with_extension("")
+                    path.with_extension("")
                         .to_str()
                         .unwrap()
                         .replace(MAIN_SEPARATOR_STR, LATEX_PATH_SEPARATOR),
@@ -187,7 +179,7 @@ impl TexlaStorageManager<GitManager> {
             }
         };
 
-        (path_abs_os, path_rel_latex)
+        (path_abs_os, path_latex)
     }
 
     fn pull_timer_manager(&mut self) -> &mut PullTimerManager {
