@@ -23,8 +23,8 @@ struct LatexParser {
 }
 
 pub(crate) fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
-    // TODO: for performance, the parser should not be created every time, but reused
-    // (could be realized by using reference arguments instead of attributes)
+    // To further improve performance, the parser could be reused instead of creating it every time.
+    // This could be realized by using reference arguments instead of attributes.
     let parser = LatexParser::new();
     let root = parser.parser().parse(string.clone())?;
     let highest_level = parser.highest_level(&string);

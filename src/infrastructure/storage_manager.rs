@@ -240,13 +240,13 @@ impl StorageManager for TexlaStorageManager<GitManager> {
     }
 
     fn multiplex_files(&self) -> Result<String, InfrastructureError> {
+        // To further improve performance, regex could be used for searching inputs instead of
+        // Chumsky. Additionally, inputs could be replaced recursively.
         let parser = Self::latex_input_parser();
         let mut latex_single_string =
             fs::read_to_string(&self.main_file.path).expect("Could not read file");
 
         loop {
-            // TODO use regex instead of chumsky to search inputs
-            // TODO replace inputs recursively (what for?)
             let parse_res = parser.parse(latex_single_string.clone());
             if parse_res.is_err() {
                 break;
@@ -285,12 +285,12 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         self.pull_timer_manager().activate();
     }
 
-    // TODO: problem: this storage manager could be used to perform multiple saves simultaneously
+    // note: This method could be accidentally used to perform multiple saves simultaneously.
     async fn save(
         this: Arc<Mutex<Self>>,
         mut latex_single_string: String,
     ) -> Result<(), InfrastructureError> {
-        // TODO: make this async using async file io and join_all!()
+        // To further improve performance, async file I/O could be used.
         {
             this.lock().unwrap().writing = true;
 
