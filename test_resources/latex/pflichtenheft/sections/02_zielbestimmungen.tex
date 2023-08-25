@@ -2,61 +2,58 @@
 
 \section{Zielbestimmungen}
 \label{sec:zielbestimmungen}
-
 \texla{} soll es ermöglichen, \LaTeX"=Dokumente übersichtlich und hierarchisch darzustellen.
 In dieser Form soll eine intuitive Benutzerschnittstelle zur Restrukturierung und Bearbeitung geboten werden.
 Die Integration in bestehende Arbeitsabläufe soll über Git-Repositories und Overleaf erfolgen.
 
 \subsection{Muss-Kriterien}
 \label{subsec:muss-kriterien}
-
 \criterium{Starten der Anwendung von der Konsole}{crt:cli}
+
 % FA: Features der CLI: Starten, Ordner angeben, Kontrolliertes beenden
-
 \criterium{Hierarchische grafische Darstellung von \LaTeX"=Dokumenten}{crt:hierarchy}
-% FA: auch file includes unterstützen
 
+% FA: auch file includes unterstützen
 \criterium{Erkennen von einfachen Strukturelementen}{crt:easy-elements}
+
 % in Funktionen konkret, welche Elemente; Floats an der Stelle, an der sie im Code stehen; alle anderen als Codeblock;
 % bestimmte Elemente als "bekannter Codeblock", d.h. es gibt ein Mapping von Environment auf benutzerfreundlicher Name,
 % der dann als Kompaktform dienen kann (und ggf. zusätzlich angezeigt wird);
 % unbekannte Inline-Makros müssen irgendwie ignoriert werden
-
 \criterium{Erkennen von einfachen Formatierungsbefehlen}{crt:easy-format}
 
 \criterium{Übersichtlichkeit durch automatisches Ein- und Ausblenden sowie durch Kompaktformen}{crt:clarity}
+
 % ab durch kann man das auch in FAs auslagern
-
 \criterium{Verschieben der Strukturelemente per Drag and Drop}{crt:dnd}
-% FA: auch zwischen Ebenen
 
+% FA: auch zwischen Ebenen
 \criterium{Bearbeitung des \LaTeX"=Quelltextes von Strukturelementen mit dem Minieditor}{crt:minieditor}
 
 \criterium{Hinzufügen von beliebigen Strukturelementen an beliebiger Stelle}{crt:add}
+
 % Zwischenknöpfe + Minieditor, Minieditor eines anderen Elements, bekannte Strukturelemente werden erkannt und
 % entsprechend angezeigt
-
 \criterium{Persistentes Speichern von Zusatzinformationen als Kommentare in den \LaTeX"=Dateien\vspace*{-1em}}
 {crt:meta-comments}
+
 % in speziellen Kommentaren
-
 \criterium{Benutzerdefinierter Export von \LaTeX"=Dateien}{crt:export}
-% Settings panel / Profile
 
+% Settings panel / Profile
 \clearpage
 
 \criterium{Integration mit Git}{crt:git}
+
 % regelmäßiges Synchronisieren, regelmäßiges Commiten nach Änderungen
-
 \criterium{Direktlink zum entsprechenden Projekt in Overleaf}{crt:overleaf-link}
-% auf konkrete Dateien geht nicht
 
+% auf konkrete Dateien geht nicht
 \subsection{Kann-Kriterien}
 \label{subsec:kann-kriterien}
-
 \criteriumOptional{Konfigurierbare grafische Oberfläche}{crt:configurable-gui}
-% z.B. Kommentare ausblenden
 
+% z.B. Kommentare ausblenden
 \criteriumOptional{Tastaturkürzel für häufige Operationen}{crt:keyboard}
 
 \criteriumOptional{Hinzufügen von Notizen zu Strukturelementen}{crt:notes}
@@ -64,21 +61,21 @@ Die Integration in bestehende Arbeitsabläufe soll über Git-Repositories und Ov
 \criteriumOptional{Hinterlegen von benutzerdefinierten Kompaktformen an Strukturelementen}{crt:manual-compact-form}
 
 \criteriumOptional{Syntax-Hervorhebung im Minieditor}{crt:syntax-highlighting}
-% Minieditor?
 
+% Minieditor?
 \criteriumOptional{Code-Vervollständigung im Minieditor}{crt:code-completion}
 
 \criteriumOptional{Möglichkeit zur einfachen Übersetzung der Anwendung}{crt:multilingual}
-% FA: internationalization tool verwenden, Englisch anbieten
 
+% FA: internationalization tool verwenden, Englisch anbieten
 \criteriumOptional{Kompatibilität mit Browser-Extensions zur Autokorrektur}{crt:autocorrect}
 
 \criteriumOptional{Automatische Zusammenfassung von Abschnitten durch KI}{crt:ai-tldrs}
+
 % einen Knopf zur (de)aktivierung, ansonsten unsichtbar
-
 \criteriumOptional{Unterstützung beim Schreiben durch KI}{crt:ai-rewriting}
-% Vorschläge, Umschreiben nach Kommentar
 
+% Vorschläge, Umschreiben nach Kommentar
 \criteriumOptional{Bereitstellung als reinen Online-Dienst durch eine vorgeschaltete Login-Page}{crt:online}
 
 \clearpage
@@ -86,13 +83,12 @@ Die Integration in bestehende Arbeitsabläufe soll über Git-Repositories und Ov
 \criteriumOptional{Feste Voreinstellungsprofile für den benutzerdefinierten Export}{crt:export-profiles}
 
 \criteriumOptional{Export von PDF-Dateien}{crt:pdf-export}
-% Voraussetzung: lokale Latex-Installation
 
+% Voraussetzung: lokale Latex-Installation
 \criteriumOptional{Verschieben von Listenelementen per Drag and Drop}{crt:lists}
 
 \subsection{Abgrenzungskriterien}
 \label{subsec:abgrenzungskriterien}
-
 \criteriumNot{Die App ist kein vollständiger \LaTeX"=Parser oder -Compiler.}{crt:no-compiler}
 Insbesondere werden keine benutzerdefinierten Makros unterstützt.
 
@@ -104,3 +100,4 @@ lesen kann.
 \criteriumNot{Die App stellt keine eigene PDF-Vorschau zur Verfügung.}{crt:no-pdf-preview}
 
 \criteriumNot{Die App stellt keine User-Verwaltung zur Verfügung, auch nicht für Git.}{crt:no-users}
+

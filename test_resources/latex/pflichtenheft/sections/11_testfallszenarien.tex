@@ -2,362 +2,393 @@
 
 \section{Testfallszenarien}
 \label{sec:testfallszenarien}
-
 \subsection{Funktionale Testfälle}
 \label{subsec:funktionale-testfaelle}
-
 Die folgenden Testfälle testen die verpflichtenden funktionalen Anforderungen:
 
 \test{Starten der Anwendung}{tst:start-01}
+
 \begin{itemize}
-  \item Vorbedingung: Dateistruktur erfüllt die Voraussetzungen (siehe~\ref{sec:produktleistungen}).
+\item Vorbedingung: Dateistruktur erfüllt die Voraussetzungen (siehe~\ref{sec:produktleistungen}).
   \item Aktion: Programmstart durch Übergabe eines Dateipfades als Argument an die ausführbare Datei.
   \item Nachbedingung: Standardansicht in der höchsten Ebene der Anwendung.
+
 \end{itemize}
 \tests{fnc:start}
 
 \test{Beenden der Anwendung}{tst:stop-01}
 \tests{fnc:exit}
+
 \begin{itemize}
-  \item Vorbedingung: Die Anwendung ist aktiv und befindet sich in irgendeinem Ansichtsmodus.
+\item Vorbedingung: Die Anwendung ist aktiv und befindet sich in irgendeinem Ansichtsmodus.
   \item Aktion: Klicken des Exit-Symbols in der unteren linken Ecke der Sidebar.
   \item Nachbedingung: Die Anwendung wird geschlossen.
   Die lokalen und Remote-Repositories sind synchron mit den vom Benutzer in \texla{} vorgenommenen Änderungen.
-\end{itemize}
 
+\end{itemize}
 \test{Hierarchische Darstellung}{tst:hierarchy-01}
 \tests{fnc:hierarchy}
+
 \begin{itemize}
-  \item Vorbedingung: Das \texla"=Pflichtenheft ist lokal verfügbar.
+\item Vorbedingung: Das \texla"=Pflichtenheft ist lokal verfügbar.
   \item Aktion: Öffnen der \texla"=Anwendung mit dem Dateipfad zum \texla"=Pflichtenheft.
   \item Nachbedingung: Alle unterstützten Strukturelemente wurden erkannt und korrekt dargestellt.
-\end{itemize}
 
+\end{itemize}
 \clearpage
 
 \test{Unterstützung inkludierter Dateien}{tst:input-01}
 \tests{fnc:input}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|/input| steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit \verb|/input| steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement des \verb|/input|-Makros.
   \item Nachbedingung: Die Datei wurde erkannt und wird angezeigt.
-\end{itemize}
 
+\end{itemize}
 \test{Strukturelemente in Blöcke aufteilen}{tst:blocks-01}
 \tests{fnc:blocks}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei enthält \verb|/begin{...} ... /end{...}|.
+\item Vorbedingung: \LaTeX"=Datei enthält \verb|/begin{...} ... /end{...}|.
   \texla{} ist gestartet.
   \item Aktion: Navigation zur definierten Umgebung.
   \item Nachbedingung: Das Umgebungs-Strukturelement wurde erkannt und korrekt angezeigt.
-\end{itemize}
 
+\end{itemize}
 \test{Rendering von Bildern}{tst:render-01}
 \tests{fnc:render}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|/includegraphics| steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit \verb|/includegraphics| steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum definierten Bild.
   \item Nachbedingung: Das Bild-Strukturelement wurde erkannt und korrekt gerendert.
-\end{itemize}
 
+\end{itemize}
 \test{Rendering von mathematischen Formeln}{tst:render-02}
 \tests{fnc:render}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|/begin{displaymath} ... /end{displaymath}| steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit \verb|/begin{displaymath} ... /end{displaymath}| steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zur definierten Formel.
   \item Nachbedingung: Die mathematische Formel wurde erkannt und korrekt gerendert.
-\end{itemize}
 
+\end{itemize}
 \clearpage
 
 \test{Formatierung in Textblöcken}{tst:format-01}
 \tests{fnc:format}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit \verb|/textbf| und \verb|/textit| steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit \verb|/textbf| und \verb|/textit| steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum enthaltenden Strukturelement.
   \item Nachbedingung: Fetter und kursiver Text wurde gerendert.
-\end{itemize}
 
+\end{itemize}
 \test{Ein- und Ausblenden sowie Komprimieren von Strukturelementen}{tst:clarity-01}
 \tests{fnc:hide}
 \tests{fnc:compact}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|/section| und \verb|/subsection|) steht
+\item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|/section| und \verb|/subsection|) steht
   lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
   Ein Strukturelement wird in der Strukturspalte angeklickt.
   \item Nachbedingung: Die Überschriften der Strukturelemente werden kompakt in der Strukturspalte angezeigt.
   Verborgene und erweiterbare Elemente werden kompakt in der Lesespalte angezeigt.
-\end{itemize}
 
+\end{itemize}
 \test{Erkennen von Algorithmen}{tst:compact-02}
 \tests{fnc:compact}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit Algorithmus-Umgebung steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit Algorithmus-Umgebung steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zur Ebene oberhalb des definierten Algorithmus.
   \item Nachbedingung: Das Algorithmus-Strukturelement wird in Kompaktform durch den Text \enquote{Algorithmus} bzw.
   \enquote{algorithm} repräsentiert.
-\end{itemize}
 
+\end{itemize}
 \test{Bereitstellung einer Graphansicht}{tst:graph-01}
 \tests{fnc:graph}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Klicken auf den Ansichtwechsel-Button.
   \item Nachbedingung: Die Graphansicht wird angezeigt.
-\end{itemize}
 
+\end{itemize}
 \test{Legale Verschiebung von Elementen per Drag and Drop}{tst:dragdrop-01}
 \tests{fnc:drag-and-drop}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zum Strukturelement.
   In der Lesespalte wird ein Element angeklickt und nach oben oder unten, vor oder nach ein anderes Element
   verschoben.
   \item Nachbedingung: Das Element steht an der gewünschten Position.
-\end{itemize}
 
+\end{itemize}
 \test{Illegale Verschiebung von Elementen per Drag and Drop}{tst:dragdrop-02}
 \tests{fnc:drag-and-drop}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|/section| und \verb|/subsection|) steht
+\item Vorbedingung: \LaTeX"=Datei mit mehrstufiger Gliederung (\zB{} \verb|/section| und \verb|/subsection|) steht
   lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
   In der Lesespalte wird ein Element angeklickt und zur Strukturspalte verschoben.
   \item Nachbedingung: Das Element behält seine ursprüngliche Position.
-\end{itemize}
 
+\end{itemize}
 \test{Bereitstellung eines Minieditors}{tst:minieditor-01}
 \tests{fnc:minieditor}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument mit mindestens einem textuellen Absatz.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument mit mindestens einem textuellen Absatz.
   \item Aktion: Navigation zum und Anklicken eines textuellen Absatzes im Arbeitsbereich.
   Anklicken des Absatzes in der Lesespalte.
   Navigation zum Kontextmenü und Anklicken des Bearbeitungsmodus.
   \item Nachbedingung: Die linke Spalte wird schmaler angezeigt.
   Der Minieditor für den ausgewählten Absatz wird auf der rechten Seite angezeigt.
-\end{itemize}
 
+\end{itemize}
 \clearpage
 
 \test{Hinzufügen von Abschnitten}{tst:add-01}
 \tests{fnc:add}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zur Lesespalte.
   In der Standardansicht hinter oder zwischen beliebigen Elementen hovern.
   Klicken des H-Button, wodurch ein Popup erscheint.
   Hinzufügen einer Überschrift.
   \item Nachbedingung: Das neue Element wird in der Standardansicht angezeigt.
-\end{itemize}
 
+\end{itemize}
 \test{Hinzufügen von \LaTeX"=Blöcken}{tst:add-02}
 \tests{fnc:add}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zur Lesespalte.
   In der Standardansicht hinter oder zwischen beliebigen Elementen hovern.
   Klicken des T-Button, wodurch \texla{} in den Bearbeitungsmodus wechselt.
   Bearbeitung und Speichern.
   \item Nachbedingung: Der neue \LaTeX"=Block wird in der Standardansicht angezeigt.
-\end{itemize}
 
+\end{itemize}
 \test{Verschmelzen von zwei Textabsätzen}{tst:add-03}
 \tests{fnc:add}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mindestens zwei textuellen Absätzen auf gleicher Ebene steht lokal zur
+\item Vorbedingung: \LaTeX"=Datei mit mindestens zwei textuellen Absätzen auf gleicher Ebene steht lokal zur
   Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zur Lesespalte.
   Bearbeiten im Minieditor des unteren von zwei textuellen Absätzen.
   Klicken der Rücktaste am Anfang des Absatzes.
   \item Nachbedingung: Die beiden Strukturelemente wurden verschmolzen.
-\end{itemize}
 
+\end{itemize}
 \clearpage
 
 \test{Benutzerdefinierter Export}{tst:export-01}
 \tests{fnc:export}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zur Sidebar und Auswahl der Export-Option.
   Auswahl von Exportmöglichkeiten in einem Pop-up-Fenster der GUI.
   \item Nachbedingung: Die exportierte Datei steht mit den ausgewählten Optionen zur Verfügung.
-\end{itemize}
 
+\end{itemize}
 \test{Integration mit Git}{tst:git-01}
 \tests{fnc:git}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet.
+\item Vorbedingung: \texla{} ist gestartet.
   \item Aktion: Verändern der \LaTeX"=Datei mit \texla{}.
   Abwarten von 5~\si{\second}.
   \item Nachbedingung: Ein Commit wurde im lokalen Repository durchgeführt.
   Ein Push wurde zum Remote-Repository durchgeführt.
-\end{itemize}
 
+\end{itemize}
 \test{Link zum Projekt in Overleaf}{tst:overleaf-01}
 \tests{fnc:overleaf-link}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zur Sidebar und Auswahl der Overleaf-Option.
   \item Nachbedingung: Der Browser öffnet sich mit dem Projekt in Overleaf.
-\end{itemize}
 
+\end{itemize}
 Die folgenden Testfälle testen die optionalen funktionalen Anforderungen:
 
 \test{Konfigurierbare graphische Oberfläche}{tst:gui-01}
 \tests{fnc:configurable-gui}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument mit \LaTeX"=Kommentaren.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument mit \LaTeX"=Kommentaren.
   \item Aktion: Navigation zur Sidebar und Auswahl der Option \enquote{Ausblenden von \LaTeX"=Kommentaren}.
   \item Nachbedingung: \LaTeX"=Kommentare werden nicht mehr angezeigt.
-\end{itemize}
 
+\end{itemize}
 \test{Tastaturkürzel für häufige Operationen}{tst:keyboard}
 \tests{fnc:keyboard}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Drücken der Tastenkombination zum Wechseln zwischen Modi.
   \item Nachbedingung: \texla{} wechselt zwischen Standard- und Graphmodus.
-\end{itemize}
 
+\end{itemize}
 \test{Hinzufügen von Notizen}{tst:notes-01}
 \tests{fnc:notes}
 \tests{fnc:meta-comments}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mindestens einem Strukturelement steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit mindestens einem Strukturelement steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
   Öffnen des Kontextmenüs zu einem Strukturelement.
   Auswahl der Notiz-Option und Bearbeitung in einem Pop-up-Fenster der GUI.
   \item Nachbedingung: Die Notiz wird als Meta-Kommentar im Quelltext gespeichert.
-\end{itemize}
 
+\end{itemize}
 \test{Benutzerdefinierte Kompaktformen von Strukturelementen}{tst:compact-01}
 \tests{fnc:manual-compact-form}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mindestens einem Strukturelement steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit mindestens einem Strukturelement steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
   Öffnen des Kontextmenüs zu einem Strukturelement.
   Auswahl der Kompaktform-Option und Eingeben einer Zusammenfassung.
   \item Nachbedingung: Das Strukturelement wird an den entsprechenden Stellen in der neuen Kompaktform angezeigt.
-\end{itemize}
 
+\end{itemize}
 \clearpage
 
 \test{Syntax-Hervorhebung im Texteditor}{tst:syntax-highlighting-01}
 \tests{fnc:syntax-highlighting}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mindestens einem Strukturelement steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit mindestens einem Strukturelement steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
   Öffnen des Kontextmenüs zu diesem Strukturelement.
   Auswahl der Bearbeiten-Option.
   \item Nachbedingung: Die \LaTeX"=Befehle des Strukturelements werden im Minieditor farblich hervorgehoben.
-\end{itemize}
 
+\end{itemize}
 \test{Code-Vervollständigung im Texteditor}{tst:gcode-completion}
 \tests{fnc:code-completion}
+
 \begin{itemize}
-  \item Vorbedingung: \LaTeX"=Datei mit mindestens einem textuellen Strukturelement steht lokal zur Verfügung.
+\item Vorbedingung: \LaTeX"=Datei mit mindestens einem textuellen Strukturelement steht lokal zur Verfügung.
   \texla{} ist gestartet.
   \item Aktion: Navigation zum Strukturelement.
   Öffnen des Kontextmenüs zu diesem Strukturelement.
   Wechsel in den Bearbeitungsmodus.
   Eingabe von \LaTeX"=Befehlen.
   \item Nachbedingung: \LaTeX"=Befehle werden automatisch vervollständigt.
-\end{itemize}
 
+\end{itemize}
 \test{Möglichkeit zur einfachen Übersetzung der Anwendung}{tst:multilingual}
 \tests{fnc:multilingual}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet.
+\item Vorbedingung: \texla{} ist gestartet.
   \item Aktion: Navigation zur Sidebar, Anklicken der Option \enquote{Sprache} und Auswahl einer bestimmten Sprache.
   \item Nachbedingung: Die Sprache der Anwendung wurde zur ausgewählten Sprache geändert.
-\end{itemize}
 
+\end{itemize}
 \clearpage
 
 \test{Kompatibilität mit Browser-Extensions zur Autokorrektur}{tst:autocorrect}
 \tests{fnc:autocorrect}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet.
+\item Vorbedingung: \texla{} ist gestartet.
   Die Browser-Extension LanguageTool ist installiert und aktiv.
   \item Aktion: Im Bearbeitungsmodus wird Text eingegeben, der bezüglich Grammatik oder Rechtschreibung fehlerhaft
   ist.
   \item Nachbedingung: Fehlerhafte Teile des Textes werden erkannt und entsprechend hervorgehoben.
-\end{itemize}
 
+\end{itemize}
 \test{Automatische Zusammenfassung von Abschnitten durch KI}{tst:ai-tldrs}
 \tests{fnc:ai-tldrs}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zur Sidebar und Auswahl der Option \enquote{KI-Zusammenfassung}.
   \item Nachbedingung: Die einzelnen Zusammenfassungen pro Abschnitt wurden automatisch generiert.
-\end{itemize}
 
+\end{itemize}
 \test{Unterstützung beim Schreiben durch KI}{tst:ai-rewriting}
 \tests{fnc:ai-rewriting}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zur Sidebar und Auswahl eines Strukturelements.
   Wechsel in den Bearbeitungsmodus.
   Eingabe einer Anfrage an die KI.
   \item Nachbedingung: Die KI hat eine Antwort zur Anfrage geschrieben.
-\end{itemize}
 
+\end{itemize}
 \test{Bereitstellung als reinen Online-Dienst}{tst:online}
 \tests{fnc:online}
+
 \begin{itemize}
-  \item Vorbedingung: Internetverbindung ist vorhanden.
+\item Vorbedingung: Internetverbindung ist vorhanden.
   \item Aktion: \texla{} wird im Browser geöffnet.
   \item Nachbedingung: Dokumente können mit \texla{} online bearbeitet werden.
-\end{itemize}
 
+\end{itemize}
 \clearpage
 
 \test{Voreinstellungsprofile für den benutzerdefinierten Export}{tst:export-profiles}
 \tests{fnc:export-profiles}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet.
+\item Vorbedingung: \texla{} ist gestartet.
   \item Aktion: Navigation zur Sidebar.
   Anklicken der Option \enquote{Export} und Auswahl eines voreingestellten Profils.
   \item Nachbedingung: Die Export-Einstellungen wurden entsprechend des Profils geändert.
-\end{itemize}
 
+\end{itemize}
 \test{Export von PDF-Dateien}{tst:pdf-export}
 \tests{fnc:pdf-export}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument.
   \item Aktion: Navigation zur Sidebar und Auswahl der Export-Option.
   \item Nachbedingung: Das \LaTeX"=Dokument wurde als PDF exportiert.
-\end{itemize}
 
+\end{itemize}
 \test{Verschieben von Listenelementen per Drag and Drop}{tst:list-dnd}
 \tests{fnc:lists}
+
 \begin{itemize}
-  \item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument mit einer \verb|itemize|-Umgebung mit
+\item Vorbedingung: \texla{} ist gestartet auf validem \LaTeX"=Dokument mit einer \verb|itemize|-Umgebung mit
   mindestens zwei Elementen.
   \item Aktion: Navigation zur Liste.
   Verschieben eines Listeneintrags per Drag and Drop.
   \item Nachbedingung: Listeneinträge erscheinen in neuer Reihenfolge.
-\end{itemize}
 
+\end{itemize}
 \subsection{Szenarien}
 \label{subsec:tests-scenarios}
-
 Anmerkung: Jegliche Ähnlichkeit zu real existierenden Personen ist rein zufällig.
 
 \subsubsection{Erweiterung und Verwaltung eines bestehenden \LaTeX"=Projekts}
-
 Der Benutzer Paul hat das Ziel, sein umfangreiches \LaTeX"=Projekt zu erweitern und zu verwalten.
 Bedauerlicherweise hat er aufgrund der Vielzahl an Dateien den Überblick verloren und einige \LaTeX"=Befehle sind
 ihm entfallen, was sein Verständnis der einzelnen Abschnitte erschwert.
@@ -388,7 +419,6 @@ Zufrieden mit seinen Anpassungen schließt Paul die Anwendung.
 All seine Änderungen wurden sowohl lokal als auch remote gespeichert.
 
 \subsubsection{Unterstützung bei der Strukturverbesserung eines \LaTeX"=Projekts}
-
 Benutzer Max verfolgt das Ziel, seinem Kommilitonen Paul bei der Verbesserung der Struktur seines
 \LaTeX"=Projekts zu unterstützen.
 Dafür setzt er die \texla"=Anwendung ein, um Paul hilfreiche Notizen zu hinterlassen.
@@ -405,7 +435,6 @@ Hier hinterlässt er für Paul wichtige Bearbeitungshinweise in Form von \LaTeX"
 Schließlich beendet Max die Anwendung und teilt Paul die hinterlassenen Bearbeitungshinweise mit.
 
 \subsubsection{Verbesserung von Algorithmen-Vorlesungsfolien}
-
 Benutzer Linus, der an einer Universität als Tutor tätig ist, strebt danach, die \LaTeX"=Folien für die
 Algorithmen-Vorlesung zu verbessern.
 Sein Lehrstuhl bevorzugt die Nutzung von Overleaf, auf welchem auch die aktuellen Folien abgelegt sind.
@@ -431,3 +460,4 @@ Er stellt jedoch fest, dass er nicht die Berechtigung hat, ihn zum Repository de
 Daher entscheidet er sich, das \LaTeX"=Dokument zu exportieren.
 In den Exporteinstellungen wählt Linus aus, dass alles exportiert werden soll.
 Schließlich sendet er die Datei an seinen Freund.
+
