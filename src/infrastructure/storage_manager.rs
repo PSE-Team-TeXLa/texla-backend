@@ -29,8 +29,8 @@ pub trait StorageManager {
     async fn start(this: Arc<Mutex<Self>>) -> Result<(), InfrastructureError>;
     fn remote_url(&self) -> Option<&String>;
     fn multiplex_files(&self) -> Result<String, InfrastructureError>;
-    fn wait_for_frontend(&mut self);
-    fn frontend_aborted(&mut self);
+    fn wait_for_action(&mut self);
+    fn action_aborted(&mut self);
     async fn save(
         this: Arc<Mutex<Self>>,
         latex_single_string: String,
@@ -266,13 +266,16 @@ impl StorageManager for TexlaStorageManager<GitManager> {
         Ok(Self::lf(latex_single_string))
     }
 
-    fn wait_for_frontend(&mut self) {
+    // This method is called when either the frontend performs an operation or an export is created.
+    fn wait_for_action(&mut self) {
         self.waiting_for_frontend = true;
         self.pull_timer_manager().deactivate();
         self.worksession_manager().pause();
     }
 
-    fn frontend_aborted(&mut self) {
+    // This method is called when either the frontend aborts an operation or an export has
+    // completed.
+    fn action_aborted(&mut self) {
         self.waiting_for_frontend = false;
         self.pull_timer_manager().activate();
     }

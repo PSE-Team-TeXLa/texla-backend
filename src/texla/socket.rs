@@ -128,7 +128,7 @@ async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
         let state_ref = extract_state(&socket);
         let state = state_ref.read().unwrap();
         // stop synchronization in order to prevent losing changes
-        state.storage_manager.lock().unwrap().wait_for_frontend();
+        state.storage_manager.lock().unwrap().wait_for_action();
         println!("Waiting for frontend to finalize operation...");
     });
 
@@ -219,7 +219,7 @@ async fn perform_and_check_operation(
         Err(err) => {
             let mut state = state.write().unwrap();
             state.ast = TexlaAst::from_latex(backup_latex)?;
-            state.storage_manager.lock().unwrap().frontend_aborted();
+            state.storage_manager.lock().unwrap().action_aborted();
             Err(err)
         }
     }
@@ -270,7 +270,7 @@ async fn handle_export(
     let ast_copy = {
         let state = state_ref.read().unwrap();
         // freeze git actions until the original AST is reverted
-        state.storage_manager.lock().unwrap().wait_for_frontend();
+        state.storage_manager.lock().unwrap().wait_for_action();
         state_ref.read().unwrap().ast.clone()
     };
 
@@ -304,7 +304,7 @@ async fn handle_export(
         .storage_manager
         .lock()
         .unwrap()
-        .frontend_aborted();
+        .action_aborted();
 
     // save reverted AST to local files again
     if let Err(err) = stringify_and_save(state_ref.clone(), Default::default()).await {
