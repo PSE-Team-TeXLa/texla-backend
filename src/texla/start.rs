@@ -31,7 +31,7 @@ struct CliArguments {
     notify_delay: u64,
 
     /// Disables all git actions (commit, pull, push)
-    #[arg(long)]
+    #[arg(short = 'g', long)]
     no_git: bool,
 }
 
