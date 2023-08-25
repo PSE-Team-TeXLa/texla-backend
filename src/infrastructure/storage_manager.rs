@@ -369,6 +369,9 @@ mod tests {
     use std::fs;
     use std::sync::{Arc, Mutex};
 
+    use ast::texla_ast::TexlaAst;
+    use ast::Ast;
+
     use crate::infrastructure::file_path::FilePath;
     use crate::infrastructure::pull_timer::PullTimerManager;
     use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
@@ -385,10 +388,15 @@ mod tests {
         let vcs_manager = GitManager::new(true, main_file.directory.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000, 100);
 
+        let correct_latex_single_string =
+            fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap();
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
-            lf(fs::read_to_string("test_resources/latex/latex_single_string.txt").unwrap())
-        )
+            lf(correct_latex_single_string.clone())
+        );
+
+        // check that the latex single string is also parsable
+        TexlaAst::from_latex(correct_latex_single_string).unwrap();
     }
 
     #[test]
@@ -397,10 +405,15 @@ mod tests {
         let vcs_manager = GitManager::new(true, main_file.directory.clone());
         let storage_manager = TexlaStorageManager::new(vcs_manager, main_file, 500, 5000, 100);
 
+        let correct_latex_single_string =
+            fs::read_to_string("test_resources/latex/latex_single_string_huge.txt").unwrap();
         assert_eq!(
             lf(storage_manager.multiplex_files().unwrap()),
-            lf(fs::read_to_string("test_resources/latex/latex_single_string_huge.txt").unwrap())
-        )
+            lf(correct_latex_single_string.clone())
+        );
+
+        // check that the latex single string is also parsable
+        TexlaAst::from_latex(correct_latex_single_string).unwrap();
     }
 
     #[tokio::test]

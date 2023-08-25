@@ -14,7 +14,15 @@ Lorem ipsum.
 % TEXLA FILE BEGIN {sections/section2}
 \section{Second section}
 
-Dolor sit amet.
+% TEXLA FILE BEGIN {sections/section2/no_segments}
+This file only contains leaf elements and especially no segments.
+Thus it it can be used in place of any text node.
+
+% TEXLA FILE END {sections/section2/no_segments}
+
+We can still write text here.
+
+But not after the next input, because it contains a segment.
 
 % TEXLA FILE BEGIN {sections/section2/subsection1}
 \subsection{First subsection of second section}
