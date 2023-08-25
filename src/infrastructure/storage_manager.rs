@@ -122,10 +122,10 @@ impl TexlaStorageManager<GitManager> {
         let end_start = string.find(FILE_END_MARK)?;
         let (path, end_end) = {
             let string = &string[end_start + FILE_END_MARK.len()..];
-            if !string.starts_with('{') {
+            if !string.starts_with(TEXLA_COMMENT_DELIMITER_LEFT) {
                 return None;
             }
-            let brace_close = string.find('}')?;
+            let brace_close = string.find(TEXLA_COMMENT_DELIMITER_RIGHT)?;
             let path = string[1..brace_close].to_string();
             (path, end_start + FILE_END_MARK.len() + brace_close + 1)
         };
