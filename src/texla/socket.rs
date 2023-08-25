@@ -44,7 +44,7 @@ pub fn socket_service(
 // All actions belong here, as they handle the basics of communication.
 // Thus, it would be artificial and useless to split it up into multiple functions.
 async fn handler(socket: TexlaSocket, core: Arc<RwLock<TexlaCore>>) {
-    println!("Socket connected with id: {}", socket.sid);
+    println!("Socket connected with ID '{}'", socket.sid);
 
     let storage_manager = {
         let core = core.read().unwrap();
@@ -318,10 +318,10 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
     // resources in an on_disconnect handler (see https://github.com/Totodore/socketioxide/pull/41).
     match socket.emit(event, data) {
         Ok(_) => {
-            println!("Successfully sent {} to {}", event, socket.sid)
+            println!("Successfully sent {} to '{}'", event, socket.sid)
         }
         Err(_) => {
-            println!("Detected a closed socket: {}", socket.sid);
+            println!("Detected a closed socket: '{}'", socket.sid);
             // make sure locks are released before doing this
             let socket = socket.clone();
             tokio::spawn(async move {
