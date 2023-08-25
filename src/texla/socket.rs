@@ -266,34 +266,37 @@ async fn handle_export(
     println!("Preparing export with options: {options:?}");
     let state_ref = extract_state(&socket).clone();
 
-    // copy of ast with enabled StringificationOptions
+    // copy complete AST with all options enabled
     let ast_copy = {
         let state = state_ref.read().unwrap();
-        // freezing pulling and pushing until the original ast is reverted
+        // freeze git actions until the original AST is reverted
         state.storage_manager.lock().unwrap().wait_for_frontend();
         state_ref.read().unwrap().ast.clone()
     };
 
+    // apply given options to AST
     if let Err(err) = stringify_and_save(state_ref.clone(), options).await {
         send(&socket, "error", err).ok();
         return;
     }
 
-    let state_ref_after_stringify = extract_state(&socket).clone();
+    // export AST to zip file
+    let zip_result = core.write().unwrap().export_manager.zip_files();
 
-    match core.write().unwrap().export_manager.zip_files() {
+    // revert original AST with all options enabled
+    extract_state(&socket).write().unwrap().ast = ast_copy;
+
+    // send message to frontend
+    match zip_result {
         Ok(url) => {
-            // reset internal ast to one with enabled StringificationOptions
-            state_ref_after_stringify.write().unwrap().ast = ast_copy;
             send(&socket, "export_ready", url).ok();
         }
         Err(err) => {
-            state_ref_after_stringify.write().unwrap().ast = ast_copy;
             send(&socket, "error", TexlaError::from(err)).ok();
         }
     }
 
-    // unfreeze pulling and pushing
+    // unfreeze git actions
     let state_ref = extract_state(&socket).clone();
     state_ref
         .read()
@@ -303,7 +306,7 @@ async fn handle_export(
         .unwrap()
         .frontend_aborted();
 
-    // save ast to local files again
+    // save reverted AST to local files again
     if let Err(err) = stringify_and_save(state_ref.clone(), Default::default()).await {
         send(&socket, "error", err).ok();
     }
@@ -334,8 +337,15 @@ pub(crate) fn send(socket: &TexlaSocket, event: &str, data: impl Serialize) -> R
 
 #[cfg(test)]
 mod test {
+    use std::fs;
+    use std::io::Read;
+    use std::path::Path;
     use std::sync::{Arc, Mutex};
+
+    use fs_extra::dir::*;
+    use fs_extra::error::*;
     use tokio::runtime::Runtime;
+    use walkdir::WalkDir;
 
     use ast::options::StringificationOptions;
     use ast::Ast;
@@ -343,13 +353,8 @@ mod test {
     use crate::infrastructure::file_path::FilePath;
     use crate::infrastructure::storage_manager::{StorageManager, TexlaStorageManager};
     use crate::infrastructure::vcs_manager::GitManager;
-    use std::fs;
-    use std::io::Read;
-    use std::path::Path;
-    use walkdir::WalkDir;
+
     extern crate fs_extra;
-    use fs_extra::dir::*;
-    use fs_extra::error::*;
 
     #[test]
     fn parse_pflichtenheft_from_disk() {
