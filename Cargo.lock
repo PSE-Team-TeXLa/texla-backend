@@ -181,35 +181,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "backend"
-version = "0.1.0"
-dependencies = [
- "ast",
- "async-trait",
- "axum",
- "chrono",
- "chumsky",
- "clap",
- "debounced",
- "fs_extra",
- "futures",
- "notify",
- "open",
- "serde",
- "serde_json",
- "socketioxide",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "walkdir",
- "zip",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.68"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1600,6 +1571,35 @@ name = "sync_wrapper"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2047c6ded9c721764247e62cd3b03c09ffc529b2ba5b10ec482ae507a4a70160"
+
+[[package]]
+name = "texla"
+version = "0.1.0"
+dependencies = [
+ "ast",
+ "async-trait",
+ "axum",
+ "chrono",
+ "chumsky",
+ "clap",
+ "debounced",
+ "fs_extra",
+ "futures",
+ "notify",
+ "open",
+ "serde",
+ "serde_json",
+ "socketioxide",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "walkdir",
+ "zip",
+]
 
 [[package]]
 name = "thiserror"
