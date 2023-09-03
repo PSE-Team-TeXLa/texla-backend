@@ -11,16 +11,17 @@ To compile a working binary from source, follow these steps:
    Step-by-step instructions can be found in the README of the frontend repository.
 2. Paste the build output, i.e. the contents of the directory `build` in the frontend, into the directory `frontend` in
    the backend.
-   For example there should be a folder `/frontend/js`.
+   For example, there should be a folder `/frontend/js`.
 3. Build the project:
    ```shell
    cargo build --release
    ```
-   When run the first time, this will download and compile all dependencies from [crates.io](https://crates.io).
+   When this command is run for the first time, all dependencies from [crates.io](https://crates.io) will be downloaded
+   and compiled.
    This may take a while, but will not be necessary for subsequent builds.
 4. The binary and all the files it depends on can then be found in [`target/release`](./target/release).
-   You can now execute TeXLa by calling `target/release/texla`(+`.exe` on Windows).
-5. To be able to run TeXLa as intended, this binary has to be put into `PATH`.
+   You can now execute TeXLa by calling `target/release/texla`(followed by `.exe` on Windows).
+5. To be able to run TeXLa as intended, i.e. by calling only `texla`, this binary has to be put into `PATH`.
    This can be achieved by running this in Windows PowerShell:
    ```shell
    $env:Path += ";" + (Resolve-Path target/release).Path
