@@ -494,6 +494,7 @@ checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
 [[package]]
 name = "engineioxide"
 version = "0.3.0"
+source = "git+https://github.com/lscobe16/socketioxide?rev=45b5467dd59c5c0a1eaec2958e143bb3074de203#45b5467dd59c5c0a1eaec2958e143bb3074de203"
 dependencies = [
  "async-trait",
  "base64 0.21.2",
@@ -1514,6 +1515,7 @@ dependencies = [
 [[package]]
 name = "socketioxide"
 version = "0.3.0"
+source = "git+https://github.com/lscobe16/socketioxide?rev=45b5467dd59c5c0a1eaec2958e143bb3074de203#45b5467dd59c5c0a1eaec2958e143bb3074de203"
 dependencies = [
  "dashmap",
  "engineioxide",

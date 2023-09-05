@@ -12,7 +12,6 @@ resources = ["frontend/**"]
 
 [workspace]
 members = ["ast"]
-exclude = ["socketioxide"]
 
 [dependencies]
 ast = { path = "ast" }
@@ -28,8 +27,7 @@ notify = "6.0.1"
 open = "5.0.0"
 serde = { version = "1.0.166", features = ["rc"] }
 serde_json = "1.0.99"
-#serde_traitobject = "0.2.8"
-socketioxide = { path = "socketioxide/socketioxide" }
+socketioxide = { git = "https://github.com/lscobe16/socketioxide", version = "0.3.0", rev = "45b5467dd59c5c0a1eaec2958e143bb3074de203" }
 tokio = { version = "1.29.1", features = ["full"] }
 tokio-stream = "0.1.14"
 tokio-util = { version = "0.7.8", features = ["io"] }
