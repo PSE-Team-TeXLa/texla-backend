@@ -8,7 +8,8 @@ authors = ["Paul Liebsch", "Piotr Malkowski", "Leonhard Mannke", "Linus Schöb",
 [package.metadata.bundle]
 name = "TeXLa"
 identifier = "edu.kit.pse.texla"
-resources = ["frontend/**"]
+resources = ["frontend"]
+icon = ["frontend/favicon.png"]
 
 [workspace]
 members = ["ast"]
