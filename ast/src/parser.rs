@@ -16,6 +16,8 @@ use crate::uuid_provider::{TexlaUuidProvider, Uuid};
 type NodeParser<'a> = BoxedParser<'a, char, NodeRef, Simple<char>>;
 type NodesParser<'a> = BoxedParser<'a, char, Vec<NodeRef>, Simple<char>>;
 
+const PARSE_ERROR_MESSAGE_RADIUS: usize = 20;
+
 #[derive(Clone)]
 struct LatexParser {
     uuid_provider: RefCell<TexlaUuidProvider>,
@@ -26,7 +28,24 @@ pub(crate) fn parse_latex(string: String) -> Result<TexlaAst, ParseError> {
     // To further improve performance, the parser could be reused instead of creating it every time.
     // This could be realized by using reference arguments instead of attributes.
     let parser = LatexParser::new();
-    let root = parser.parser().parse(string.clone())?;
+    let root = match parser.parser().parse(string.clone()) {
+        Ok(root) => root,
+        Err(errs) => {
+            let err = errs.first().expect("error, but no message");
+            let span = err.span();
+            let pre_span = span.start - PARSE_ERROR_MESSAGE_RADIUS..span.start;
+            let post_span = span.end..span.end + PARSE_ERROR_MESSAGE_RADIUS;
+            let message = err.to_string()
+                + " near \n`"
+                + &string[pre_span]
+                + "\n>>> "
+                + &string[span]
+                + " <<<\n"
+                + &string[post_span]
+                + "`";
+            return Err(ParseError { message });
+        }
+    };
     let highest_level = parser.highest_level(&string);
     Ok(TexlaAst {
         portal: parser.portal.into_inner(),
