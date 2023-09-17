@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 
+use clap::builder::OsStr;
 use clap::Parser;
 
 use ast::latex_constants::LATEX_FILE_EXTENSION;
@@ -7,7 +8,7 @@ use ast::latex_constants::LATEX_FILE_EXTENSION;
 use crate::infrastructure::export_manager::TexlaExportManager;
 use crate::infrastructure::file_path::FilePath;
 use crate::texla::core::TexlaCore;
-use crate::texla::webserver::{start_axum, PORT};
+use crate::texla::webserver::{start_axum, DEFAULT_PORT};
 
 // the rustdocs are put into the help message of the CLI
 #[derive(Parser, Debug)]
@@ -33,6 +34,11 @@ struct CliArguments {
     /// Disable all git actions (commit, pull, push)
     #[arg(short = 'g', long)]
     no_git: bool,
+
+    /// The port number of the web server
+    #[arg(short = 'P', long, value_name = "port number",
+    default_value = OsStr::from(& DEFAULT_PORT.to_string()))]
+    port: u16,
 }
 
 fn verify_main_file(main_file: &FilePath) -> bool {
@@ -60,6 +66,15 @@ pub async fn start() {
     }
 
     println!("Starting TeXLa...");
+
+    let port = args.port;
+    if port != DEFAULT_PORT {
+        println!(
+            "WARNING: Do not use a custom port to start TeXLa multiple times for the same \
+        directory!"
+        );
+    }
+
     println!("Opening file: {}", main_file.path.to_str().unwrap());
 
     let core = Arc::new(RwLock::new(TexlaCore {
@@ -72,12 +87,12 @@ pub async fn start() {
         socket: None,
     }));
 
-    if let Err(err) = open::that(format!("http://localhost:{}/", PORT)) {
+    if let Err(err) = open::that(format!("http://localhost:{port}/")) {
         println!("Could not open browser: {err}");
-        println!("Please open http://localhost:{}/ manually", PORT);
+        println!("Please open http://localhost:{port}/ manually");
     } else {
-        println!("Opened TeXLa at http://localhost:{}/", PORT);
+        println!("Opened TeXLa at http://localhost:{port}/");
     }
 
-    start_axum(core).await;
+    start_axum(core, port).await;
 }

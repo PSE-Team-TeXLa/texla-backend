@@ -13,10 +13,10 @@ use crate::texla::core::TexlaCore;
 use crate::texla::socket::socket_service;
 
 const LOCALHOST_IP: [u8; 4] = [127, 0, 0, 1];
-pub const PORT: u16 = 13814;
+pub const DEFAULT_PORT: u16 = 13814;
 const FRONTEND_SUBDIR: &str = "frontend";
 
-pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
+pub async fn start_axum(core: Arc<RwLock<TexlaCore>>, port: u16) {
     let app = axum::Router::new()
         .fallback_service(static_files())
         .route("/user-assets/*path", get(user_assets_handler))
@@ -26,7 +26,7 @@ pub async fn start_axum(core: Arc<RwLock<TexlaCore>>) {
         .layer(socket_service(core.clone()))
         .layer(Extension(core.clone()));
 
-    let res = Server::bind(&(LOCALHOST_IP, PORT).into())
+    let res = Server::bind(&(LOCALHOST_IP, port).into())
         .serve(app.into_make_service())
         .await;
 
