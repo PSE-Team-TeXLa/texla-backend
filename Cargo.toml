@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "TeXLa - a graphical LaTeX editor"
 authors = ["Paul Liebsch", "Piotr Malkowski", "Leonhard Mannke", "Linus Schöb", "Max Vogel"]
+license = "MIT OR Apache-2.0"
 
 [package.metadata.bundle]
 name = "TeXLa"
